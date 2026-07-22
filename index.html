@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>The Fluffy Ascendancy — Living World</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #07060e; font-family: Nunito, system-ui, sans-serif; }
+    #c { display: block; width: 100vw; height: 100vh; touch-action: none; }
+    .font-display { font-family: Fredoka, system-ui, sans-serif; }
+    .panel {
+      background: linear-gradient(180deg, rgba(16,12,28,0.92), rgba(10,8,18,0.88));
+      border: 1px solid rgba(167,139,250,0.35);
+      backdrop-filter: blur(12px);
+    }
+    .btn {
+      background: linear-gradient(180deg, #5b21b6, #2e1065);
+      border: 2px solid #a78bfa; color: #fff;
+      box-shadow: 0 3px 0 #1e1b4b; user-select: none;
+    }
+    .btn:active, .btn.pressed { transform: translateY(2px); box-shadow: 0 1px 0 #1e1b4b; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-pink { background: linear-gradient(180deg, #be185d, #831843); border-color: #f9a8d4; }
+    .btn-mint { background: linear-gradient(180deg, #0f766e, #134e4a); border-color: #5eead4; }
+    .skill-node {
+      width: 64px; height: 64px; border-radius: 16px; border: 2px solid #6b7280;
+      background: #1f1630; display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; transition: 0.15s;
+    }
+    .skill-node.available { border-color: #f9a8d4; box-shadow: 0 0 12px rgba(249,168,212,0.4); }
+    .skill-node.owned { border-color: #a78bfa; background: #3b0764; }
+    .skill-node.locked { opacity: 0.35; cursor: not-allowed; }
+    #mobilePad { display: none; }
+    #mobilePad.show { display: flex; }
+    .float-label {
+      position: absolute; pointer-events: none; transform: translate(-50%, -100%);
+      font-family: Fredoka, sans-serif; font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+    }
+    .party-slot {
+      width: 52px; height: 52px; border-radius: 12px; border: 2px solid rgba(167,139,250,0.4);
+      background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .zone-chip { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="labels" class="absolute inset-0 overflow-hidden pointer-events-none z-10"></div>
+
+  <!-- TOP HUD -->
+  <div class="absolute top-0 inset-x-0 z-20 p-2 sm:p-3 pointer-events-none">
+    <div class="panel rounded-2xl max-w-5xl mx-auto px-3 py-2.5 flex flex-wrap items-center gap-3 text-violet-100">
+      <div class="min-w-[120px]">
+        <p class="zone-chip" id="zoneName">Nursery Hills</p>
+        <h1 class="font-display text-base sm:text-lg text-pink-200 leading-tight">Fluffy Ascendancy</h1>
+      </div>
+      <div class="flex gap-3 text-sm">
+        <div><span class="text-pink-300">AP</span> <span id="apVal" class="font-display text-xl">0</span></div>
+        <div><span class="text-violet-300">FP</span> <span id="fpVal" class="font-display text-xl">0</span></div>
+        <div><span class="text-amber-300">LVL</span> <span id="lvlVal" class="font-display text-xl">1</span></div>
+      </div>
+      <div class="flex-1 min-w-[140px]">
+        <div class="flex justify-between text-[11px] mb-0.5"><span>Miracle Charge</span><span id="mirText">0/100</span></div>
+        <div class="h-2 rounded-full bg-black/40 overflow-hidden">
+          <div id="mirBar" class="h-full bg-gradient-to-r from-amber-300 to-violet-400" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="flex gap-1.5 pointer-events-auto">
+        <button id="btnSkills" class="btn rounded-xl px-3 py-2 text-xs font-display">Skills</button>
+        <button id="btnParty" class="btn rounded-xl px-3 py-2 text-xs font-display">Party</button>
+        <button id="btnMiracle" class="btn btn-pink rounded-xl px-3 py-2 text-xs font-display" disabled>Miracle</button>
+      </div>
+    </div>
+    <div class="max-w-5xl mx-auto mt-2 flex gap-1.5 justify-center sm:justify-start px-1">
+      <div id="partyHud" class="flex gap-1.5"></div>
+    </div>
+    <p id="toast" class="text-center font-display text-sm text-amber-100 mt-2 opacity-0 transition-opacity drop-shadow"></p>
+  </div>
+
+  <div id="prompt" class="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 panel rounded-xl px-4 py-2 text-sm text-violet-100 opacity-0 transition-opacity pointer-events-none"></div>
+
+  <!-- SKILL TREE -->
+  <div id="skillsUI" class="hidden absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
+    <div class="panel rounded-2xl w-full max-w-lg p-4 text-violet-100">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-display text-lg text-pink-200">Affection Skill Tree</h2>
+        <button id="closeSkills" class="btn rounded-lg px-3 py-1.5 text-xs">Close</button>
+      </div>
+      <p class="text-xs text-violet-300 mb-4">Spend Affection Points to awaken fluff powers. AP: <span id="skillAP" class="text-pink-300 font-bold">0</span></p>
+      <div id="skillGrid" class="flex flex-wrap gap-3 justify-center"></div>
+      <p id="skillDesc" class="mt-4 text-sm text-violet-200 min-h-[3rem] text-center"></p>
+    </div>
+  </div>
+
+  <!-- PARTY -->
+  <div id="partyUI" class="hidden absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
+    <div class="panel rounded-2xl w-full max-w-md p-4 text-violet-100">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-display text-lg text-pink-200">Fluffy Party</h2>
+        <button id="closeParty" class="btn rounded-lg px-3 py-1.5 text-xs">Close</button>
+      </div>
+      <p class="text-xs text-violet-300 mb-3">Recruit wild fluffies across the world — like catching partners. Max 4.</p>
+      <div id="partyList" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- BATTLE -->
+  <div id="battleUI" class="hidden absolute inset-0 z-50 flex flex-col justify-end bg-gradient-to-b from-[#1a1035f0] via-[#120c28e8] to-[#080614f5]">
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="text-center px-4">
+        <p class="font-display text-2xl sm:text-3xl text-rose-300" id="bEnemyName">Hostile Pet</p>
+        <p class="text-violet-200 text-sm mt-1" id="bHpLine">HP</p>
+        <p class="text-xs text-violet-400 mt-2" id="bPartyLine"></p>
+      </div>
+    </div>
+    <div class="relative z-10 max-w-xl w-full mx-auto p-4 space-y-3">
+      <div class="panel rounded-xl p-3 min-h-[3rem]"><p id="bLog" class="text-violet-100 text-sm"></p></div>
+      <div class="grid grid-cols-2 gap-2">
+        <button data-atk="slap" class="btn rounded-xl py-3 font-display text-sm">Soft Slap</button>
+        <button data-atk="beam" class="btn rounded-xl py-3 font-display text-sm">Cuddle Beam<br/><span class="text-[10px] text-violet-300">12 FP</span></button>
+        <button data-atk="party" class="btn btn-mint rounded-xl py-3 font-display text-sm">Party Assault</button>
+        <button data-atk="flee" class="btn rounded-xl py-3 font-display text-sm text-rose-200">Flee</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE -->
+  <div id="mobilePad" class="absolute inset-x-0 bottom-0 z-30 p-3 justify-between items-end pointer-events-none">
+    <div class="pointer-events-auto grid grid-cols-3 gap-1 w-[150px]">
+      <div></div>
+      <button data-dir="up" class="btn w-11 h-11 rounded-lg">▲</button>
+      <div></div>
+      <button data-dir="left" class="btn w-11 h-11 rounded-lg">◀</button>
+      <button data-dir="down" class="btn w-11 h-11 rounded-lg">▼</button>
+      <button data-dir="right" class="btn w-11 h-11 rounded-lg">▶</button>
+    </div>
+    <button id="btnAction" class="pointer-events-auto btn btn-pink w-14 h-14 rounded-full font-display text-lg">A</button>
+  </div>
+
+  <div class="absolute bottom-2 right-2 z-20 text-[10px] text-violet-500/80 pointer-events-none hidden sm:block">
+    WASD move · SPACE interact · K skills · P party · M miracle
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ═══════════════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════════════
+  const state = {
+    mode: 'play', // play | hug | battle | ui
+    ap: 0,
+    fp: 0,
+    miracleCharge: 0,
+    miracleMax: 100,
+    zone: 'nursery',
+    keys: Object.create(null),
+    touch: { x: 0, y: 0 },
+    toastT: 0,
+    invuln: 0,
+    time: 0,
+    hugT: 0,
+    hugTarget: null,
+    actionQueued: false
+  };
+
+  const player = {
+    hp: 50, hpMax: 50, atk: 8, spd: 5.2, level: 1,
+    skills: {
+      softFur: false, buttonEyes: false, haloStep: false,
+      partyBond: false, miracleEcho: false, fluffShield: false
+    }
+  };
+
+  const SKILLS = [
+    { id: 'softFur', icon: '🧸', name: 'Soft Fur', cost: 15, desc: '+3 Attack. Your hugs feel irresistible.', req: null },
+    { id: 'buttonEyes', icon: '👀', name: 'Button Eyes', cost: 25, desc: '+20% Affection from hugs.', req: 'softFur' },
+    { id: 'haloStep', icon: '✨', name: 'Halo Step', cost: 40, desc: '+1.2 move speed. Slight glow.', req: 'softFur' },
+    { id: 'partyBond', icon: '🤝', name: 'Party Bond', cost: 35, desc: 'Party Assault deals +40% damage.', req: 'buttonEyes' },
+    { id: 'miracleEcho', icon: '🙏', name: 'Miracle Echo', cost: 50, desc: 'Miracles grant +50% Faith.', req: 'haloStep' },
+    { id: 'fluffShield', icon: '🛡️', name: 'Fluff Shield', cost: 45, desc: '+20 Max HP and start battles shielded.', req: 'partyBond' }
+  ];
+
+  const PARTY_MAX = 4;
+  const party = []; // recruited fluffies {id,name,emoji,atk,hp,color}
+
+  const battle = { enemy: null, turn: 'player', busy: false, log: '' };
+
+  // ═══════════════════════════════════════════════════════
+  // THREE.JS WORLD
+  // ═══════════════════════════════════════════════════════
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87a0c8);
+  scene.fog = new THREE.Fog(0x87a0c8, 35, 90);
+
+  const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 200);
+  const camOffset = new THREE.Vector3(0, 11, 14);
+
+  scene.add(new THREE.HemisphereLight(0xfff0e8, 0x4a5a3a, 0.95));
+  const sun = new THREE.DirectionalLight(0xfff5e6, 1.15);
+  sun.position.set(20, 30, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -40;
+  sun.shadow.camera.right = 40;
+  sun.shadow.camera.top = 40;
+  sun.shadow.camera.bottom = -40;
+  scene.add(sun);
+
+  // Ground — large living world
+  const WORLD = 70;
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(WORLD, 64),
+    new THREE.MeshStandardMaterial({ color: 0x4a7c4e, roughness: 1 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Path ring / roads
+  function addPath(x, z, w, d, color = 0xc4b59a) {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, d),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.95 })
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, 0.02, z);
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+  addPath(0, 0, 6, 55); // N-S road
+  addPath(0, 0, 55, 5); // E-W road
+  addPath(-18, -16, 14, 12, 0x6b8f71); // park plaza
+  addPath(18, 14, 10, 10, 0xb8a090); // plaza
+
+  // Zone markers (invisible centers)
+  const ZONES = {
+    nursery: { name: 'Nursery Hills', x: 0, z: 18, color: 0xf9a8d4 },
+    house:   { name: 'Cozy Homestead', x: -16, z: 2, color: 0xfbbf24 },
+    park:    { name: 'Stuffed Park', x: -18, z: -16, color: 0x6ee7b7 },
+    street:  { name: 'Ribbon Street', x: 18, z: 0, color: 0x93c5fd },
+    shrine:  { name: 'Velvet Shrine', x: 16, z: -18, color: 0xc4b5fd }
+  };
+
+  function addBuilding(x, z, w, h, d, color) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.8 })
+    );
+    mesh.position.set(x, h / 2, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  }
+
+  // Nursery cottage
+  addBuilding(0, 22, 8, 4, 6, 0xe8b4b8);
+  addBuilding(-2, 20.5, 2.2, 2.2, 0.3, 0x7dd3fc); // window fake
+  // Homestead
+  addBuilding(-18, 4, 7, 4.5, 7, 0xd4a574);
+  addBuilding(-15, 1, 3, 2, 3, 0xb8956a);
+  // Park trees (cones + trunks)
+  function addTree(x, z) {
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.35, 1.4, 8),
+      new THREE.MeshStandardMaterial({ color: 0x6b4423 })
+    );
+    trunk.position.set(x, 0.7, z);
+    trunk.castShadow = true;
+    scene.add(trunk);
+    const leaves = new THREE.Mesh(
+      new THREE.ConeGeometry(1.4, 2.8, 8),
+      new THREE.MeshStandardMaterial({ color: 0x2f6b3a })
+    );
+    leaves.position.set(x, 2.6, z);
+    leaves.castShadow = true;
+    scene.add(leaves);
+  }
+  [[-22,-14],[-14,-20],[-24,-20],[-12,-12],[-20,-10],[-16,-24]].forEach(([x,z]) => addTree(x,z));
+
+  // Street shops
+  addBuilding(20, 4, 5, 3.5, 5, 0x94a3b8);
+  addBuilding(22, -4, 4, 3, 4, 0xf472b6);
+  addBuilding(16, 6, 4, 3, 4, 0x60a5fa);
+
+  // Shrine
+  {
+    const base = addBuilding(16, -18, 5, 0.4, 5, 0x5b4a8a);
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.5, 3.5, 10),
+      new THREE.MeshStandardMaterial({ color: 0xc4b5fd, emissive: 0x4c1d95, emissiveIntensity: 0.25 })
+    );
+    pillar.position.set(16, 2, -18);
+    pillar.castShadow = true;
+    scene.add(pillar);
+    const orb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.55, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xfbbf24, emissiveIntensity: 0.5 })
+    );
+    orb.position.set(16, 4.2, -18);
+    scene.add(orb);
+  }
+
+  // Decorative rocks / fences as soft blockers
+  const blockers = [];
+  function addBlocker(x, z, r) {
+    blockers.push({ x, z, r });
+    const rock = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(r * 0.7, 0),
+      new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.9 })
+    );
+    rock.position.set(x, r * 0.35, z);
+    rock.castShadow = true;
+    scene.add(rock);
+  }
+  [[8,18],[ -8,20],[12,-8],[-25,8],[25,-12],[-5,-25],[8,-20]].forEach(([x,z]) => addBlocker(x, z, 1.2));
+
+  // Zone fountain lights
+  Object.values(ZONES).forEach(z => {
+    const light = new THREE.PointLight(z.color, 0.6, 14);
+    light.position.set(z.x, 3, z.z);
+    scene.add(light);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // BEAR
+  // ═══════════════════════════════════════════════════════
+  function makeTeddy() {
+    const root = new THREE.Group();
+    const fur = new THREE.MeshStandardMaterial({ color: 0xe8a090, roughness: 0.65 });
+    const light = new THREE.MeshStandardMaterial({ color: 0xedb5a8, roughness: 0.6 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x2a1a18 });
+
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), fur);
+    body.position.y = 0.52; body.scale.set(1, 1.05, 0.9); body.castShadow = true;
+    root.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 18, 14), light);
+    head.position.y = 1.1; head.castShadow = true; root.add(head);
+    const earL = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), fur);
+    earL.position.set(-0.26, 1.35, 0);
+    const earR = earL.clone(); earR.position.x = 0.26;
+    root.add(earL, earR);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf8e0d8 }));
+    snout.position.set(0, 1.0, 0.26); root.add(snout);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), dark);
+    nose.position.set(0, 1.02, 0.38); root.add(nose);
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), dark);
+    eyeL.position.set(-0.11, 1.14, 0.3);
+    const eyeR = eyeL.clone(); eyeR.position.x = 0.11;
+    root.add(eyeL, eyeR);
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.38), fur);
+    armL.position.set(-0.45, 0.6, 0.05); armL.rotation.z = 0.3; armL.castShadow = true;
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.38), fur);
+    armR.position.set(0.45, 0.6, 0.05); armR.rotation.z = -0.3; armR.castShadow = true;
+    root.add(armL, armR);
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.25, 0.25), fur);
+    legL.position.set(-0.18, 0.16, 0);
+    const legR = legL.clone(); legR.position.x = 0.18;
+    root.add(legL, legR);
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(0.26, 0.03, 8, 20),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xfbbf24, emissiveIntensity: 0.55 })
+    );
+    halo.rotation.x = Math.PI / 2; halo.position.y = 1.55; halo.visible = false;
+    root.add(halo);
+    root.userData = { armL, armR, halo, bob: 0 };
+    return root;
+  }
+
+  const bear = makeTeddy();
+  bear.position.set(0, 0, 16);
+  scene.add(bear);
+
+  // ═══════════════════════════════════════════════════════
+  // WILD FLUFFIES (recruitable) + HOSTILE PETS
+  // ═══════════════════════════════════════════════════════
+  const FLUFFY_TYPES = [
+    { id: 'bunny', name: 'Cotton Bunny', emoji: '🐰', color: 0xfce7f3, atk: 5, rarity: 'common' },
+    { id: 'pup', name: 'Plush Pup', emoji: '🐶', color: 0xfed7aa, atk: 7, rarity: 'common' },
+    { id: 'duck', name: 'Bath Duck', emoji: '🦆', color: 0xfef08a, atk: 4, rarity: 'common' },
+    { id: 'panda', name: 'Ink Panda', emoji: '🐼', color: 0xe5e7eb, atk: 9, rarity: 'rare' },
+    { id: 'fox', name: 'Ember Fox', emoji: '🦊', color: 0xfdba74, atk: 10, rarity: 'rare' },
+    { id: 'dragon', name: 'Velvet Dragon', emoji: '🐲', color: 0xc4b5fd, atk: 14, rarity: 'legend' }
+  ];
+
+  const HOSTILE_TYPES = [
+    { id: 'scrapdog', name: 'Scrap Dog', emoji: '🐕', color: 0x78716c, hp: 28, atk: 7 },
+    { id: 'corpcat', name: 'Corp Cat', emoji: '🐱', color: 0xf8fafc, hp: 32, atk: 8 },
+    { id: 'razorbot', name: 'Razor Petbot', emoji: '🤖', color: 0x94a3b8, hp: 40, atk: 10 },
+    { id: 'voidrat', name: 'Void Rat', emoji: '🐀', color: 0x44403c, hp: 22, atk: 9 }
+  ];
+
+  function makeCritter(color, scale = 1, style = 'fluff') {
+    const root = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.28 * scale, 12, 10), mat);
+    body.position.y = 0.32 * scale; body.castShadow = true; root.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22 * scale, 12, 10), mat);
+    head.position.set(0.15 * scale, 0.5 * scale, 0); head.castShadow = true; root.add(head);
+    if (style === 'hostile') {
+      const spike = new THREE.Mesh(
+        new THREE.ConeGeometry(0.08 * scale, 0.2 * scale, 6),
+        new THREE.MeshStandardMaterial({ color: 0xf43f5e })
+      );
+      spike.position.set(0.15 * scale, 0.72 * scale, 0);
+      root.add(spike);
+    } else {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.08 * scale, 8, 6), mat);
+      ear.position.set(0.05 * scale, 0.7 * scale, 0.1 * scale);
+      root.add(ear);
+    }
+    return root;
+  }
+
+  const wildFluffies = [];
+  const hostiles = [];
+  const humans = [];
+
+  function spawnWildFluffy(type, x, z) {
+    const mesh = makeCritter(type.color, type.rarity === 'legend' ? 1.25 : 1, 'fluff');
+    mesh.position.set(x, 0, z);
+    scene.add(mesh);
+    const f = {
+      kind: 'fluffy', type, mesh,
+      recruited: false,
+      homeX: x, homeZ: z,
+      wanderT: Math.random() * 2,
+      vx: 0, vz: 0
+    };
+    wildFluffies.push(f);
+    return f;
+  }
+
+  function spawnHostile(type, x, z) {
+    const mesh = makeCritter(type.color, 1.1, 'hostile');
+    mesh.position.set(x, 0, z);
+    scene.add(mesh);
+    hostiles.push({
+      kind: 'hostile', type, mesh,
+      hp: type.hp, hpMax: type.hp, atk: type.atk,
+      defeated: false,
+      homeX: x, homeZ: z,
+      aggro: 7,
+      vx: (Math.random() - 0.5), vz: (Math.random() - 0.5)
+    });
+  }
+
+  function makeHuman(name, x, z, color) {
+    const root = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({ color: 0xf0c8a8 });
+    const shirt = new THREE.MeshStandardMaterial({ color });
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.25), shirt);
+    torso.position.y = 0.9; torso.castShadow = true; root.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), skin);
+    head.position.y = 1.35; root.add(head);
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    legs.position.y = 0.35; root.add(legs);
+    root.position.set(x, 0, z);
+    scene.add(root);
+    humans.push({ name, mesh: root, hugged: false, convertProgress: 0 });
+  }
+
+  // Populate world
+  spawnWildFluffy(FLUFFY_TYPES[0], 3, 14);
+  spawnWildFluffy(FLUFFY_TYPES[2], -3, 12);
+  spawnWildFluffy(FLUFFY_TYPES[1], -14, 0);
+  spawnWildFluffy(FLUFFY_TYPES[3], -20, -14);
+  spawnWildFluffy(FLUFFY_TYPES[4], 14, 2);
+  spawnWildFluffy(FLUFFY_TYPES[0], 10, -16);
+  spawnWildFluffy(FLUFFY_TYPES[5], 18, -20); // legend near shrine
+  spawnWildFluffy(FLUFFY_TYPES[1], -8, -8);
+  spawnWildFluffy(FLUFFY_TYPES[2], 22, 8);
+
+  spawnHostile(HOSTILE_TYPES[1], 6, 8);
+  spawnHostile(HOSTILE_TYPES[0], -10, 8);
+  spawnHostile(HOSTILE_TYPES[2], 12, -6);
+  spawnHostile(HOSTILE_TYPES[3], -22, -8);
+  spawnHostile(HOSTILE_TYPES[1], 20, -10);
+  spawnHostile(HOSTILE_TYPES[0], -6, -18);
+  spawnHostile(HOSTILE_TYPES[2], 8, -22);
+
+  makeHuman('Child', 2, 18, 0x7dd3fc);
+  makeHuman('Parent', -16, 6, 0xf9a8d4);
+  makeHuman('Park Ranger', -18, -12, 0x86efac);
+  makeHuman('Shopkeep', 18, 2, 0xfbbf24);
+  makeHuman('Acolyte', 14, -16, 0xc4b5fd);
+
+  // ═══════════════════════════════════════════════════════
+  // LABELS / FX
+  // ═══════════════════════════════════════════════════════
+  const labelLayer = document.getElementById('labels');
+  const floaters = [];
+  const particles = [];
+
+  function toScreen(pos) {
+    const v = pos.clone().project(camera);
+    return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight, ok: v.z < 1 };
+  }
+
+  function spawnFloat(pos, text, color = '#f9a8d4') {
+    const el = document.createElement('div');
+    el.className = 'float-label text-base';
+    el.style.color = color;
+    el.textContent = text;
+    labelLayer.appendChild(el);
+    floaters.push({ el, pos: pos.clone(), life: 1.3, vy: 1.1 });
+  }
+
+  function updateFloaters(dt) {
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      const f = floaters[i];
+      f.life -= dt; f.pos.y += f.vy * dt;
+      const s = toScreen(f.pos);
+      f.el.style.left = s.x + 'px'; f.el.style.top = s.y + 'px';
+      f.el.style.opacity = String(Math.max(0, f.life));
+      if (f.life <= 0) { f.el.remove(); floaters.splice(i, 1); }
+    }
+  }
+
+  function burst(pos, color, n = 10) {
+    for (let i = 0; i < n; i++) {
+      const p = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 6, 6),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      p.position.copy(pos);
+      p.userData = {
+        vx: (Math.random() - 0.5) * 3,
+        vy: 1 + Math.random() * 2,
+        vz: (Math.random() - 0.5) * 3,
+        life: 0.9
+      };
+      scene.add(p);
+      particles.push(p);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // MOVEMENT
+  // ═══════════════════════════════════════════════════════
+  function blocked(x, z) {
+    if (Math.hypot(x, z) > WORLD - 2) return true;
+    for (const b of blockers) {
+      if (Math.hypot(x - b.x, z - b.z) < b.r + 0.45) return true;
+    }
+    // Soft building AABBs
+    const buildings = [
+      { x: 0, z: 22, w: 4.5, d: 3.5 },
+      { x: -18, z: 4, w: 4, d: 4 },
+      { x: 20, z: 4, w: 3, d: 3 },
+      { x: 22, z: -4, w: 2.5, d: 2.5 },
+      { x: 16, z: 6, w: 2.5, d: 2.5 }
+    ];
+    for (const b of buildings) {
+      if (Math.abs(x - b.x) < b.w && Math.abs(z - b.z) < b.d) return true;
+    }
+    return false;
+  }
+
+  function tryMove(dx, dz) {
+    const nx = bear.position.x + dx;
+    const nz = bear.position.z + dz;
+    if (!blocked(nx, bear.position.z)) bear.position.x = nx;
+    if (!blocked(bear.position.x, nz)) bear.position.z = nz;
+  }
+
+  function nearest(list, range, pred) {
+    let best = null, bestD = range;
+    for (const o of list) {
+      if (pred && !pred(o)) continue;
+      const d = bear.position.distanceTo(o.mesh.position);
+      if (d < bestD) { best = o; bestD = d; }
+    }
+    return best;
+  }
+
+  function currentZone() {
+    let best = 'nursery', bestD = Infinity;
+    for (const [id, z] of Object.entries(ZONES)) {
+      const d = Math.hypot(bear.position.x - z.x, bear.position.z - z.z);
+      if (d < bestD) { bestD = d; best = id; }
+    }
+    return best;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // INTERACTIONS: HUG / RECRUIT / MIRACLE
+  // ═══════════════════════════════════════════════════════
+  function doAction() {
+    if (state.mode !== 'play') return;
+
+    const fluffy = nearest(wildFluffies, 2.2, f => !f.recruited);
+    if (fluffy) { recruitFluffy(fluffy); return; }
+
+    const human = nearest(humans, 2.0);
+    if (human) { hugHuman(human); return; }
+
+    toast('Nothing nearby — explore for fluffies, humans, or the shrine.');
+  }
+
+  function hugHuman(h) {
+    state.mode = 'hug';
+    state.hugT = 0;
+    state.hugTarget = h;
+
+    const dx = h.mesh.position.x - bear.position.x;
+    const dz = h.mesh.position.z - bear.position.z;
+    bear.rotation.y = Math.atan2(dx, dz);
+
+    let gain = 12 + Math.floor(Math.random() * 8);
+    if (player.skills.buttonEyes) gain = Math.floor(gain * 1.2);
+    state.ap += gain;
+    state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + gain * 0.85);
+    h.convertProgress = Math.min(100, h.convertProgress + gain);
+    h.hugged = true;
+
+    const mid = bear.position.clone().lerp(h.mesh.position, 0.5);
+    mid.y = 1.3;
+    spawnFloat(mid, `+${gain} AP`, '#f9a8d4');
+    burst(mid, 0xf472b6, 8);
+
+    if (h.convertProgress >= 100) {
+      toast(`${h.name} believes! Miracle Charge surges.`);
+      state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 20);
+      h.mesh.traverse(o => {
+        if (o.isMesh && o.material && o.geometry?.type === 'BoxGeometry') {
+          o.material = o.material.clone();
+          o.material.color.set(0x7c3aed);
+        }
+      });
+    }
+    updateHUD();
+  }
+
+  function recruitFluffy(f) {
+    if (party.length >= PARTY_MAX) {
+      toast('Party full (4). Open Party to manage.');
+      return;
+    }
+    f.recruited = true;
+    f.mesh.visible = false;
+    const member = {
+      id: f.type.id + '_' + Math.random().toString(36).slice(2, 6),
+      name: f.type.name,
+      emoji: f.type.emoji,
+      atk: f.type.atk,
+      color: f.type.color,
+      rarity: f.type.rarity
+    };
+    party.push(member);
+    state.ap += 8;
+    state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 10);
+    spawnFloat(f.mesh.position.clone().setY(1.2), 'JOINED!', '#6ee7b7');
+    burst(f.mesh.position.clone().setY(0.8), f.type.color, 14);
+    toast(`${member.emoji} ${member.name} joined your party!`);
+    updateHUD();
+    renderPartyHud();
+  }
+
+  function performMiracle() {
+    if (state.mode !== 'play') return;
+    if (state.miracleCharge < state.miracleMax) {
+      toast('Miracle not ready — hug humans & recruit fluffies to charge.');
+      return;
+    }
+
+    let fpGain = 40 + party.length * 8 + humans.filter(h => h.convertProgress >= 100).length * 10;
+    if (player.skills.miracleEcho) fpGain = Math.floor(fpGain * 1.5);
+
+    state.miracleCharge = 0;
+    state.fp += fpGain;
+    bear.userData.halo.visible = true;
+
+    // Screen miracle FX
+    burst(bear.position.clone().setY(1.2), 0xfde68a, 28);
+    burst(bear.position.clone().setY(1.5), 0xc4b5fd, 20);
+    spawnFloat(bear.position.clone().setY(2), `MIRACLE +${fpGain} FP`, '#fde68a');
+
+    // Pacify nearby hostiles briefly / damage
+    for (const h of hostiles) {
+      if (h.defeated) continue;
+      if (bear.position.distanceTo(h.mesh.position) < 12) {
+        h.hp -= 15;
+        spawnFloat(h.mesh.position.clone().setY(1), '-15', '#fda4af');
+        if (h.hp <= 0) defeatHostile(h, false);
+      }
+    }
+
+    // Heal
+    player.hp = Math.min(player.hpMax, player.hp + 15);
+    toast(`Miracle! Faith floods the land (+${fpGain} FP).`);
+    updateHUD();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // COMBAT vs HOSTILE PETS
+  // ═══════════════════════════════════════════════════════
+  function startBattle(enemy) {
+    if (state.mode !== 'play' || enemy.defeated || state.invuln > 0) return;
+    state.mode = 'battle';
+    battle.enemy = enemy;
+    battle.turn = 'player';
+    battle.busy = false;
+    battle.log = `${enemy.type.emoji} ${enemy.type.name} tries to rip the fluff apart!`;
+    if (player.skills.fluffShield) {
+      battle.log += ' Fluff Shield braces you.';
+    }
+    document.getElementById('battleUI').classList.remove('hidden');
+    document.getElementById('bEnemyName').textContent = `${enemy.type.emoji} ${enemy.type.name}`;
+    syncBattle();
+  }
+
+  function syncBattle() {
+    const e = battle.enemy;
+    document.getElementById('bLog').textContent = battle.log;
+    document.getElementById('bHpLine').textContent =
+      `Enemy ${Math.max(0, Math.ceil(e.hp))}/${e.hpMax} · You ${Math.max(0, Math.ceil(player.hp))}/${player.hpMax}`;
+    document.getElementById('bPartyLine').textContent =
+      party.length ? 'Party: ' + party.map(p => p.emoji).join(' ') : 'No party partners yet';
+    document.querySelectorAll('[data-atk]').forEach(b => {
+      b.disabled = battle.busy || battle.turn !== 'player';
+    });
+    const beam = document.querySelector('[data-atk="beam"]');
+    if (beam) beam.disabled = battle.busy || battle.turn !== 'player' || state.fp < 12;
+  }
+
+  function playerAtk(kind) {
+    if (state.mode !== 'battle' || battle.busy || battle.turn !== 'player') return;
+    battle.busy = true;
+    const e = battle.enemy;
+
+    if (kind === 'flee') {
+      if (Math.random() < 0.55 + (player.skills.haloStep ? 0.15 : 0)) {
+        battle.log = 'You scampered away!';
+        syncBattle();
+        setTimeout(endBattle, 700);
+      } else {
+        battle.log = 'Blocked! No escape.';
+        syncBattle();
+        setTimeout(enemyAtk, 700);
+      }
+      return;
+    }
+
+    let dmg = 0;
+    if (kind === 'slap') {
+      dmg = player.atk + Math.floor(Math.random() * 5);
+      battle.log = `Soft Slap hits for ${dmg}!`;
+    } else if (kind === 'beam') {
+      if (state.fp < 12) { battle.log = 'Need 12 FP!'; battle.busy = false; syncBattle(); return; }
+      state.fp -= 12;
+      dmg = Math.floor(player.atk * 2.2) + Math.floor(Math.random() * 6);
+      battle.log = `Cuddle Beam deals ${dmg}!`;
+      updateHUD();
+    } else if (kind === 'party') {
+      const base = party.reduce((s, p) => s + p.atk, 0) + 4;
+      dmg = Math.floor(base * (player.skills.partyBond ? 1.4 : 1)) + Math.floor(Math.random() * 5);
+      battle.log = party.length
+        ? `Party Assault! ${party.map(p => p.emoji).join('')} deal ${dmg}!`
+        : `Lonely swipe for ${dmg}. Find fluffies!`;
+    }
+
+    e.hp -= dmg;
+    syncBattle();
+    if (e.hp <= 0) setTimeout(() => { defeatHostile(e, true); endBattle(); }, 600);
+    else setTimeout(enemyAtk, 750);
+  }
+
+  function enemyAtk() {
+    const e = battle.enemy;
+    if (!e || e.hp <= 0) return;
+    battle.turn = 'enemy';
+    let dmg = e.atk + Math.floor(Math.random() * 4);
+    if (player.skills.fluffShield) dmg = Math.max(1, dmg - 3);
+    player.hp -= dmg;
+    battle.log = `${e.type.name} shreds stuffing for ${dmg}!`;
+    syncBattle();
+
+    if (player.hp <= 0) {
+      player.hp = 0;
+      battle.log = 'Unstuffed… waking up in Nursery Hills.';
+      syncBattle();
+      setTimeout(() => {
+        endBattle();
+        player.hp = player.hpMax;
+        bear.position.set(0, 0, 16);
+        updateHUD();
+      }, 1000);
+      return;
+    }
+    setTimeout(() => { battle.turn = 'player'; battle.busy = false; syncBattle(); }, 650);
+  }
+
+  function defeatHostile(e, grantRewards) {
+    e.defeated = true;
+    e.mesh.visible = false;
+    if (grantRewards) {
+      const ap = 10 + Math.floor(Math.random() * 8);
+      const fp = 5 + Math.floor(Math.random() * 6);
+      state.ap += ap;
+      state.fp += fp;
+      state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 8);
+      toast(`Pet defeated! +${ap} AP · +${fp} FP`);
+      // Respawn later
+      setTimeout(() => {
+        e.defeated = false;
+        e.hp = e.hpMax;
+        e.mesh.visible = true;
+        e.mesh.position.set(e.homeX + (Math.random() - 0.5) * 4, 0, e.homeZ + (Math.random() - 0.5) * 4);
+      }, 25000);
+      updateHUD();
+    }
+  }
+
+  function endBattle() {
+    document.getElementById('battleUI').classList.add('hidden');
+    battle.enemy = null;
+    state.mode = 'play';
+    state.invuln = 1.8;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SKILL TREE
+  // ═══════════════════════════════════════════════════════
+  function renderSkills() {
+    const grid = document.getElementById('skillGrid');
+    document.getElementById('skillAP').textContent = state.ap;
+    grid.innerHTML = SKILLS.map(s => {
+      const owned = player.skills[s.id];
+      const reqOk = !s.req || player.skills[s.req];
+      const can = !owned && reqOk && state.ap >= s.cost;
+      const cls = owned ? 'owned' : can ? 'available' : 'locked';
+      return `<button class="skill-node ${cls}" data-skill="${s.id}" title="${s.name}">
+        <span>${s.icon}</span>
+      </button>`;
+    }).join('');
+
+    grid.querySelectorAll('[data-skill]').forEach(btn => {
+      const s = SKILLS.find(x => x.id === btn.dataset.skill);
+      btn.addEventListener('mouseenter', () => {
+        document.getElementById('skillDesc').textContent =
+          `${s.name} (${s.cost} AP) — ${s.desc}` + (s.req && !player.skills[s.req] ? ` Requires ${s.req}.` : '');
+      });
+      btn.addEventListener('click', () => buySkill(s.id));
+    });
+  }
+
+  function buySkill(id) {
+    const s = SKILLS.find(x => x.id === id);
+    if (!s || player.skills[id]) return;
+    if (s.req && !player.skills[s.req]) { toast('Prerequisite skill needed.'); return; }
+    if (state.ap < s.cost) { toast('Not enough AP.'); return; }
+    state.ap -= s.cost;
+    player.skills[id] = true;
+
+    if (id === 'softFur') player.atk += 3;
+    if (id === 'haloStep') { player.spd += 1.2; bear.userData.halo.visible = true; }
+    if (id === 'fluffShield') { player.hpMax += 20; player.hp += 20; }
+
+    toast(`Unlocked ${s.name}!`);
+    renderSkills();
+    updateHUD();
+  }
+
+  function renderPartyList() {
+    const el = document.getElementById('partyList');
+    if (!party.length) {
+      el.innerHTML = '<p class="text-violet-400 text-sm">Empty. Explore the world and press A near wild fluffies!</p>';
+      return;
+    }
+    el.innerHTML = party.map((p, i) => `
+      <div class="flex items-center justify-between gap-2 rounded-xl border border-violet-500/30 bg-black/30 px-3 py-2">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">${p.emoji}</span>
+          <div>
+            <p class="font-display text-sm text-pink-100">${p.name}</p>
+            <p class="text-[11px] text-violet-400">${p.rarity} · ATK ${p.atk}</p>
+          </div>
+        </div>
+        <span class="text-xs text-violet-500">#${i + 1}</span>
+      </div>`).join('');
+  }
+
+  function renderPartyHud() {
+    const el = document.getElementById('partyHud');
+    const slots = [];
+    for (let i = 0; i < PARTY_MAX; i++) {
+      const p = party[i];
+      slots.push(`<div class="party-slot">${p ? p.emoji : '·'}</div>`);
+    }
+    el.innerHTML = slots.join('');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // UI
+  // ═══════════════════════════════════════════════════════
+  function updateHUD() {
+    document.getElementById('apVal').textContent = Math.floor(state.ap);
+    document.getElementById('fpVal').textContent = Math.floor(state.fp);
+    document.getElementById('lvlVal').textContent = player.level;
+    document.getElementById('mirText').textContent = `${Math.floor(state.miracleCharge)}/${state.miracleMax}`;
+    document.getElementById('mirBar').style.width = `${(state.miracleCharge / state.miracleMax) * 100}%`;
+    const mirBtn = document.getElementById('btnMiracle');
+    mirBtn.disabled = state.miracleCharge < state.miracleMax || state.mode !== 'play';
+  }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.opacity = '1';
+    state.toastT = 2.8;
+  }
+
+  function openUI(which) {
+    if (state.mode === 'battle' || state.mode === 'hug') return;
+    state.mode = 'ui';
+    document.getElementById('skillsUI').classList.toggle('hidden', which !== 'skills');
+    document.getElementById('partyUI').classList.toggle('hidden', which !== 'party');
+    if (which === 'skills') renderSkills();
+    if (which === 'party') renderPartyList();
+  }
+
+  function closeUI() {
+    document.getElementById('skillsUI').classList.add('hidden');
+    document.getElementById('partyUI').classList.add('hidden');
+    if (state.mode === 'ui') state.mode = 'play';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // INPUT
+  // ═══════════════════════════════════════════════════════
+  window.addEventListener('keydown', e => {
+    state.keys[e.key] = true;
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+    if (e.key === ' ' && state.mode === 'play') state.actionQueued = true;
+    if (e.key === 'k' || e.key === 'K') openUI('skills');
+    if (e.key === 'p' || e.key === 'P') openUI('party');
+    if (e.key === 'm' || e.key === 'M') performMiracle();
+    if (e.key === 'Escape') closeUI();
+  });
+  window.addEventListener('keyup', e => { state.keys[e.key] = false; });
+
+  document.getElementById('btnAction').onclick = () => { if (state.mode === 'play') state.actionQueued = true; };
+  document.getElementById('btnSkills').onclick = () => openUI('skills');
+  document.getElementById('btnParty').onclick = () => openUI('party');
+  document.getElementById('btnMiracle').onclick = performMiracle;
+  document.getElementById('closeSkills').onclick = closeUI;
+  document.getElementById('closeParty').onclick = closeUI;
+  document.querySelectorAll('[data-atk]').forEach(b => b.addEventListener('click', () => playerAtk(b.dataset.atk)));
+
+  function bindDir(btn) {
+    const apply = () => {
+      let x = 0, y = 0;
+      document.querySelectorAll('[data-dir]').forEach(b => {
+        if (!b.classList.contains('pressed')) return;
+        if (b.dataset.dir === 'up') y -= 1;
+        if (b.dataset.dir === 'down') y += 1;
+        if (b.dataset.dir === 'left') x -= 1;
+        if (b.dataset.dir === 'right') x += 1;
+      });
+      state.touch.x = x; state.touch.y = y;
+    };
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault(); btn.setPointerCapture(e.pointerId);
+      btn.classList.add('pressed'); apply();
+    });
+    btn.addEventListener('pointerup', () => { btn.classList.remove('pressed'); apply(); });
+    btn.addEventListener('pointercancel', () => { btn.classList.remove('pressed'); apply(); });
+  }
+  document.querySelectorAll('[data-dir]').forEach(bindDir);
+
+  window.addEventListener('touchstart', () => document.getElementById('mobilePad').classList.add('show'), { once: true, passive: true });
+  if (matchMedia('(pointer: coarse)').matches) document.getElementById('mobilePad').classList.add('show');
+
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // FOLLOWERS (party snakes behind bear)
+  // ═══════════════════════════════════════════════════════
+  const trail = [];
+  const followerMeshes = [];
+
+  function syncFollowers() {
+    while (followerMeshes.length < party.length) {
+      const p = party[followerMeshes.length];
+      const m = makeCritter(p.color, 0.85, 'fluff');
+      scene.add(m);
+      followerMeshes.push(m);
+    }
+    while (followerMeshes.length > party.length) {
+      const m = followerMeshes.pop();
+      scene.remove(m);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // UPDATE LOOP
+  // ═══════════════════════════════════════════════════════
+  const clock = new THREE.Clock();
+
+  function update(dt) {
+    state.time += dt;
+    if (state.toastT > 0) {
+      state.toastT -= dt;
+      if (state.toastT <= 0) document.getElementById('toast').style.opacity = '0';
+    }
+    if (state.invuln > 0) state.invuln -= dt;
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      const u = p.userData;
+      u.life -= dt;
+      p.position.x += u.vx * dt;
+      p.position.y += u.vy * dt;
+      p.position.z += u.vz * dt;
+      u.vy -= 3 * dt;
+      if (u.life <= 0) { scene.remove(p); particles.splice(i, 1); }
+    }
+
+    if (state.mode === 'battle' || state.mode === 'ui') {
+      updateFloaters(dt);
+      return;
+    }
+
+    // Hug anim
+    if (state.mode === 'hug') {
+      state.hugT += dt;
+      const t = Math.min(1, state.hugT / 0.55);
+      const swing = Math.sin(t * Math.PI) * 1.0;
+      bear.userData.armL.rotation.z = 0.3 + swing;
+      bear.userData.armR.rotation.z = -0.3 - swing;
+      bear.position.y = Math.sin(t * Math.PI) * 0.12;
+      if (state.hugT >= 0.65) {
+        bear.userData.armL.rotation.set(0, 0, 0.3);
+        bear.userData.armR.rotation.set(0, 0, -0.3);
+        bear.position.y = 0;
+        state.mode = 'play';
+        state.hugTarget = null;
+      }
+    }
+
+    if (state.mode === 'play') {
+      if (state.actionQueued) { state.actionQueued = false; doAction(); }
+
+      let mx = 0, mz = 0;
+      if (state.keys['ArrowLeft'] || state.keys['a'] || state.keys['A']) mx -= 1;
+      if (state.keys['ArrowRight'] || state.keys['d'] || state.keys['D']) mx += 1;
+      if (state.keys['ArrowUp'] || state.keys['w'] || state.keys['W']) mz -= 1;
+      if (state.keys['ArrowDown'] || state.keys['s'] || state.keys['S']) mz += 1;
+      mx += state.touch.x; mz += state.touch.y;
+
+      if (mx || mz) {
+        const len = Math.hypot(mx, mz) || 1;
+        mx /= len; mz /= len;
+        tryMove(mx * player.spd * dt, mz * player.spd * dt);
+        bear.rotation.y = Math.atan2(mx, mz);
+        bear.userData.bob += dt * 10;
+        bear.position.y = Math.abs(Math.sin(bear.userData.bob)) * 0.05;
+        bear.userData.armL.rotation.x = Math.sin(bear.userData.bob) * 0.35;
+        bear.userData.armR.rotation.x = -Math.sin(bear.userData.bob) * 0.35;
+      } else bear.position.y = 0;
+
+      // Prompt
+      const fNear = nearest(wildFluffies, 2.2, f => !f.recruited);
+      const hNear = nearest(humans, 2.0);
+      const prompt = document.getElementById('prompt');
+      if (fNear) {
+        prompt.style.opacity = '1';
+        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to recruit <b>${fNear.type.emoji} ${fNear.type.name}</b>`;
+      } else if (hNear) {
+        prompt.style.opacity = '1';
+        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to hug <b>${hNear.name}</b> (${Math.floor(hNear.convertProgress)}%)`;
+      } else {
+        prompt.style.opacity = '0';
+      }
+
+      // Zone
+      const z = currentZone();
+      if (z !== state.zone) {
+        state.zone = z;
+        document.getElementById('zoneName').textContent = ZONES[z].name;
+        toast(`Entered ${ZONES[z].name}`);
+      }
+    }
+
+    // Trail + followers
+    trail.unshift({ x: bear.position.x, z: bear.position.z, y: bear.rotation.y });
+    if (trail.length > 120) trail.length = 120;
+    syncFollowers();
+    followerMeshes.forEach((m, i) => {
+      const idx = Math.min(trail.length - 1, (i + 1) * 12);
+      const t = trail[idx];
+      if (!t) return;
+      m.position.x += (t.x - m.position.x) * Math.min(1, 8 * dt);
+      m.position.z += (t.z - m.position.z) * Math.min(1, 8 * dt);
+      m.rotation.y = t.y;
+      m.position.y = Math.abs(Math.sin(state.time * 6 + i)) * 0.04;
+    });
+
+    // Wild fluffies wander
+    for (const f of wildFluffies) {
+      if (f.recruited) continue;
+      f.wanderT -= dt;
+      if (f.wanderT <= 0) {
+        f.wanderT = 1.5 + Math.random() * 2;
+        f.vx = (Math.random() - 0.5) * 2;
+        f.vz = (Math.random() - 0.5) * 2;
+      }
+      let nx = f.mesh.position.x + f.vx * dt;
+      let nz = f.mesh.position.z + f.vz * dt;
+      if (Math.hypot(nx - f.homeX, nz - f.homeZ) > 4) {
+        f.vx *= -1; f.vz *= -1;
+      } else {
+        f.mesh.position.x = nx; f.mesh.position.z = nz;
+      }
+      f.mesh.position.y = Math.abs(Math.sin(state.time * 4 + f.homeX)) * 0.05;
+      if (f.vx || f.vz) f.mesh.rotation.y = Math.atan2(f.vx, f.vz);
+    }
+
+    // Hostiles: wander + chase + collide
+    for (const h of hostiles) {
+      if (h.defeated) continue;
+      const dist = bear.position.distanceTo(h.mesh.position);
+      if (dist < h.aggro && state.mode === 'play') {
+        const dx = bear.position.x - h.mesh.position.x;
+        const dz = bear.position.z - h.mesh.position.z;
+        const len = Math.hypot(dx, dz) || 1;
+        h.mesh.position.x += (dx / len) * 2.8 * dt;
+        h.mesh.position.z += (dz / len) * 2.8 * dt;
+        h.mesh.rotation.y = Math.atan2(dx, dz);
+      } else {
+        h.mesh.position.x += h.vx * 1.5 * dt;
+        h.mesh.position.z += h.vz * 1.5 * dt;
+        if (Math.hypot(h.mesh.position.x - h.homeX, h.mesh.position.z - h.homeZ) > 6) {
+          h.vx *= -1; h.vz *= -1;
+        }
+      }
+      h.mesh.position.y = Math.abs(Math.sin(state.time * 5)) * 0.04;
+      if (state.mode === 'play' && state.invuln <= 0 && dist < 1.3) startBattle(h);
+    }
+
+    // Camera
+    const desired = bear.position.clone().add(camOffset);
+    camera.position.lerp(desired, 1 - Math.pow(0.002, dt));
+    camera.lookAt(bear.position.x, 1.1, bear.position.z);
+
+    // Day tint by zone
+    const zc = ZONES[state.zone];
+    if (zc) scene.fog.color.lerp(new THREE.Color(zc.color).multiplyScalar(0.35).add(new THREE.Color(0x87a0c8).multiplyScalar(0.65)), 0.02);
+
+    updateFloaters(dt);
+    updateHUD();
+  }
+
+  function frame() {
+    update(Math.min(0.05, clock.getDelta()));
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  renderPartyHud();
+  updateHUD();
+  toast('Explore the world. Recruit fluffies. Hug humans. Charge a Miracle!');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
