@@ -18,7 +18,7 @@ namespace HolypawCatalog
 			};
 			Add(TEXT("Park Ranger"),
 				TEXT("I used to write tickets. Now I write hymns in the margin. East, the lanterns. Don't overthink it."),
-				TEXT("The Skeptic by the porch is almost ready. One more hug and he'll clap."),
+				TEXT("If you pocketed the porch postcard, key 3 closes my missing-bear report. Key 4 takes the job."),
 				TEXT("Lantern road east. Ribbon City is a buffet of opinions."));
 			Add(TEXT("Skeptic"),
 				TEXT("I had a five-year plan. It was rectangular. You made it round. I am... fine with that."),
@@ -26,7 +26,7 @@ namespace HolypawCatalog
 				TEXT("Hug first, commute later. The city waits."));
 			Add(TEXT("Child"),
 				TEXT("Can the mill make a teddy as warm as you? I asked. The mill said no, then offered a coupon."),
-				TEXT("I clapped so hard my mittens flew off. Keep going."),
+				TEXT("I clapped so hard my mittens flew off. Key 4 if you have a stuffing bun. I will clap with crumbs."),
 				TEXT("Nursery hills, then the gold lanterns."));
 			Add(TEXT("Baker"),
 				TEXT("I used to sell identical rolls. Now every bun has a secret. The mill hated that sentence."),
@@ -98,8 +98,24 @@ namespace HolypawCatalog
 				TEXT("Tidewell lantern. Then Cherry rumors if you're brave."));
 			Add(TEXT("Net Weaver"),
 				TEXT("I mended a hole and accidentally mended a worldview. Occupied hazard."),
-				TEXT("Salt crabs pinch. You pinch back with hymns."),
-				TEXT("East docks, then the ferry camp."));
+				TEXT("A pearl rolled under Net Walk. Key 4 takes the job. Key 3 when it is round in your paw."),
+				TEXT("Net Walk west of the lantern. Salt crabs pinch. Brine Warden is tall about it."));
+			Add(TEXT("Ferry Clerk"),
+				TEXT("I stamp tickets to nowhere because everywhere is now a hug. Efficient."),
+				TEXT("Ferry crate sometimes hides mill scrap. Cherry rumors if you're brave."),
+				TEXT("Slip east. Channel camp if the ocean argues."));
+			Add(TEXT("Salt Priest"),
+				TEXT("I baptize ribbons in brine. The mill baptizes nothing. That is the whole theology."),
+				TEXT("Key 4. Bring a hymn ribbon from the Cloth Loft or a stall. I will dunk it."),
+				TEXT("Salt Choir pool north of the lantern. Off-key on purpose."));
+			Add(TEXT("Pearl Diver"),
+				TEXT("I hold my breath for opinions. They float. Pearls do not."),
+				TEXT("Net Walk hides one round thought. The Weaver wants it more than I do."),
+				TEXT("West nets. Then clap at the font."));
+			Add(TEXT("Hook Cook"),
+				TEXT("I fry fish that were never identical. The mill asked for fish-shaped polyester. I threw a pan."),
+				TEXT("Tide Inn heals. Brine font wishes. Eat something handmade."),
+				TEXT("Outer Dock. Inn the warm cube. Brine Warden further out."));
 			Add(TEXT("Farmer"),
 				TEXT("Grain grew better after I stopped yelling at clouds. I yell at the mill now. Clouds approved."),
 				TEXT("Harvest Overseer north of the mill. Bring a party."),

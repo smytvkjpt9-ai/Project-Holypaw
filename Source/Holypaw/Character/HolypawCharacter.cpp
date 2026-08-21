@@ -694,9 +694,11 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	if (Kind == TEXT("guard"))
 	{
 		bGuarding = true;
+		const int32 Stitch = 4;
+		HP = FMath::Min(HPMax, HP + Stitch);
 		BattleLog = Skills->HasSkill(TEXT("seamGuard"))
-			? TEXT("Seam Guard: you brace almost the whole next rip.")
-			: TEXT("You guard your seams.");
+			? FString::Printf(TEXT("Seam Guard + stitch %d stuffing."), Stitch)
+			: FString::Printf(TEXT("You guard your seams and stitch %d."), Stitch);
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.55f, false);
 		return;
 	}
@@ -715,6 +717,12 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		PoisonTurns = 0;
 		HymnShield = 2;
 		BattleLog = FString::Printf(TEXT("Hymn mends %d stuffing, clears poison, and raises a shield."), Heal);
+		if (FMath::FRand() < 0.28f)
+		{
+			BattleLog += TEXT(" Lullaby — they snooze a turn.");
+			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::ResumePlayerTurn, 0.75f, false);
+			return;
+		}
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 		return;
 	}
@@ -825,7 +833,8 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.35f, false);
 		return;
 	}
-	GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
+	const float HitStop = (bCrit || bEnemyStaggered) ? 0.95f : 0.7f;
+	GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, HitStop, false);
 }
 
 void AHolypawCharacter::EnemyBattleSwing()
@@ -1354,11 +1363,32 @@ void AHolypawCharacter::CycleSkillTree()
 
 TArray<FString> AHolypawCharacter::GetJournalLines() const
 {
+	TArray<FString> Lines;
 	if (Story)
 	{
-		return Story->GetJournalLines();
+		Lines = Story->GetJournalLines();
 	}
-	return {};
+	Lines.Add(TEXT(""));
+	Lines.Add(TEXT("--- errands ---"));
+	int32 Shown = 0;
+	for (const FHolypawQuestDef& Q : HolypawCatalog::GetQuests())
+	{
+		if (QuestDone.Contains(Q.Id))
+		{
+			Lines.Add(FString::Printf(TEXT("x  %s"), *Q.Title.ToString()));
+			++Shown;
+		}
+		else if (QuestActive.Contains(Q.Id))
+		{
+			Lines.Add(FString::Printf(TEXT(">  %s  —  %s"), *Q.Title.ToString(), *Q.Brief.ToString()));
+			++Shown;
+		}
+	}
+	if (Shown == 0)
+	{
+		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Choir Bear, Child, Ranger, mill, Tidewell."));
+	}
+	return Lines;
 }
 
 void AHolypawCharacter::CompleteBearFaith()
@@ -1478,6 +1508,7 @@ void AHolypawCharacter::TryBuyTreeSlot(int32 Index)
 			if (Index == 0) { AdvanceTalk(); }
 			else if (Index == 1) { AskTalkHint(); }
 			else if (Index == 2) { TurnInErrand(); }
+			else if (Index == 3) { AcceptQuest(); }
 		}
 		else if (bShopOpen)
 		{
@@ -1633,6 +1664,8 @@ void AHolypawCharacter::ResetForNewGame()
 	UnlockTravel(EHolypawZone::ForestCottage);
 	Inventory.Reset();
 	AddItem(TEXT("stuffingBun"), 1);
+	QuestActive.Reset();
+	QuestDone.Reset();
 	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
 		SetActorLocation(It->GetCottageSpawn() + FVector(420.f, 0.f, 40.f));
@@ -2234,39 +2267,76 @@ void AHolypawCharacter::TurnInErrand()
 	{
 		return;
 	}
-	if (TalkSpeaker.Equals(TEXT("Mill Whistleblower"), ESearchCase::IgnoreCase))
+	bool bAny = false;
+	for (const FHolypawQuestDef& Q : HolypawCatalog::GetQuests())
 	{
-		if (!ConsumeItem(TEXT("millScrap"), 1))
+		if (!Q.TurnIn.Equals(TalkSpeaker, ESearchCase::IgnoreCase))
 		{
-			Toast(TEXT("Bring mill scrap from a Poly fight. The whistleblower will gasp on purpose."));
+			continue;
+		}
+		bAny = true;
+		if (QuestDone.Contains(Q.Id))
+		{
+			Toast(TEXT("That errand already clapped. Find another round person."));
 			return;
 		}
+		if (!ConsumeItem(Q.NeedItem, Q.NeedCount))
+		{
+			const FHolypawItemDef* Item = HolypawCatalog::FindItem(Q.NeedItem);
+			Toast(FString::Printf(TEXT("Need %s. %s"), Item ? *Item->DisplayName.ToString() : *Q.NeedItem.ToString(), *Q.Brief.ToString()));
+			return;
+		}
+		QuestActive.Remove(Q.Id);
+		QuestDone.AddUnique(Q.Id);
 		if (Affection)
 		{
-			Affection->AddAP(18);
-			Affection->AddFP(8);
+			Affection->AddAP(Q.RewardAP);
+			Affection->AddFP(Q.RewardFP);
+			if (Q.RewardMiracle > 0.f)
+			{
+				Affection->AddMiracle(Q.RewardMiracle);
+			}
 		}
 		PlayCue(TEXT("Convert"));
-		Toast(TEXT("Whistleblower files the scrap as Exhibit Bear. +18 AP · +8 FP."));
+		Toast(Q.DoneLine.IsEmpty()
+			? FString::Printf(TEXT("Errand done: %s  +%d AP"), *Q.Title.ToString(), Q.RewardAP)
+			: Q.DoneLine);
 		return;
 	}
-	if (TalkSpeaker.Equals(TEXT("Choir Bear"), ESearchCase::IgnoreCase))
+	Toast(bAny ? TEXT("Nothing to hand over.") : TEXT("They do not have an errand. Hug, clap, or ask the way."));
+}
+
+void AHolypawCharacter::AcceptQuest()
+{
+	if (!bTalkOpen)
 	{
-		if (!ConsumeItem(TEXT("hymnSheet"), 1))
-		{
-			Toast(TEXT("The cottage cellar hid a hymn sheet. Choir Bear wants the lyrics."));
-			return;
-		}
-		if (Affection)
-		{
-			Affection->AddMiracle(40.f);
-			Affection->AddFP(6);
-		}
-		PlayCue(TEXT("Miracle"));
-		Toast(TEXT("Choir Bear sight-reads your cellar hymn. Miracle Charge leaps."));
 		return;
 	}
-	Toast(TEXT("They do not have an errand. Hug, clap, or ask the way."));
+	const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(TalkSpeaker);
+	if (!Q)
+	{
+		Toast(TEXT("No job on this person. Try Choir Bear, Child, Ranger, mill, Net Weaver, Salt Priest."));
+		return;
+	}
+	if (QuestDone.Contains(Q->Id))
+	{
+		Toast(TEXT("Already finished. They are still clapping about it."));
+		return;
+	}
+	if (QuestActive.Contains(Q->Id))
+	{
+		Toast(Q->Brief.ToString());
+		return;
+	}
+	QuestActive.AddUnique(Q->Id);
+	PlayCue(TEXT("Talk"));
+	Toast(Q->OfferLine.IsEmpty() ? Q->Brief.ToString() : Q->OfferLine);
+}
+
+void AHolypawCharacter::SetQuestState(const TArray<FName>& Active, const TArray<FName>& Done)
+{
+	QuestActive = Active;
+	QuestDone = Done;
 }
 
 TArray<FString> AHolypawCharacter::GetTalkLines() const
@@ -2274,7 +2344,22 @@ TArray<FString> AHolypawCharacter::GetTalkLines() const
 	TArray<FString> Lines;
 	Lines.Add(TalkSpeaker);
 	Lines.Add(TalkBody);
-	Lines.Add(TEXT("1  keep listening    2  ask the way    3  errand    E/Esc done"));
+	Lines.Add(TEXT("1  keep listening    2  ask the way    3  turn in    4  take job"));
+	if (const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(TalkSpeaker))
+	{
+		if (QuestDone.Contains(Q->Id))
+		{
+			Lines.Add(TEXT("Errand: done."));
+		}
+		else if (QuestActive.Contains(Q->Id))
+		{
+			Lines.Add(FString::Printf(TEXT("Errand: %s"), *Q->Brief.ToString()));
+		}
+		else
+		{
+			Lines.Add(FString::Printf(TEXT("Job available: %s"), *Q->Title.ToString()));
+		}
+	}
 	return Lines;
 }
 

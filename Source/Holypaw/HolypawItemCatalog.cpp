@@ -23,7 +23,9 @@ namespace HolypawCatalog
 			Add(TEXT("cocoaButton"), TEXT("Cocoa Button"), TEXT("Edible only in the Bear Faith. +12 HP and +4 FP."), 18, 12, 4);
 			Add(TEXT("millScrap"), TEXT("Mill Scrap"), TEXT("Cheap polyester. Proof the factory bleeds. Hand to the whistleblower (talk 3)."), 0, 0, 0);
 			Add(TEXT("hymnSheet"), TEXT("Hymn Sheet"), TEXT("Cellar lyrics. Choir Bear will sight-read this (talk 3). Restores 16 FP if you keep it."), 0, 0, 16);
-			Add(TEXT("stuffedPostcard"), TEXT("Stuffed Postcard"), TEXT("The porch wrote home. Decorative. Proof you woke up."), 0, 0, 0);
+			Add(TEXT("stuffedPostcard"), TEXT("Stuffed Postcard"), TEXT("The porch wrote home. Decorative. Proof you woke up. Ranger wants it (talk 3)."), 0, 0, 0);
+			Add(TEXT("saltPearl"), TEXT("Salt Pearl"), TEXT("Tidewell net-walk treasure. Net Weaver will knot it into a hymn (talk 3)."), 0, 0, 0);
+			Add(TEXT("brineTaffy"), TEXT("Brine Taffy"), TEXT("Chewy salt. Mends 8 HP and tastes like an argument."), 9, 8, 0);
 			return Out;
 		}();
 		return All;

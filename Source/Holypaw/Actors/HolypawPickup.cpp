@@ -14,9 +14,9 @@ void AHolypawPickup::BeginPlay()
 	{
 		SetSolidColor(FLinearColor(0.95f, 0.86f, 0.55f));
 	}
-	else if (ItemId == TEXT("stuffedPostcard"))
+	else if (ItemId == TEXT("saltPearl"))
 	{
-		SetSolidColor(FLinearColor(0.72f, 0.82f, 0.95f));
+		SetSolidColor(FLinearColor(0.72f, 0.9f, 0.95f));
 	}
 	else
 	{

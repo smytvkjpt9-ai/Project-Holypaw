@@ -92,8 +92,8 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 236.f), TEXT("2  Cuddle Beam (12 FP)"), FLinearColor(0.85f, 0.8f, 1.f), 1.1f);
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 204.f), TEXT("3  Party Assault"), FLinearColor(0.7f, 0.95f, 0.85f), 1.1f);
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 172.f), TEXT("4  Flee"), FLinearColor(1.f, 0.7f, 0.75f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 140.f), TEXT("5  Guard"), FLinearColor(0.85f, 0.9f, 1.f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 108.f), TEXT("6  Hymn (8 FP)"), FLinearColor(1.f, 0.85f, 0.55f), 1.1f);
+		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 140.f), TEXT("5  Guard + stitch"), FLinearColor(0.85f, 0.9f, 1.f), 1.1f);
+		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 108.f), TEXT("6  Hymn (8 FP, lullaby?)"), FLinearColor(1.f, 0.85f, 0.55f), 1.1f);
 	}
 
 	if (P->IsSkillsOpen() && P->Skills && P->Affection)

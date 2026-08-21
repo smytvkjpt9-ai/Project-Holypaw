@@ -98,6 +98,7 @@ protected:
 	void ScatterFlora();
 	void BuildCottage();
 	void BuildRibbonDistricts();
+	void BuildTidewellDistricts();
 	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();

@@ -69,7 +69,7 @@ Wild biomes fill the land between cities: Stuffed Park, Nursery Hills, Cozy Home
 
 ## Combat (UMG)
 
-Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands: **1** Soft Slap **2** Cuddle Beam **3** Party Assault **4** Flee **5** Guard **6** Hymn. Slap builds a combo; ~12% crits can **stagger** (enemy special fumbles). Elites and bosses enter **phase two** under half stuffing. Beam slips **armor plates** better than slaps. Frost slows your paw. Poison thread ticks between turns. Hymn clears poison and raises a shield. Hits flash the villain. Poly Mill enemies take extra damage from **Poly Rip**.
+Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands: **1** Soft Slap **2** Cuddle Beam **3** Party Assault **4** Flee **5** Guard (stitches 4 HP) **6** Hymn (shield, chance to **lullaby** skip their turn). Slap builds a combo; crits **stagger** and hit-stop. Elites and bosses enter **phase two** under half stuffing. Beam slips armor plates. Frost / poison / hymn shield show on the overlay.
 
 ## Three skill trees (K, Tab to cycle)
 
@@ -114,6 +114,6 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 
 Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
-Converted humans **talk** (testimony) instead of being hugged again. 1 keeps listening, 2 asks the way, 3 turns in an errand (mill scrap to the whistleblower, cellar hymn sheet to Choir Bear).
+Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Six errands (journal J): cellar hymn, mill scrap, porch postcard, child's bun, Tidewell pearl, brine ribbon.
 
-Cottage cellar and porch hold pickups. Pocket the hymn sheet before you leave the park.
+Tidewell has districts (Outer Dock, Net Walk, Brine Stair, Ferry Slip, Salt Choir), an inn, brine font, and a salt pearl pickup. Fog tints by biome (salt, snow, fen jam, desert gold, mill beige).

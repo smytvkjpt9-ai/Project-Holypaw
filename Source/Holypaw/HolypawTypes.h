@@ -425,6 +425,48 @@ struct HOLYPAW_API FHolypawTalkDef
 	FString Hint;
 };
 
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawQuestDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Id;
+
+	UPROPERTY()
+	FText Title;
+
+	UPROPERTY()
+	FText Brief;
+
+	UPROPERTY()
+	FString Giver;
+
+	UPROPERTY()
+	FString TurnIn;
+
+	UPROPERTY()
+	FName NeedItem;
+
+	UPROPERTY()
+	int32 NeedCount = 1;
+
+	UPROPERTY()
+	int32 RewardAP = 12;
+
+	UPROPERTY()
+	int32 RewardFP = 6;
+
+	UPROPERTY()
+	float RewardMiracle = 0.f;
+
+	UPROPERTY()
+	FString OfferLine;
+
+	UPROPERTY()
+	FString DoneLine;
+};
+
 namespace HolypawCatalog
 {
 	inline TArray<FFluffyTypeDef> MakeFluffyTypes()
@@ -534,4 +576,7 @@ namespace HolypawCatalog
 	const TArray<FHolypawItemDef>& GetItems();
 	const FHolypawItemDef* FindItem(FName Id);
 	const FHolypawTalkDef* FindTalk(const FString& Speaker);
+	const TArray<FHolypawQuestDef>& GetQuests();
+	const FHolypawQuestDef* FindQuest(FName Id);
+	const FHolypawQuestDef* FindQuestByGiver(const FString& Speaker);
 }

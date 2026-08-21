@@ -10,6 +10,7 @@
 #include "Actors/Signpost.h"
 #include "Actors/TravelLantern.h"
 #include "Actors/HolypawPickup.h"
+#include "Character/HolypawCharacter.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -177,6 +178,42 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), W);
 			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), W * 0.45f);
 		}
+		if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
+		{
+			switch (Teddy->CurrentZone)
+			{
+			case EHolypawZone::Tidewell:
+			case EHolypawZone::Coast:
+			case EHolypawZone::Ocean:
+			case EHolypawZone::CapePlush:
+			case EHolypawZone::CoralChoir:
+				FogDensity += 0.01f;
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.55f, 0.72f, 0.82f), 0.35f);
+				break;
+			case EHolypawZone::Snowveil:
+			case EHolypawZone::Snow:
+			case EHolypawZone::Ice:
+			case EHolypawZone::FeltIceCamp:
+			case EHolypawZone::AuroraBorough:
+			case EHolypawZone::TundraParish:
+				FogDensity += 0.008f;
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.86f, 0.9f, 0.98f), 0.4f);
+				SunCol = FMath::Lerp(SunCol, FLinearColor(0.82f, 0.88f, 1.f), 0.25f);
+				break;
+			case EHolypawZone::Emberfen:
+			case EHolypawZone::Mire:
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.62f, 0.32f, 0.28f), 0.4f);
+				break;
+			case EHolypawZone::DustMesa:
+			case EHolypawZone::Desert:
+			case EHolypawZone::SandHymn:
+				FogDensity = FMath::Max(0.01f, FogDensity - 0.006f);
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.92f, 0.78f, 0.5f), 0.35f);
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	if (SunLight)
@@ -225,6 +262,7 @@ void AHolypawWorldBuilder::GenerateWorld()
 	BuildRoads();
 	BuildAllSettlements();
 	BuildRibbonDistricts();
+	BuildTidewellDistricts();
 	BuildSkyRift();
 	SpawnGameplayActors();
 	SpawnPlayerStart();
@@ -790,6 +828,44 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	}
 }
 
+void AHolypawWorldBuilder::BuildTidewellDistricts()
+{
+	const FVector2D Dock = Tidewell + FVector2D(400.f, 200.f);
+	const FVector2D Nets = Tidewell + FVector2D(-900.f, -400.f);
+	const FVector2D Stair = Tidewell + FVector2D(1400.f, 800.f);
+	const FVector2D Ferry = Tidewell + FVector2D(2200.f, 200.f);
+	const FVector2D Choir = Tidewell + FVector2D(-400.f, 1100.f);
+
+	PlaceSign(Dock + FVector2D(80.f, -80.f), NSLOCTEXT("Holypaw", "TideDock", "Outer Dock  |  salt, hooks, brine hymns"));
+	PlaceSign(Nets, NSLOCTEXT("Holypaw", "TideNets", "Net Walk  |  pearls under the mesh, not polyester"));
+	PlaceSign(Stair, NSLOCTEXT("Holypaw", "TideStair", "Brine Stair  |  steps down to the Plush Sea"));
+	PlaceSign(Ferry, NSLOCTEXT("Holypaw", "TideFerry", "Ferry Slip  |  east rumors toward Cherry Loom"));
+	PlaceSign(Choir, NSLOCTEXT("Holypaw", "TideChoir", "Salt Choir  |  off-key on purpose"));
+
+	PlaceShrine(Dock + FVector2D(260.f, 80.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "TideInn", "Tide Inn"));
+	PlaceShrine(Choir + FVector2D(80.f, 40.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "BrineFont", "Brine Font"));
+	PlaceShrine(Ferry + FVector2D(-120.f, 60.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "FerryCrate", "Ferry Crate"));
+	PlaceShrine(Nets + FVector2D(120.f, 40.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "NetChapel", "Net Chapel"));
+
+	PlacePickup(Nets + FVector2D(-80.f, 90.f), TEXT("saltPearl"), NSLOCTEXT("Holypaw", "PearlPick", "salt pearl"));
+
+	for (int32 I = 0; I < 4; ++I)
+	{
+		const float X = Nets.X + I * 160.f;
+		const float Y = Nets.Y + 40.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 90.f), FVector(0.12f, 1.8f, 0.08f), FLinearColor(0.42f, 0.55f, 0.58f), MakeName(TEXT("NetRack")));
+	}
+	for (int32 I = 0; I < 5; ++I)
+	{
+		const float X = Stair.X + I * 90.f;
+		const float Y = Stair.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 6.f + I * 10.f), FVector(1.6f, 4.2f, 0.12f), FLinearColor(0.5f, 0.58f, 0.62f), MakeName(TEXT("BrineStep")));
+	}
+	PlaceCube(FVector(Choir.X, Choir.Y, SampleHeight(Choir.X, Choir.Y) + 40.f), FVector(1.4f, 1.4f, 0.2f), FLinearColor(0.45f, 0.7f, 0.78f), MakeName(TEXT("BrinePool")));
+}
+
 void AHolypawWorldBuilder::BuildSkyRift()
 {
 	const float Z = SampleHeight(PeakCenter.X, PeakCenter.Y);
@@ -1033,6 +1109,10 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Night Watch"), FVector2D(RibbonCity.X + 240.f, RibbonCity.Y - 3600.f), FLinearColor(0.35f, 0.42f, 0.62f));
 	SpawnHuman(TEXT("Harbor Hand"), FVector2D(Tidewell.X + 400.f, Tidewell.Y + 200.f), FLinearColor(0.45f, 0.55f, 0.7f));
 	SpawnHuman(TEXT("Net Weaver"), FVector2D(Tidewell.X - 200.f, Tidewell.Y - 300.f), FLinearColor(0.4f, 0.7f, 0.75f));
+	SpawnHuman(TEXT("Ferry Clerk"), FVector2D(Tidewell.X + 2200.f, Tidewell.Y + 240.f), FLinearColor(0.55f, 0.6f, 0.72f));
+	SpawnHuman(TEXT("Salt Priest"), FVector2D(Tidewell.X - 380.f, Tidewell.Y + 1120.f), FLinearColor(0.7f, 0.82f, 0.88f));
+	SpawnHuman(TEXT("Pearl Diver"), FVector2D(Tidewell.X - 980.f, Tidewell.Y - 360.f), FLinearColor(0.35f, 0.62f, 0.7f));
+	SpawnHuman(TEXT("Hook Cook"), FVector2D(Tidewell.X + 480.f, Tidewell.Y + 80.f), FLinearColor(0.72f, 0.48f, 0.4f));
 	SpawnHuman(TEXT("Farmer"), FVector2D(Hearthfold.X + 250.f, Hearthfold.Y - 200.f), FLinearColor(0.7f, 0.6f, 0.3f));
 	SpawnHuman(TEXT("Miller"), FVector2D(Hearthfold.X - 350.f, Hearthfold.Y + 150.f), FLinearColor(0.65f, 0.5f, 0.35f));
 	SpawnHuman(TEXT("Fen Guide"), FVector2D(Emberfen.X + 180.f, Emberfen.Y + 80.f), FLinearColor(0.55f, 0.35f, 0.32f));

@@ -277,6 +277,8 @@ if not (ROOT / "Source/Holypaw/Actors/HolypawPickup.cpp").exists():
     errors.append("missing HolypawPickup.cpp")
 if not (ROOT / "Source/Holypaw/Actors/HolypawShrine.cpp").exists():
     errors.append("missing HolypawShrine.cpp")
+if not (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists():
+    errors.append("missing HolypawQuestCatalog.cpp")
 if not (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").exists():
     errors.append("missing HolypawBattleMath.cpp")
 for needle, blob, label in (
@@ -300,6 +302,13 @@ for needle, blob, label in (
     ("PlacePickup", WORLD, "world"),
     ("hymnSheet", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
     ("Plaza Florist", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("AcceptQuest", CHAR, "character"),
+    ("BuildTidewellDistricts", WORLD, "world"),
+    ("saltPearl", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("cellarHymn", (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists() else "", "quests"),
+    ("Ferry Clerk", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Salt Priest", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Lullaby", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

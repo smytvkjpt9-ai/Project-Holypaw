@@ -271,9 +271,9 @@ Do not dress Felt Ice Camp before save exists. Do not write 220 quests before th
 | W0 | Plan + loc counter | — | this document, `CountHolypawLoc.py` |
 | W1 | Persistence & meta | 8,000 | title, 3 save slots, settings, wake-at-cottage restore |
 | W2 | City Hearts & travel | 6,000 | per-city Hearts, lantern fast travel, believer parade stub |
-| W3 | Combat director | 10,000 | abilities extracted, status, 4 boss phases — **started:** `HolypawBattleMath`, slap combo / crit / frost / poison / hymn shield / stagger, hit flash |
-| W4 | Dialogue VM | 8,000 | talk to NPCs, choices, journal updates |
-| W5 | Ribbon City full | 8,000 | 24 NPCs, 8 interiors, 4 shops — the AAA vertical slice |
+| W3 | Combat director | 10,000 | abilities extracted, status, 4 boss phases — **started:** statuses, phase two, lullaby, stitch, hit-stop |
+| W4 | Dialogue VM | 8,000 | talk to NPCs, choices, journal updates — **started:** talk 3/4 errands, `HolypawQuestCatalog` (6 jobs), save |
+| W5 | Ribbon City full | 8,000 | 24 NPCs, 8 interiors, 4 shops — **started:** districts, shrines; Tidewell second dressed city |
 | W6 | Audio + proc anim | 6,000 | cue table, teddy bounce/hug/kneel |
 | W7 | Items + shops | 8,000 | inventory, 120 items, Ribbon shops live |
 | W8 | Remaining 25 cities | 44,000 | each city module lands playable, streamed |

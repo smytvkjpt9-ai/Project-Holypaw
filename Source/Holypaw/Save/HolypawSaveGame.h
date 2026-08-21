@@ -146,6 +146,12 @@ public:
 	UPROPERTY()
 	TArray<FHolypawItemStack> Inventory;
 
+	UPROPERTY()
+	TArray<FName> QuestActive;
+
+	UPROPERTY()
+	TArray<FName> QuestDone;
+
 	FString MakeSummaryLine() const;
 };
 

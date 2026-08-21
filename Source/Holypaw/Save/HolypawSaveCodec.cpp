@@ -71,6 +71,8 @@ namespace HolypawSaveCodec
 		Out.CityHearts = Pawn->GetHeartRecords();
 		Out.UnlockedTravel = Pawn->GetUnlockedTravel();
 		Out.Inventory = Pawn->GetInventory();
+		Out.QuestActive = Pawn->GetQuestActive();
+		Out.QuestDone = Pawn->GetQuestDone();
 
 		Out.Humans.Reset();
 		if (UWorld* World = Pawn->GetWorld())
@@ -151,6 +153,7 @@ namespace HolypawSaveCodec
 		Pawn->SetHeartRecords(In.CityHearts);
 		Pawn->SetUnlockedTravel(In.UnlockedTravel);
 		Pawn->SetInventory(In.Inventory);
+		Pawn->SetQuestState(In.QuestActive, In.QuestDone);
 
 		FVector Loc = In.Location;
 		if (Loc.IsNearlyZero())

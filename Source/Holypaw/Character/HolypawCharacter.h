@@ -153,6 +153,10 @@ public:
 	void AdvanceTalk();
 	void AskTalkHint();
 	void TurnInErrand();
+	void AcceptQuest();
+	void SetQuestState(const TArray<FName>& Active, const TArray<FName>& Done);
+	const TArray<FName>& GetQuestActive() const { return QuestActive; }
+	const TArray<FName>& GetQuestDone() const { return QuestDone; }
 	void ToggleInventory();
 	bool IsTalkOpen() const { return bTalkOpen; }
 	bool IsShopOpen() const { return bShopOpen; }
@@ -330,6 +334,12 @@ protected:
 
 	UPROPERTY()
 	TArray<FHolypawItemStack> Inventory;
+
+	UPROPERTY()
+	TArray<FName> QuestActive;
+
+	UPROPERTY()
+	TArray<FName> QuestDone;
 
 	void TickProcAnim(float DeltaSeconds);
 	void PlayCue(FName Cue);
