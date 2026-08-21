@@ -1,39 +1,33 @@
 # The Fluffy Ascendancy (Project Holypaw)
 
-Unreal Engine **5.8** C++ prototype. Same painterly / plush look everywhere: forest cottage, lantern road, Ribbon City, Velvet Peak. No Megascans. No Pokémon IP.
+Unreal Engine **5.8** C++ prototype. Same painterly / plush look everywhere. No Megascans. No Pokémon IP.
 
-The old browser toy is in [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
+You wake in a **forest cottage**, follow lanterns into **Ribbon City**, then out to four more settlements. The old browser toy is in [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
-## What Phase 1 is
+## The living world (generated at Play)
 
-You wake **inside a forest cottage clearing**, follow lanterns into a **blockout Ribbon City**, recruit fluffies, hug people, fight hostile pets, spend Affection, fire a Miracle. Extra biomes are tinted regions on the same terrain, not fully dressed.
+| Place | What it is |
+| --- | --- |
+| Stuffed Park cottage | Home. Heal on the porch. |
+| Ribbon City | Main city: plaza, spire, market stall, people |
+| Tidewell | Harbor town on the coast, docks, water |
+| Hearthfold | Farm town in the homestead hills |
+| Emberfen | Stilted village in Crimson Hollow |
+| Snowveil | Alpine hamlet on the way to the peak |
+| Velvet Peak | Sacred mountain and shrine. **Velvet Tyrant** (alpha) nearby |
+| Survey camps | Heal tents on the roads between cities |
 
-World layout is spawned at **Play** by `AHolypawWorldBuilder` (no binary `.umap` required).
+Roads with lanterns connect cottage → Ribbon City → the other towns. Press **N** for distances.
 
 ## Open in Unreal 5.8
 
-1. Install **Unreal Engine 5.8** (Epic Launcher).
-2. Install Visual Studio 2022 with **Game development with C++** (Windows) or Xcode (Mac).
-3. Right-click `Holypaw.uproject` → **Generate Visual Studio project files**.
-4. Open `Holypaw.uproject`. Let it compile the `Holypaw` module.
-5. Press **Play**. You should spawn on the cottage porch.
+1. Install **Unreal Engine 5.8** and a C++ toolchain (VS 2022 Game development / Xcode).
+2. Right-click `Holypaw.uproject` → Generate project files.
+3. Open the project, compile `Holypaw`, press **Play**.
 
-Plugins already enabled in the `.uproject`:
+Plugins in the `.uproject`: Python Editor Script, Procedural Mesh, Enhanced Input, Model Context Protocol (optional).
 
-- Python Editor Script Plugin
-- Procedural Mesh Component
-- Enhanced Input (plugin on; Phase 1 still uses classic axis mappings so it runs without Input Action assets)
-- **Model Context Protocol** (Epic, experimental). Auto-start is **off** so the editor does not hang without a client.
-
-### Optional: save a map
-
-With the project compiled, in Output Log:
-
-```
-py "Tools/GenerateWorld.py"
-```
-
-That places a World Builder actor and tries to save the current level. Play still generates geometry at BeginPlay.
+Optional editor helper: `py "Tools/GenerateWorld.py"` after compile.
 
 ## Controls
 
@@ -42,30 +36,19 @@ That places a World Builder actor and tries to save the current level. Play stil
 | WASD / left stick | Move |
 | Mouse / right stick | Look |
 | Space | Jump |
-| E | Interact (recruit, hug, rest) |
+| E | Interact (recruit, hug, rest, stall, sign) |
 | K | Skill tree (1–6 to buy) |
 | P | Party |
-| M | Miracle (when the bar is full) |
+| M | Miracle (bar full) |
+| N | Survey map |
 | 1–4 in battle | Slap / Cuddle Beam / Party Assault / Flee |
 
-## Hook Cursor MCP later (on your PC)
+Faith stalls in each city: **10 AP → 8 FP**.
 
-Epic’s 5.8 MCP plugin is a **server only**. It does not place actors until you add tools.
+## Art
 
-1. Edit → Plugins → enable **Model Context Protocol** (already on in this project).
-2. Enable **Python Editor Script Plugin**.
-3. Console: `ModelContextProtocol.StartServer`
-4. Default URL: `http://127.0.0.1:8000/mcp`
-5. Point Cursor at that URL and add a toolkit (for example UnrealMCPToolkit) for `execute_python`.
+One look for cottage, woods, every city, snow, and coast. No Quixel / Megascans. Plush palette (rose, mint, gold, powder blue).
 
-Do not expect this cloud repo to talk to your local editor by itself.
+## Cursor MCP later (your PC)
 
-## Art rules
-
-- One look for the whole game (cottage, woods, city, mountain).
-- No Quixel / Megascans / Fab photoscans.
-- Plush palette: rose, mint, gold, powder blue — not Hisui mud, not Warcraft stone.
-
-## Later (not this pass)
-
-Dressed biomes, city interiors, denser foliage, water, packaged shipping build, wiring Cursor from this VM.
+`ModelContextProtocol.StartServer` → `http://127.0.0.1:8000/mcp`. See `.cursor/mcp.json.example`.

@@ -50,6 +50,11 @@ void AHolypawHUD::DrawHUD()
 		Canvas->DrawItem(Bar);
 	}
 
+	if (!P->GetCompassLine().IsEmpty() && P->Mode == EHolypawPawnMode::Play)
+	{
+		DrawLabel(32.f, 176.f, P->GetCompassLine(), FLinearColor(0.85f, 0.9f, 1.f), 1.0f);
+	}
+
 	if (!P->GetPrompt().IsEmpty())
 	{
 		DrawLabel(W * 0.5f - 180.f, Canvas->SizeY - 140.f, P->GetPrompt().ToString(), FLinearColor(1.f, 0.85f, 0.95f), 1.2f);
@@ -60,7 +65,7 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 220.f, 190.f, P->GetToast(), FLinearColor(1.f, 0.95f, 0.75f), 1.25f);
 	}
 
-	DrawLabel(W - 420.f, Canvas->SizeY - 48.f, TEXT("WASD move  Mouse look  E interact  K skills  P party  M miracle"), FLinearColor(0.75f, 0.7f, 0.9f), 0.85f);
+	DrawLabel(W - 460.f, Canvas->SizeY - 48.f, TEXT("WASD move  Mouse look  E interact  K skills  P party  M miracle  N map"), FLinearColor(0.75f, 0.7f, 0.9f), 0.85f);
 
 	if (P->Mode == EHolypawPawnMode::Battle)
 	{
@@ -117,5 +122,17 @@ void AHolypawHUD::DrawHUD()
 			}
 		}
 		DrawLabel(W * 0.5f - 80.f, Canvas->SizeY - 160.f, TEXT("P to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+	}
+
+	if (P->IsMapOpen())
+	{
+		DrawLabel(W * 0.5f - 160.f, 230.f, TEXT("Survey Map"), FLinearColor(1.f, 0.85f, 0.7f), 1.5f);
+		int32 I = 0;
+		for (const FString& Line : P->GetMapLines())
+		{
+			DrawLabel(W * 0.5f - 220.f, 280.f + I * 30.f, Line, FLinearColor(0.92f, 0.88f, 1.f), 1.12f);
+			++I;
+		}
+		DrawLabel(W * 0.5f - 90.f, 280.f + I * 30.f + 16.f, TEXT("N to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 }

@@ -9,6 +9,10 @@ enum class EHolypawZone : uint8
 	ForestCottage UMETA(DisplayName = "Stuffed Park"),
 	NurseryHills UMETA(DisplayName = "Nursery Hills"),
 	RibbonCity UMETA(DisplayName = "Ribbon City"),
+	Tidewell UMETA(DisplayName = "Tidewell"),
+	Hearthfold UMETA(DisplayName = "Hearthfold"),
+	Emberfen UMETA(DisplayName = "Emberfen"),
+	Snowveil UMETA(DisplayName = "Snowveil"),
 	Homestead UMETA(DisplayName = "Cozy Homestead"),
 	Coast UMETA(DisplayName = "Ribbon Coast"),
 	Mire UMETA(DisplayName = "Crimson Hollow"),
@@ -140,6 +144,10 @@ namespace HolypawCatalog
 		case EHolypawZone::ForestCottage: return TEXT("Stuffed Park");
 		case EHolypawZone::NurseryHills: return TEXT("Nursery Hills");
 		case EHolypawZone::RibbonCity: return TEXT("Ribbon City");
+		case EHolypawZone::Tidewell: return TEXT("Tidewell");
+		case EHolypawZone::Hearthfold: return TEXT("Hearthfold");
+		case EHolypawZone::Emberfen: return TEXT("Emberfen");
+		case EHolypawZone::Snowveil: return TEXT("Snowveil");
 		case EHolypawZone::Homestead: return TEXT("Cozy Homestead");
 		case EHolypawZone::Coast: return TEXT("Ribbon Coast");
 		case EHolypawZone::Mire: return TEXT("Crimson Hollow");

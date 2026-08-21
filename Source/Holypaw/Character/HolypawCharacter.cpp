@@ -102,7 +102,7 @@ void AHolypawCharacter::BeginPlay()
 	Colorize(HeadMesh, FLinearColor(0.95f, 0.72f, 0.66f));
 	Colorize(HaloMesh, FLinearColor(1.f, 0.9f, 0.45f));
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	Toast(TEXT("Wake at the cottage. Follow the lantern path to Ribbon City."));
+	Toast(TEXT("Wake at the cottage. Follow lanterns to Ribbon City. N opens the map."));
 }
 
 void AHolypawCharacter::Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color)
@@ -132,6 +132,7 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction(TEXT("Miracle"), IE_Pressed, this, &AHolypawCharacter::TryMiracle);
 	PlayerInputComponent->BindAction(TEXT("Skills"), IE_Pressed, this, &AHolypawCharacter::ToggleSkills);
 	PlayerInputComponent->BindAction(TEXT("Party"), IE_Pressed, this, &AHolypawCharacter::ToggleParty);
+	PlayerInputComponent->BindAction(TEXT("Map"), IE_Pressed, this, &AHolypawCharacter::ToggleMap);
 	PlayerInputComponent->BindAction(TEXT("BattleSlap"), IE_Pressed, this, &AHolypawCharacter::BattleSlap);
 	PlayerInputComponent->BindAction(TEXT("BattleBeam"), IE_Pressed, this, &AHolypawCharacter::BattleBeam);
 	PlayerInputComponent->BindAction(TEXT("BattleParty"), IE_Pressed, this, &AHolypawCharacter::BattlePartyAtk);
@@ -269,12 +270,22 @@ void AHolypawCharacter::UpdateZone()
 	if (WorldB)
 	{
 		Z = WorldB->ResolveZone(GetActorLocation());
+		CompassLine = WorldB->GetCompassLine(GetActorLocation());
 	}
 	if (Z != CurrentZone)
 	{
 		CurrentZone = Z;
 		Toast(FString::Printf(TEXT("Entered %s"), HolypawCatalog::ZoneDisplayName(Z)));
 	}
+}
+
+TArray<FString> AHolypawCharacter::GetMapLines() const
+{
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		return It->GetMapLines(GetActorLocation());
+	}
+	return {};
 }
 
 AActor* AHolypawCharacter::FindNearestInteractable(float Range) const
@@ -531,7 +542,19 @@ void AHolypawCharacter::GrantKillRewards()
 void AHolypawCharacter::RestFully()
 {
 	HP = HPMax;
-	Toast(TEXT("The cottage mends your stuffing."));
+	Toast(TEXT("Your stuffing is mended."));
+}
+
+bool AHolypawCharacter::BuyFaith(int32 ApCost, int32 FpGain)
+{
+	if (!Affection->SpendAP(ApCost))
+	{
+		Toast(TEXT("Not enough AP for the faith stall."));
+		return false;
+	}
+	Affection->AddFP(FpGain);
+	Toast(FString::Printf(TEXT("Traded %d AP for %d FP."), ApCost, FpGain));
+	return true;
 }
 
 void AHolypawCharacter::TryMiracle()
@@ -581,6 +604,7 @@ void AHolypawCharacter::ToggleSkills()
 	}
 	bSkillsOpen = !bSkillsOpen;
 	bPartyOpen = false;
+	bMapOpen = false;
 	Mode = bSkillsOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -604,11 +628,36 @@ void AHolypawCharacter::ToggleParty()
 	}
 	bPartyOpen = !bPartyOpen;
 	bSkillsOpen = false;
+	bMapOpen = false;
 	Mode = bPartyOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = bPartyOpen;
 		if (bPartyOpen)
+		{
+			PC->SetInputMode(FInputModeGameAndUI());
+		}
+		else
+		{
+			PC->SetInputMode(FInputModeGameOnly());
+		}
+	}
+}
+
+void AHolypawCharacter::ToggleMap()
+{
+	if (Mode == EHolypawPawnMode::Battle)
+	{
+		return;
+	}
+	bMapOpen = !bMapOpen;
+	bSkillsOpen = false;
+	bPartyOpen = false;
+	Mode = bMapOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->bShowMouseCursor = bMapOpen;
+		if (bMapOpen)
 		{
 			PC->SetInputMode(FInputModeGameAndUI());
 		}

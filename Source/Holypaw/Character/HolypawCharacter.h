@@ -87,6 +87,7 @@ public:
 	void StartBattle(AHostilePet* Enemy);
 	void GrantKillRewards();
 	void RestFully();
+	bool BuyFaith(int32 ApCost, int32 FpGain);
 	void TryMiracle();
 	void ApplySkillEffects(FName Id);
 	void Toast(const FString& Msg);
@@ -109,8 +110,12 @@ public:
 
 	void ToggleSkills();
 	void ToggleParty();
+	void ToggleMap();
 	bool IsSkillsOpen() const { return bSkillsOpen; }
 	bool IsPartyOpen() const { return bPartyOpen; }
+	bool IsMapOpen() const { return bMapOpen; }
+	FString GetCompassLine() const { return CompassLine; }
+	TArray<FString> GetMapLines() const;
 	void TryBuySkill(FName Id);
 
 	UFUNCTION()
@@ -151,6 +156,8 @@ protected:
 	FText Prompt;
 	bool bSkillsOpen = false;
 	bool bPartyOpen = false;
+	bool bMapOpen = false;
+	FString CompassLine;
 
 	UMaterialInterface* ShapeMat = nullptr;
 
