@@ -56,6 +56,34 @@ namespace HolypawCatalog
 				TEXT("I will not make a speech. I will clap once, correctly."),
 				TEXT("Thank you for not asking me to network."),
 				TEXT("Lanterns by the spire hop you home."));
+			Add(TEXT("Innkeep"),
+				TEXT("Beds here remember the last person who was serious. We washed that out."),
+				TEXT("Rest is a political act if the mill wants you exhausted and identical."),
+				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."));
+			Add(TEXT("Choir Bear"),
+				TEXT("I am not a bear. I am a person in a choir that aspires. Close enough."),
+				TEXT("The chapel fills Miracle Charge. Dusk makes the sky sing along."),
+				TEXT("Bear Chapel, gold roof. Hymn, then go pick a fight with polyester."));
+			Add(TEXT("Seamstress"),
+				TEXT("I stitch hymn ribbons that the mill called inefficient. They were correct. I clapped."),
+				TEXT("Eight AP, one ribbon. Faith you can tie around a paw."),
+				TEXT("Cloth Loft west. Workshop cube. Bring leftover hugs."));
+			Add(TEXT("Dock Poet"),
+				TEXT("I wrote a sonnet about nets. Then you hugged the meter out of me. Improvement."),
+				TEXT("Harbor crates sometimes hide mill scrap. Sometimes dust. Poetry either way."),
+				TEXT("Harbor Steps east. Crate by the water. Tidewell further if you like salt."));
+			Add(TEXT("Lamp Lighter"),
+				TEXT("I light Quiet Rows so nobody has to be brave in the dark. You are already glowing."),
+				TEXT("Night turns the fog blue. The mill stays beige on purpose."),
+				TEXT("South of the plaza. Windows lit. Few hostiles on the street."));
+			Add(TEXT("Spire Guard"),
+				TEXT("I used to guard opinions. Now I guard a fountain that grants Faith if you toss a thought."),
+				TEXT("The mayor converted. My job is ceremonial clapping. I am thriving."),
+				TEXT("Plaza fountain. E to wish. Inn east, chapel west, mill rude and further east."));
+			Add(TEXT("Mill Whistleblower"),
+				TEXT("I filed a complaint that polyester has no soul. They offered a coupon. I took a hymn."),
+				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap."),
+				TEXT("Poly Mill, grey sheds, red stack. Handmade not polyester — the sign is not subtle."));
 			Add(TEXT("Harbor Hand"),
 				TEXT("Nets catch fish. You catch governments. Same wrist motion."),
 				TEXT("Brine Warden walks the outer dock. He's very tall about it."),

@@ -7,6 +7,8 @@
 #include "Actors/HugHuman.h"
 #include "Actors/HostilePet.h"
 #include "Actors/HolypawInteractable.h"
+#include "Actors/HolypawShrine.h"
+#include "Combat/HolypawBattleMath.h"
 #include "HolypawWorldBuilder.h"
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveCodec.h"
@@ -630,6 +632,11 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	BattleTurn = 0;
 	bPartyCut = false;
 	bGuarding = false;
+	SlapCombo = 0;
+	PoisonTurns = 0;
+	FrostTurns = 0;
+	HymnShield = 0;
+	bEnemyStaggered = false;
 	if (SpringArm)
 	{
 		SpringArm->TargetArmLength = BattleArm;
@@ -657,6 +664,10 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	}
 	bBattleBusy = true;
 	AHostilePet* E = BattleEnemy.Get();
+	if (Kind != TEXT("slap"))
+	{
+		SlapCombo = 0;
+	}
 
 	if (Kind == TEXT("flee"))
 	{
@@ -701,7 +712,9 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		}
 		int32 Heal = Skills->HasSkill(TEXT("hymnWard")) ? 18 : 10;
 		HP = FMath::Min(HPMax, HP + Heal);
-		BattleLog = FString::Printf(TEXT("Hymn mends %d stuffing."), Heal);
+		PoisonTurns = 0;
+		HymnShield = 2;
+		BattleLog = FString::Printf(TEXT("Hymn mends %d stuffing, clears poison, and raises a shield."), Heal);
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 		return;
 	}
@@ -709,7 +722,8 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	int32 Dmg = 0;
 	if (Kind == TEXT("slap"))
 	{
-		Dmg = Attack + FMath::RandRange(0, 4);
+		++SlapCombo;
+		Dmg = Attack + FMath::RandRange(0, 4) + HolypawBattle::SlapComboBonus(SlapCombo);
 		if (Skills->HasSkill(TEXT("bearPaw")))
 		{
 			Dmg += Attack / 2;
@@ -718,6 +732,10 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		else
 		{
 			BattleLog = FString::Printf(TEXT("Soft Slap hits for %d!"), Dmg);
+		}
+		if (SlapCombo >= 2)
+		{
+			BattleLog += FString::Printf(TEXT(" Combo x%d."), SlapCombo);
 		}
 	}
 	else if (Kind == TEXT("beam"))
@@ -763,13 +781,37 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		BattleLog += TEXT(" Poly Rip!");
 	}
 
-	if (E->Special == EVillainSpecial::ArmorPlates)
+	const bool bCrit = HolypawBattle::RollCrit();
+	if (bCrit)
 	{
-		Dmg = FMath::Max(1, FMath::FloorToInt(Dmg * 0.72f));
-		BattleLog += TEXT(" Armor plates dull it.");
+		Dmg = FMath::Max(1, FMath::FloorToInt(Dmg * 1.5f));
+		BattleLog += TEXT(" Crit!");
+	}
+
+	if (FrostTurns > 0)
+	{
+		Dmg = HolypawBattle::ScaleForFrost(Dmg, FrostTurns);
+		--FrostTurns;
+		BattleLog += TEXT(" Frost slows the paw.");
+	}
+
+	const int32 BeforeArmor = Dmg;
+	Dmg = HolypawBattle::ScaleForArmor(Dmg, E->Special, Kind == TEXT("beam"));
+	if (Dmg < BeforeArmor)
+	{
+		BattleLog += Kind == TEXT("beam")
+			? TEXT(" Beam slips the plates.")
+			: TEXT(" Armor plates dull it.");
+	}
+
+	if (HolypawBattle::ShouldStagger(Dmg, bCrit))
+	{
+		bEnemyStaggered = true;
+		BattleLog += TEXT(" Staggered!");
 	}
 
 	E->HP -= Dmg;
+	E->PulseHit();
 	LastDamageDealt = Dmg;
 	DamagePopupTime = 0.9f;
 	PlayCue(TEXT("BattleHit"));
@@ -806,54 +848,65 @@ void AHolypawCharacter::EnemyBattleSwing()
 	FString Extra;
 	const FString Verb = En->GetDef().AttackLine.IsEmpty() ? TEXT("shreds stuffing") : En->GetDef().AttackLine;
 
-	switch (En->Special)
+	if (bEnemyStaggered)
 	{
-	case EVillainSpecial::DrainFaith:
-	{
-		const int32 Drain = FMath::Min(6, Affection->FP);
-		if (Drain > 0)
-		{
-			Affection->SpendFP(Drain);
-			Extra = FString::Printf(TEXT("  -%d FP."), Drain);
-		}
-		break;
+		Dmg = FMath::Max(1, Dmg / 2);
+		Extra = TEXT("  Staggers. Special fumbles.");
+		bEnemyStaggered = false;
 	}
-	case EVillainSpecial::StealMiracle:
+	else
 	{
-		const float Stolen = FMath::Min(10.f, Affection->MiracleCharge);
-		Affection->MiracleCharge = FMath::Max(0.f, Affection->MiracleCharge - Stolen);
-		Extra = TEXT("  Miracle Charge nipped.");
-		break;
-	}
-	case EVillainSpecial::DoubleStrike:
-		Dmg += En->Attack / 2 + FMath::RandRange(0, 2);
-		Extra = TEXT("  Twice!");
-		break;
-	case EVillainSpecial::FrostBite:
-		Dmg += 2;
-		Extra = TEXT("  Seams go numb.");
-		break;
-	case EVillainSpecial::PoisonThread:
-		Dmg += 3;
-		Extra = TEXT("  Poison thread itches.");
-		break;
-	case EVillainSpecial::Rage:
-		if (En->HP * 2 <= En->HPMax)
+		switch (En->Special)
 		{
-			Dmg = FMath::FloorToInt(Dmg * 1.5f);
-			Extra = TEXT("  RAGE.");
+		case EVillainSpecial::DrainFaith:
+		{
+			const int32 Drain = FMath::Min(6, Affection->FP);
+			if (Drain > 0)
+			{
+				Affection->SpendFP(Drain);
+				Extra = FString::Printf(TEXT("  -%d FP."), Drain);
+			}
+			break;
 		}
-		break;
-	case EVillainSpecial::ThreadCut:
-		bPartyCut = true;
-		Extra = TEXT("  Party ribbons snipped.");
-		break;
-	case EVillainSpecial::FaithBurn:
-		Dmg += FMath::Max(0, Affection->FP / 8);
-		Extra = TEXT("  Faith flares against you.");
-		break;
-	default:
-		break;
+		case EVillainSpecial::StealMiracle:
+		{
+			const float Stolen = FMath::Min(10.f, Affection->MiracleCharge);
+			Affection->MiracleCharge = FMath::Max(0.f, Affection->MiracleCharge - Stolen);
+			Extra = TEXT("  Miracle Charge nipped.");
+			break;
+		}
+		case EVillainSpecial::DoubleStrike:
+			Dmg += En->Attack / 2 + FMath::RandRange(0, 2);
+			Extra = TEXT("  Twice!");
+			break;
+		case EVillainSpecial::FrostBite:
+			Dmg += 2;
+			FrostTurns = FMath::Max(FrostTurns, 3);
+			Extra = TEXT("  Seams go numb. (frost)");
+			break;
+		case EVillainSpecial::PoisonThread:
+			Dmg += 3;
+			PoisonTurns = FMath::Max(PoisonTurns, 3);
+			Extra = TEXT("  Poison thread itches.");
+			break;
+		case EVillainSpecial::Rage:
+			if (En->HP * 2 <= En->HPMax)
+			{
+				Dmg = FMath::FloorToInt(Dmg * 1.5f);
+				Extra = TEXT("  RAGE.");
+			}
+			break;
+		case EVillainSpecial::ThreadCut:
+			bPartyCut = true;
+			Extra = TEXT("  Party ribbons snipped.");
+			break;
+		case EVillainSpecial::FaithBurn:
+			Dmg += FMath::Max(0, Affection->FP / 8);
+			Extra = TEXT("  Faith flares against you.");
+			break;
+		default:
+			break;
+		}
 	}
 
 	if (En->Rank == EVillainRank::WorldBoss && BattleTurn >= 4)
@@ -872,10 +925,15 @@ void AHolypawCharacter::EnemyBattleSwing()
 	}
 	if (bGuarding)
 	{
-		const float Keep = Skills->HasSkill(TEXT("seamGuard")) ? 0.25f : 0.45f;
-		Dmg = FMath::Max(1, FMath::FloorToInt(Dmg * Keep));
+		Dmg = HolypawBattle::ScaleForGuard(Dmg, Skills->HasSkill(TEXT("seamGuard")));
 		bGuarding = false;
 		Extra += TEXT("  Guarded.");
+	}
+	if (HymnShield > 0)
+	{
+		Dmg = HolypawBattle::ScaleForHymnShield(Dmg);
+		--HymnShield;
+		Extra += TEXT("  Hymn shield.");
 	}
 	HP -= Dmg;
 	LastDamageTaken = Dmg;
@@ -896,6 +954,27 @@ void AHolypawCharacter::ResumePlayerTurn()
 {
 	bPlayerTurn = true;
 	bBattleBusy = false;
+	if (Mode != EHolypawPawnMode::Battle)
+	{
+		return;
+	}
+	if (PoisonTurns <= 0)
+	{
+		return;
+	}
+	const int32 Tick = 3;
+	HP = FMath::Max(0, HP - Tick);
+	--PoisonTurns;
+	LastDamageTaken = Tick;
+	HurtPulse = 0.7f;
+	BattleLog = FString::Printf(TEXT("Poison thread nips %d stuffing. (%d left)"), Tick, PoisonTurns);
+	if (HP <= 0)
+	{
+		HP = 0;
+		bBattleBusy = true;
+		BattleLog = TEXT("Poison unstuffed you. The cottage bed still smells like you.");
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::FailAndWakeAtCottage, 1.0f, false);
+	}
 }
 
 void AHolypawCharacter::FailAndWakeAtCottage()
@@ -922,6 +1001,11 @@ void AHolypawCharacter::EndBattle()
 	Mode = EHolypawPawnMode::Play;
 	bBattleBusy = false;
 	bGuarding = false;
+	SlapCombo = 0;
+	PoisonTurns = 0;
+	FrostTurns = 0;
+	HymnShield = 0;
+	bEnemyStaggered = false;
 	Invuln = 1.8f;
 	if (SpringArm)
 	{
@@ -995,6 +1079,62 @@ bool AHolypawCharacter::BuyFaith(int32 ApCost, int32 FpGain)
 	Affection->AddFP(FpGain);
 	Toast(FString::Printf(TEXT("Traded %d AP for %d FP. Faith is just leftover hugs in a jar."), ApCost, FpGain));
 	return true;
+}
+
+bool AHolypawCharacter::UseShrine(const EHolypawShrineKind Kind)
+{
+	switch (Kind)
+	{
+	case EHolypawShrineKind::Inn:
+		HP = HPMax;
+		if (Affection)
+		{
+			Affection->AddFP(8);
+		}
+		QuickSave(false);
+		Toast(TEXT("Spire Inn tucks you in. HP full, cocoa on the nightstand. Saved."));
+		return true;
+	case EHolypawShrineKind::Chapel:
+		if (Affection)
+		{
+			Affection->MiracleCharge = Affection->MiracleMax;
+		}
+		PlayCue(TEXT("Miracle"));
+		Toast(TEXT("Bear Chapel hymn fills the Miracle bar."));
+		return true;
+	case EHolypawShrineKind::Workshop:
+		if (!Affection || !Affection->SpendAP(8))
+		{
+			Toast(TEXT("Cloth loft needs 8 AP to stitch a hymn ribbon."));
+			return false;
+		}
+		AddItem(TEXT("hymnRibbon"), 1);
+		PlayCue(TEXT("Shop"));
+		Toast(TEXT("Seamstress stitches a hymn ribbon (-8 AP)."));
+		return true;
+	case EHolypawShrineKind::Wish:
+		if (Affection)
+		{
+			Affection->AddFP(4);
+		}
+		PlayCue(TEXT("Miracle"));
+		Toast(TEXT("Fountain wish: +4 FP. The plaza pretends it was always this round."));
+		return true;
+	case EHolypawShrineKind::Crate:
+		if (FMath::RandRange(0, 99) < 55)
+		{
+			AddItem(TEXT("millScrap"), 1);
+			Toast(TEXT("Harbor crate: mill scrap! Proof the factory bleeds."));
+		}
+		else
+		{
+			Toast(TEXT("Harbor crate: stuffing dust. Try again later."));
+		}
+		PlayCue(TEXT("Shop"));
+		return true;
+	default:
+		return false;
+	}
 }
 
 void AHolypawCharacter::TryMiracle()
@@ -1865,6 +2005,11 @@ FString AHolypawCharacter::GetClockLine() const
 		return GI->GetClockLabel();
 	}
 	return TEXT("");
+}
+
+FString AHolypawCharacter::GetBattleStatusLine() const
+{
+	return HolypawBattle::FormatStatus(SlapCombo, PoisonTurns, FrostTurns, HymnShield, bEnemyStaggered);
 }
 
 int32 AHolypawCharacter::ShopPrice(int32 BaseCost) const

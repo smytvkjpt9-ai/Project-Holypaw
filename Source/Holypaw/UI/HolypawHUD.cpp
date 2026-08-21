@@ -128,6 +128,10 @@ void AHolypawHUD::DrawHUD()
 			}
 		}
 		DrawLabel(CX - 300.f, CY + 88.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.12f);
+		if (!P->GetBattleStatusLine().IsEmpty())
+		{
+			DrawLabel(CX - 300.f, CY + 118.f, P->GetBattleStatusLine(), FLinearColor(0.7f, 0.95f, 0.85f), 0.95f);
+		}
 		DrawLabel(64.f, Canvas->SizeY - 260.f, TEXT("1  Soft Slap"), FLinearColor(1.f, 1.f, 1.f), 1.2f);
 		DrawLabel(64.f, Canvas->SizeY - 228.f, TEXT("2  Cuddle Beam (12 FP)"), FLinearColor(0.85f, 0.8f, 1.f), 1.2f);
 		DrawLabel(64.f, Canvas->SizeY - 196.f, TEXT("3  Party Assault"), FLinearColor(0.7f, 0.95f, 0.85f), 1.2f);

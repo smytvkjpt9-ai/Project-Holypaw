@@ -235,7 +235,7 @@ On the user’s PC: drop WAVs on those IDs. No silent ship. Until assets exist, 
 - **Poly Mill raid:** 6 floors (gate, spinning frames, dye vats, executive felt, unstuffing bay, roof hymn)
 - Wilderness encounter tables per biome
 - Shrines for the Four Rites
-- Sky rift + volumetric clouds stay; add mill smog volume
+- Sky rift + volumetric clouds stay; add mill smog volume — **started:** clock-driven sun/fog plus polyester haze near the mill
 
 ### 4.10 Pillar 10 — Tools / tests / loc (14,000)
 
@@ -271,7 +271,7 @@ Do not dress Felt Ice Camp before save exists. Do not write 220 quests before th
 | W0 | Plan + loc counter | — | this document, `CountHolypawLoc.py` |
 | W1 | Persistence & meta | 8,000 | title, 3 save slots, settings, wake-at-cottage restore |
 | W2 | City Hearts & travel | 6,000 | per-city Hearts, lantern fast travel, believer parade stub |
-| W3 | Combat director | 10,000 | abilities extracted, status, 4 boss phases |
+| W3 | Combat director | 10,000 | abilities extracted, status, 4 boss phases — **started:** `HolypawBattleMath`, slap combo / crit / frost / poison / hymn shield / stagger, hit flash |
 | W4 | Dialogue VM | 8,000 | talk to NPCs, choices, journal updates |
 | W5 | Ribbon City full | 8,000 | 24 NPCs, 8 interiors, 4 shops — the AAA vertical slice |
 | W6 | Audio + proc anim | 6,000 | cue table, teddy bounce/hug/kneel |

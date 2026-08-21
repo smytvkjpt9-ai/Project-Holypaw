@@ -67,7 +67,10 @@ public:
 	void Defeat(bool bGrantRewards);
 	void RespawnLater();
 
+	void PulseHit();
+	float HitPulse = 0.f;
 	FVector Home = FVector::ZeroVector;
+	float BodyScale = 1.f;
 
 private:
 	void ApplyFromCatalog();

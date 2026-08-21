@@ -93,6 +93,7 @@ void AHostilePet::ApplyFromCatalog()
 	bBlocksFlee = D.bBlocksFlee;
 	RespawnSeconds = D.RespawnSeconds;
 	SetActorScale3D(FVector(D.Scale));
+	BodyScale = D.Scale;
 
 	if (UStaticMesh* Body = MeshForShape(D.Shape))
 	{
@@ -256,9 +257,25 @@ bool AHostilePet::Interact(AHolypawCharacter* InstigatorPawn)
 	return true;
 }
 
+void AHostilePet::PulseHit()
+{
+	HitPulse = 1.f;
+}
+
 void AHostilePet::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (HitPulse > 0.f)
+	{
+		HitPulse = FMath::Max(0.f, HitPulse - DeltaSeconds * 3.2f);
+		SetActorScale3D(FVector(BodyScale * (1.f + HitPulse * 0.28f)));
+	}
+	else if (BodyScale > 0.f)
+	{
+		SetActorScale3D(FVector(BodyScale));
+	}
+
 	if (bDefeated)
 	{
 		return;

@@ -14,6 +14,7 @@ class UHolypawMissionComponent;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
+enum class EHolypawShrineKind : uint8;
 
 UENUM()
 enum class EHolypawPawnMode : uint8
@@ -118,6 +119,8 @@ public:
 	void GrantKillRewards(AHostilePet* Fallen);
 	void RestFully();
 	bool BuyFaith(int32 ApCost, int32 FpGain);
+	bool UseShrine(EHolypawShrineKind Kind);
+	FString GetBattleStatusLine() const;
 	void TryMiracle();
 	void CompleteBearFaith();
 	void ApplySkillEffects(FName Id);
@@ -261,6 +264,11 @@ protected:
 	int32 BattleTurn = 0;
 	bool bPartyCut = false;
 	bool bGuarding = false;
+	int32 SlapCombo = 0;
+	int32 PoisonTurns = 0;
+	int32 FrostTurns = 0;
+	int32 HymnShield = 0;
+	bool bEnemyStaggered = false;
 	float ExploreArm = 540.f;
 	float BattleArm = 300.f;
 	FTimerHandle BattleTimer;

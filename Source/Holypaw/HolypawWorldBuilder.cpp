@@ -1,5 +1,6 @@
 #include "HolypawWorldBuilder.h"
 #include "Holypaw.h"
+#include "HolypawGameInstance.h"
 #include "Actors/WildFluffy.h"
 #include "Actors/HostilePet.h"
 #include "Actors/HugHuman.h"
@@ -23,12 +24,13 @@
 #include "Engine/PostProcessVolume.h"
 #include "Engine/PlayerStart.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 AHolypawWorldBuilder::AHolypawWorldBuilder()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	TerrainMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Terrain"));
 	SetRootComponent(TerrainMesh);
@@ -106,6 +108,102 @@ void AHolypawWorldBuilder::BeginPlay()
 	GenerateWorld();
 }
 
+void AHolypawWorldBuilder::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	TickClockLighting(DeltaSeconds);
+}
+
+void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
+{
+	UHolypawGameInstance* GI = UHolypawGameInstance::Get(this);
+	if (!GI)
+	{
+		return;
+	}
+	const float Hour = GI->GetWorldHour();
+	float SunInt = 9.5f;
+	FLinearColor SunCol(1.f, 0.93f, 0.82f);
+	float SkyInt = 1.15f;
+	FLinearColor FogCol(0.78f, 0.84f, 0.95f);
+	if (Hour >= 17.f && Hour < 20.f)
+	{
+		SunInt = 4.2f;
+		SunCol = FLinearColor(1.f, 0.55f, 0.38f);
+		SkyInt = 0.7f;
+		FogCol = FLinearColor(0.92f, 0.62f, 0.48f);
+	}
+	else if (Hour < 5.f || Hour >= 20.f)
+	{
+		SunInt = 0.55f;
+		SunCol = FLinearColor(0.45f, 0.55f, 0.95f);
+		SkyInt = 0.28f;
+		FogCol = FLinearColor(0.22f, 0.28f, 0.48f);
+	}
+	else if (Hour >= 5.f && Hour < 8.f)
+	{
+		SunInt = 6.5f;
+		SunCol = FLinearColor(1.f, 0.78f, 0.62f);
+		SkyInt = 0.9f;
+	}
+
+	float FogDensity = 0.016f;
+	if (Hour >= 17.f && Hour < 20.f)
+	{
+		FogDensity = 0.022f;
+	}
+	else if (Hour < 5.f || Hour >= 20.f)
+	{
+		FogDensity = 0.028f;
+	}
+
+	float Pitch = 18.f;
+	if (Hour >= 5.f && Hour < 20.f)
+	{
+		const float T = (Hour - 5.f) / 15.f;
+		Pitch = FMath::Lerp(-12.f, -70.f, FMath::Sin(T * PI));
+	}
+
+	if (APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		const FVector2D Mill = RibbonCity + FVector2D(5200.f, -800.f);
+		const FVector2D P(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Y);
+		const float Dist = FVector2D::Distance(P, Mill);
+		if (Dist < 6200.f)
+		{
+			const float W = 1.f - Dist / 6200.f;
+			FogDensity += 0.034f * W;
+			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), W);
+			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), W * 0.45f);
+		}
+	}
+
+	if (SunLight)
+	{
+		SunLight->SetActorRotation(FRotator(Pitch, 35.f, 0.f));
+		if (UDirectionalLightComponent* C = SunLight->FindComponentByClass<UDirectionalLightComponent>())
+		{
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, SunInt, DeltaSeconds, 1.2f));
+			C->SetLightColor(SunCol);
+		}
+	}
+	if (SkyLight)
+	{
+		if (USkyLightComponent* C = SkyLight->FindComponentByClass<USkyLightComponent>())
+		{
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, SkyInt, DeltaSeconds, 1.2f));
+		}
+	}
+	if (HeightFog)
+	{
+		if (UExponentialHeightFogComponent* C = HeightFog->FindComponentByClass<UExponentialHeightFogComponent>())
+		{
+			C->SetFogInscatteringColor(FogCol);
+			C->SetFogDensity(FogDensity);
+		}
+	}
+}
+
 void AHolypawWorldBuilder::GenerateWorld()
 {
 	if (bGenerated)
@@ -162,6 +260,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 
 	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42.f, 35.f, 0.f), Sp))
 	{
+		SunLight = Sun;
 		if (UDirectionalLightComponent* C = Sun->FindComponentByClass<UDirectionalLightComponent>())
 		{
 			C->SetIntensity(9.5f);
@@ -173,6 +272,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	}
 	if (ASkyLight* Sky = GetWorld()->SpawnActor<ASkyLight>(FVector(0.f, 0.f, 400.f), FRotator::ZeroRotator, Sp))
 	{
+		SkyLight = Sky;
 		if (USkyLightComponent* C = Sky->FindComponentByClass<USkyLightComponent>())
 		{
 			C->SetIntensity(1.15f);
@@ -182,6 +282,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	}
 	if (AExponentialHeightFog* Fog = GetWorld()->SpawnActor<AExponentialHeightFog>(FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator, Sp))
 	{
+		HeightFog = Fog;
 		if (UExponentialHeightFogComponent* C = Fog->FindComponentByClass<UExponentialHeightFogComponent>())
 		{
 			C->SetFogDensity(0.016f);
@@ -635,6 +736,26 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	PlaceStall(Market + FVector2D(260.f, 120.f));
 	PlaceStall(Market + FVector2D(-180.f, 200.f));
 
+	PlaceShrine(Plaza + FVector2D(-180.f, -220.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "Fountain", "Ribbon Fountain"));
+	PlaceShrine(Plaza + FVector2D(520.f, 180.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "InnName", "Spire Inn"));
+	PlaceShrine(Plaza + FVector2D(-480.f, 420.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "ChapelName", "Bear Chapel"));
+	PlaceShrine(Cloth + FVector2D(180.f, 160.f), EHolypawShrineKind::Workshop, NSLOCTEXT("Holypaw", "LoftName", "Cloth Loft"));
+	PlaceShrine(Harbor + FVector2D(-220.f, 80.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "CrateName", "Harbor Crate"));
+	PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 70.f), FVector(1.6f, 1.6f, 0.22f), FLinearColor(0.55f, 0.75f, 0.92f), MakeName(TEXT("FountainPool")));
+	PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 130.f), FVector(0.35f, 0.35f, 1.1f), FLinearColor(0.85f, 0.88f, 0.95f), MakeName(TEXT("FountainJet")));
+
+	const FVector2D Inn = Plaza + FVector2D(520.f, 180.f);
+	PlaceCube(FVector(Inn.X + 90.f, Inn.Y, SampleHeight(Inn.X, Inn.Y) + 90.f), FVector(0.35f, 0.12f, 0.55f), FLinearColor(1.f, 0.82f, 0.55f), MakeName(TEXT("InnLamp")));
+	PlaceCube(FVector(Inn.X - 70.f, Inn.Y + 40.f, SampleHeight(Inn.X, Inn.Y) + 70.f), FVector(0.8f, 0.35f, 0.18f), FLinearColor(0.62f, 0.38f, 0.28f), MakeName(TEXT("InnBed")));
+
+	const FVector2D Chapel = Plaza + FVector2D(-480.f, 420.f);
+	PlaceCube(FVector(Chapel.X + 70.f, Chapel.Y - 40.f, SampleHeight(Chapel.X, Chapel.Y) + 28.f), FVector(0.9f, 0.28f, 0.22f), FLinearColor(0.82f, 0.72f, 0.48f), MakeName(TEXT("PewA")));
+	PlaceCube(FVector(Chapel.X + 70.f, Chapel.Y + 40.f, SampleHeight(Chapel.X, Chapel.Y) + 28.f), FVector(0.9f, 0.28f, 0.22f), FLinearColor(0.82f, 0.72f, 0.48f), MakeName(TEXT("PewB")));
+
+	const FVector2D Loft = Cloth + FVector2D(180.f, 160.f);
+	PlaceCube(FVector(Loft.X + 80.f, Loft.Y, SampleHeight(Loft.X, Loft.Y) + 50.f), FVector(0.9f, 0.45f, 0.35f), FLinearColor(0.55f, 0.42f, 0.62f), MakeName(TEXT("Loom")));
+	PlaceSign(RibbonCity + FVector2D(4700.f, -620.f), NSLOCTEXT("Holypaw", "MillProtest", "Handmade not polyester  |  clap, don't stamp"));
+
 	for (int32 I = 0; I < 5; ++I)
 	{
 		const float X = Cloth.X + I * 220.f;
@@ -749,6 +870,47 @@ void AHolypawWorldBuilder::PlaceLantern(const FVector2D& XY, EHolypawZone Zone)
 	}
 }
 
+void AHolypawWorldBuilder::PlaceShrine(const FVector2D& XY, EHolypawShrineKind Kind, const FText& Name)
+{
+	const float Z = SampleHeight(XY.X, XY.Y);
+	FLinearColor Col(0.78f, 0.52f, 0.42f);
+	FVector Scale(2.6f, 2.2f, 2.8f);
+	if (Kind == EHolypawShrineKind::Chapel)
+	{
+		Col = FLinearColor(0.92f, 0.82f, 0.55f);
+		Scale = FVector(2.2f, 2.2f, 4.2f);
+	}
+	else if (Kind == EHolypawShrineKind::Workshop)
+	{
+		Col = FLinearColor(0.72f, 0.48f, 0.68f);
+		Scale = FVector(2.8f, 2.0f, 2.4f);
+	}
+	else if (Kind == EHolypawShrineKind::Wish)
+	{
+		Col = FLinearColor(0.42f, 0.68f, 0.88f);
+		Scale = FVector(1.8f, 1.8f, 0.35f);
+	}
+	else if (Kind == EHolypawShrineKind::Crate)
+	{
+		Col = FLinearColor(0.55f, 0.45f, 0.32f);
+		Scale = FVector(1.1f, 0.9f, 0.8f);
+	}
+	PlaceCube(FVector(XY.X, XY.Y, Z + Scale.Z * 50.f), Scale, Col, MakeName(TEXT("ShrineBody")));
+	if (Kind == EHolypawShrineKind::Chapel)
+	{
+		PlaceCube(FVector(XY.X, XY.Y, Z + Scale.Z * 100.f + 40.f), FVector(1.4f, 1.4f, 0.5f), FLinearColor(0.95f, 0.75f, 0.35f), MakeName(TEXT("ChapelCap")));
+	}
+	FActorSpawnParameters Sp;
+	Sp.Owner = this;
+	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	if (AHolypawShrine* S = GetWorld()->SpawnActor<AHolypawShrine>(FVector(XY.X, XY.Y, Z + 36.f), FRotator::ZeroRotator, Sp))
+	{
+		S->Kind = Kind;
+		S->PlaceName = Name;
+		S->SetActorScale3D(FVector(1.1f, 1.1f, 0.25f));
+	}
+}
+
 FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
 {
 	if (Zone == EHolypawZone::ForestCottage)
@@ -839,6 +1001,13 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Cloth Dyer"), FVector2D(RibbonCity.X - 2300.f, RibbonCity.Y + 680.f), FLinearColor(0.78f, 0.45f, 0.62f));
 	SpawnHuman(TEXT("Harbor Kid"), FVector2D(RibbonCity.X + 4000.f, RibbonCity.Y + 1500.f), FLinearColor(0.5f, 0.72f, 0.85f));
 	SpawnHuman(TEXT("Quiet Neighbor"), FVector2D(RibbonCity.X + 180.f, RibbonCity.Y - 3300.f), FLinearColor(0.72f, 0.68f, 0.82f));
+	SpawnHuman(TEXT("Innkeep"), FVector2D(RibbonCity.X + 520.f, RibbonCity.Y + 220.f), FLinearColor(0.78f, 0.48f, 0.38f));
+	SpawnHuman(TEXT("Choir Bear"), FVector2D(RibbonCity.X - 500.f, RibbonCity.Y + 440.f), FLinearColor(0.92f, 0.78f, 0.55f));
+	SpawnHuman(TEXT("Seamstress"), FVector2D(RibbonCity.X - 2200.f, RibbonCity.Y + 820.f), FLinearColor(0.82f, 0.52f, 0.72f));
+	SpawnHuman(TEXT("Dock Poet"), FVector2D(RibbonCity.X + 4100.f, RibbonCity.Y + 1680.f), FLinearColor(0.48f, 0.62f, 0.78f));
+	SpawnHuman(TEXT("Lamp Lighter"), FVector2D(RibbonCity.X + 80.f, RibbonCity.Y - 3100.f), FLinearColor(1.f, 0.82f, 0.42f));
+	SpawnHuman(TEXT("Spire Guard"), FVector2D(RibbonCity.X - 80.f, RibbonCity.Y + 80.f), FLinearColor(0.62f, 0.55f, 0.72f));
+	SpawnHuman(TEXT("Mill Whistleblower"), FVector2D(RibbonCity.X + 4800.f, RibbonCity.Y - 700.f), FLinearColor(0.7f, 0.68f, 0.6f));
 	SpawnHuman(TEXT("Harbor Hand"), FVector2D(Tidewell.X + 400.f, Tidewell.Y + 200.f), FLinearColor(0.45f, 0.55f, 0.7f));
 	SpawnHuman(TEXT("Net Weaver"), FVector2D(Tidewell.X - 200.f, Tidewell.Y - 300.f), FLinearColor(0.4f, 0.7f, 0.75f));
 	SpawnHuman(TEXT("Farmer"), FVector2D(Hearthfold.X + 250.f, Hearthfold.Y - 200.f), FLinearColor(0.7f, 0.6f, 0.3f));

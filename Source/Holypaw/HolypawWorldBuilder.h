@@ -3,10 +3,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "HolypawTypes.h"
+#include "Actors/HolypawShrine.h"
 #include "HolypawWorldBuilder.generated.h"
 
 class UProceduralMeshComponent;
 class UInstancedStaticMeshComponent;
+class ADirectionalLight;
+class ASkyLight;
+class AExponentialHeightFog;
 
 USTRUCT()
 struct FHolypawLandmark
@@ -40,6 +44,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	FVector GetCottageSpawn() const { return CottageSpawn; }
 	FVector GetTravelLocation(EHolypawZone Zone) const;
+	void TickClockLighting(float DeltaSeconds);
+	virtual void Tick(float DeltaSeconds) override;
 
 	FString GetCompassLine(const FVector& From) const;
 	TArray<FString> GetMapLines(const FVector& From) const;
@@ -109,6 +115,7 @@ protected:
 	void BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt);
 	void PlaceCamp(const FVector2D& XY, const FText& Name);
 	void PlaceLantern(const FVector2D& XY, EHolypawZone Zone);
+	void PlaceShrine(const FVector2D& XY, EHolypawShrineKind Kind, const FText& Name);
 	void PlaceStall(const FVector2D& XY);
 	void PlaceSign(const FVector2D& XY, const FText& Message);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;
@@ -140,4 +147,13 @@ protected:
 	UStaticMesh* ConeMesh = nullptr;
 	UStaticMesh* CylMesh = nullptr;
 	UMaterialInterface* ShapeMat = nullptr;
+
+	UPROPERTY()
+	TObjectPtr<ADirectionalLight> SunLight;
+
+	UPROPERTY()
+	TObjectPtr<ASkyLight> SkyLight;
+
+	UPROPERTY()
+	TObjectPtr<AExponentialHeightFog> HeightFog;
 };

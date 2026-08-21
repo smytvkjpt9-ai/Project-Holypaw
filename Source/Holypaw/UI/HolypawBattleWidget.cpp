@@ -76,6 +76,11 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 			}
 		}
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 300.f, Size.Y * 0.27f), P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.05f);
+		const FString Status = P->GetBattleStatusLine();
+		if (!Status.IsEmpty())
+		{
+			PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 300.f, Size.Y * 0.31f), Status, FLinearColor(0.7f, 0.95f, 0.85f), 0.95f);
+		}
 
 		PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(40.f, Size.Y - 280.f), FVector2D(420.f, 220.f), FLinearColor(0.10f, 0.07f, 0.14f, 0.82f));
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 268.f), TEXT("1  Soft Slap"), FLinearColor(1.f, 1.f, 1.f), 1.1f);

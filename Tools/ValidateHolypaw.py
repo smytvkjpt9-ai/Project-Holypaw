@@ -273,6 +273,28 @@ if "OpenShop" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text()
 if "StartTalk" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
     errors.append("believers should talk, not re-hug")
 
+if not (ROOT / "Source/Holypaw/Actors/HolypawShrine.cpp").exists():
+    errors.append("missing HolypawShrine.cpp")
+if not (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").exists():
+    errors.append("missing HolypawBattleMath.cpp")
+for needle, blob, label in (
+    ("PlaceShrine", WORLD, "world"),
+    ("TickClockLighting", WORLD, "world"),
+    ("UseShrine", CHAR, "character"),
+    ("GetBattleStatusLine", CHAR, "character"),
+    ("PulseHit", (ROOT / "Source/Holypaw/Actors/HostilePet.cpp").read_text(), "hostile"),
+    ("Innkeep", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Choir Bear", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Seamstress", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Dock Poet", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Lamp Lighter", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Spire Guard", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Mill Whistleblower", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("ScaleForArmor", (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").read_text(), "battle math"),
+):
+    if needle not in blob:
+        errors.append(f"{label} missing {needle}")
+
 if errors:
     print("FAIL")
     for e in errors:
