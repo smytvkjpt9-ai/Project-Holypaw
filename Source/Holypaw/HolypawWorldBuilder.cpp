@@ -632,32 +632,120 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Snow Warden"), FVector2D(Snowveil.X + 160.f, Snowveil.Y - 80.f), FLinearColor(0.8f, 0.85f, 0.95f));
 	SpawnHuman(TEXT("Peak Acolyte"), FVector2D(PeakCenter.X - 600.f, PeakCenter.Y - 900.f), FLinearColor(0.75f, 0.65f, 0.95f));
 
-	auto SpawnHostile = [&](const TCHAR* Name, int32 Hp, int32 Atk, const FVector2D& XY, float Scale)
+	auto SpawnHostile = [&](EHolypawVillain Id, const FVector2D& XY)
 	{
-		const float Z = SampleHeight(XY.X, XY.Y) + 40.f;
-		if (AHostilePet* H = GetWorld()->SpawnActor<AHostilePet>(FVector(XY.X, XY.Y, Z), FRotator::ZeroRotator, Sp))
-		{
-			H->DisplayName = FText::FromString(Name);
-			H->HPMax = Hp;
-			H->HP = Hp;
-			H->Attack = Atk;
-			H->SetActorScale3D(FVector(Scale));
-			if (Scale > 1.4f)
-			{
-				H->AggroRange = 1400.f;
-			}
-		}
+		SpawnVillainAt(Id, XY);
 	};
-	SpawnHostile(TEXT("Scrap Dog"), 28, 7, FVector2D(-12000.f, 2200.f), 1.f);
-	SpawnHostile(TEXT("Corp Cat"), 32, 8, FVector2D(-2000.f, -3500.f), 1.f);
-	SpawnHostile(TEXT("Razor Petbot"), 40, 10, FVector2D(9000.f, 2500.f), 1.1f);
-	SpawnHostile(TEXT("Void Rat"), 22, 9, FVector2D(15000.f, -5000.f), 0.9f);
-	SpawnHostile(TEXT("Alley Scrap Dog"), 26, 7, FVector2D(RibbonCity.X + 2400.f, RibbonCity.Y - 2100.f), 1.f);
-	SpawnHostile(TEXT("Salt Crab"), 30, 8, FVector2D(Tidewell.X + 1800.f, Tidewell.Y - 1400.f), 1.f);
-	SpawnHostile(TEXT("Scarecrow Hound"), 34, 9, FVector2D(Hearthfold.X + 2200.f, Hearthfold.Y + 1600.f), 1.05f);
-	SpawnHostile(TEXT("Mire Lurker"), 38, 11, FVector2D(Emberfen.X + 2000.f, Emberfen.Y - 1600.f), 1.15f);
-	SpawnHostile(TEXT("Frost Moth"), 26, 10, FVector2D(Snowveil.X - 1600.f, Snowveil.Y + 1100.f), 1.f);
-	SpawnHostile(TEXT("Velvet Tyrant"), 88, 16, FVector2D(PeakCenter.X + 900.f, PeakCenter.Y - 1600.f), 1.85f);
+	auto Ring = [&](EHolypawVillain Id, const FVector2D& C, int32 N, float R)
+	{
+		SpawnVillainRing(Id, C, N, R);
+	};
+
+	// Stuffed Park / cottage road — original Scrap Dogs plus forest pack.
+	SpawnHostile(EHolypawVillain::ScrapDog, FVector2D(-12000.f, 2200.f));
+	SpawnHostile(EHolypawVillain::ScrapDog, FVector2D(-24000.f, 1600.f));
+	SpawnHostile(EHolypawVillain::ScrapDog, FVector2D(-20000.f, -1800.f));
+	SpawnHostile(EHolypawVillain::ParkProwler, FVector2D(-28000.f, 900.f));
+	SpawnHostile(EHolypawVillain::ParkProwler, FVector2D(-26000.f, -1400.f));
+	SpawnHostile(EHolypawVillain::NightThread, FVector2D(-30000.f, -2200.f));
+	SpawnHostile(EHolypawVillain::NightThread, FVector2D(-16000.f, 2800.f));
+	SpawnHostile(EHolypawVillain::StitchedWolf, FVector2D(-21000.f, 3200.f));
+	SpawnHostile(EHolypawVillain::Tatterfox, FVector2D(-8000.f, -2800.f));
+
+	// Nursery hills roamers + original Corp Cat.
+	SpawnHostile(EHolypawVillain::CorpCat, FVector2D(-2000.f, -3500.f));
+	SpawnHostile(EHolypawVillain::CorpCat, FVector2D(2000.f, -6000.f));
+	SpawnHostile(EHolypawVillain::ButtonThief, FVector2D(-6000.f, 500.f));
+	SpawnHostile(EHolypawVillain::ButtonThief, FVector2D(4000.f, -2000.f));
+	SpawnHostile(EHolypawVillain::MiracleEater, FVector2D(10000.f, 800.f));
+	SpawnHostile(EHolypawVillain::MiracleEater, FVector2D(RibbonCity.X - 9000.f, 2500.f));
+	SpawnHostile(EHolypawVillain::VoidRat, FVector2D(15000.f, -5000.f));
+
+	// Ribbon City dens.
+	Ring(EHolypawVillain::AlleyScrapDog, RibbonCity + FVector2D(2400.f, -2100.f), 3, 700.f);
+	Ring(EHolypawVillain::PlazaCorpCat, RibbonCity + FVector2D(-1800.f, 1600.f), 2, 500.f);
+	Ring(EHolypawVillain::SewerVoidRat, RibbonCity + FVector2D(400.f, -2800.f), 3, 420.f);
+	SpawnHostile(EHolypawVillain::RazorPetbot, FVector2D(9000.f, 2500.f));
+	SpawnHostile(EHolypawVillain::RazorPetbot, RibbonCity + FVector2D(3200.f, 900.f));
+	SpawnHostile(EHolypawVillain::RibbonEnforcer, RibbonCity + FVector2D(-2400.f, -400.f));
+	SpawnHostile(EHolypawVillain::RibbonEnforcer, RibbonCity + FVector2D(1800.f, 2200.f));
+	SpawnHostile(EHolypawVillain::TinselGolem, RibbonCity + FVector2D(2800.f, 2800.f));
+	SpawnHostile(EHolypawVillain::GoldSnipper, RibbonCity + FVector2D(600.f, -1600.f));
+	SpawnHostile(EHolypawVillain::GoldSnipper, RibbonCity + FVector2D(-900.f, 900.f));
+	SpawnHostile(EHolypawVillain::SilkMagistrate, RibbonCity + FVector2D(0.f, 3400.f));
+
+	// Tidewell harbor.
+	Ring(EHolypawVillain::SaltCrab, Tidewell + FVector2D(1800.f, -1400.f), 3, 650.f);
+	SpawnHostile(EHolypawVillain::HarborHook, Tidewell + FVector2D(-1600.f, 900.f));
+	SpawnHostile(EHolypawVillain::HarborHook, Tidewell + FVector2D(2200.f, 400.f));
+	SpawnHostile(EHolypawVillain::BrineGull, Tidewell + FVector2D(800.f, 1800.f));
+	SpawnHostile(EHolypawVillain::BrineGull, Tidewell + FVector2D(-400.f, -1800.f));
+	Ring(EHolypawVillain::DockRat, Tidewell + FVector2D(-2000.f, -800.f), 2, 380.f);
+	SpawnHostile(EHolypawVillain::BrineWarden, Tidewell + FVector2D(2800.f, 1600.f));
+
+	// Hearthfold farms.
+	Ring(EHolypawVillain::ScarecrowHound, Hearthfold + FVector2D(2200.f, 1600.f), 3, 700.f);
+	SpawnHostile(EHolypawVillain::HaywireScarecrow, Hearthfold + FVector2D(-1800.f, 1400.f));
+	SpawnHostile(EHolypawVillain::HaywireScarecrow, Hearthfold + FVector2D(2600.f, -900.f));
+	SpawnHostile(EHolypawVillain::ThreshCat, Hearthfold + FVector2D(400.f, 2000.f));
+	SpawnHostile(EHolypawVillain::ThreshCat, Hearthfold + FVector2D(-1200.f, -1600.f));
+	Ring(EHolypawVillain::GrainMite, Hearthfold + FVector2D(1600.f, -1400.f), 3, 360.f);
+	SpawnHostile(EHolypawVillain::HarvestOverseer, Hearthfold + FVector2D(0.f, 3200.f));
+
+	// Emberfen mire.
+	Ring(EHolypawVillain::MireLurker, Emberfen + FVector2D(2000.f, -1600.f), 3, 720.f);
+	SpawnHostile(EHolypawVillain::FenWitchPet, Emberfen + FVector2D(-1400.f, 1200.f));
+	SpawnHostile(EHolypawVillain::FenWitchPet, Emberfen + FVector2D(2400.f, 800.f));
+	SpawnHostile(EHolypawVillain::BogLeech, Emberfen + FVector2D(-2000.f, -900.f));
+	SpawnHostile(EHolypawVillain::BogLeech, Emberfen + FVector2D(900.f, -2200.f));
+	SpawnHostile(EHolypawVillain::EmberToad, Emberfen + FVector2D(400.f, 1800.f));
+	SpawnHostile(EHolypawVillain::EmberToad, Emberfen + FVector2D(-800.f, -1800.f));
+	SpawnHostile(EHolypawVillain::BogKing, Emberfen + FVector2D(0.f, -3000.f));
+
+	// Snowveil + ridge.
+	Ring(EHolypawVillain::FrostMoth, Snowveil + FVector2D(-1600.f, 1100.f), 3, 600.f);
+	SpawnHostile(EHolypawVillain::IceShardCat, Snowveil + FVector2D(1800.f, 900.f));
+	SpawnHostile(EHolypawVillain::IceShardCat, Snowveil + FVector2D(-900.f, -1400.f));
+	SpawnHostile(EHolypawVillain::DriftWolf, Snowveil + FVector2D(400.f, 2400.f));
+	SpawnHostile(EHolypawVillain::DriftWolf, FVector2D(PeakCenter.X - 2400.f, PeakCenter.Y - 800.f));
+	SpawnHostile(EHolypawVillain::AuroraWisp, Snowveil + FVector2D(2200.f, -600.f));
+	SpawnHostile(EHolypawVillain::AuroraWarden, Snowveil + FVector2D(-200.f, 2800.f));
+
+	// Velvet Peak world bosses and shades.
+	SpawnHostile(EHolypawVillain::VelvetTyrant, FVector2D(PeakCenter.X + 900.f, PeakCenter.Y - 1600.f));
+	SpawnHostile(EHolypawVillain::Unmaker, FVector2D(PeakCenter.X - 1400.f, PeakCenter.Y + 2200.f));
+	SpawnHostile(EHolypawVillain::UnstuffedShade, FVector2D(PeakCenter.X + 1800.f, PeakCenter.Y + 400.f));
+	SpawnHostile(EHolypawVillain::UnstuffedShade, FVector2D(PeakCenter.X - 2200.f, PeakCenter.Y - 2400.f));
+
+	PlaceSign(FVector2D(-22000.f, 400.f), NSLOCTEXT("Holypaw", "VSignPark", "Park notice  |  Scrap Dogs and Night Thread after dusk. Codex: V"));
+	PlaceSign(RibbonCity + FVector2D(-500.f, 800.f), NSLOCTEXT("Holypaw", "VSignCity", "Watch  |  Silk Magistrate holds court north of the plaza"));
+	PlaceSign(Tidewell + FVector2D(200.f, 400.f), NSLOCTEXT("Holypaw", "VSignTide", "Harbor watch  |  Brine Warden walks the outer dock"));
+	PlaceSign(Hearthfold + FVector2D(-200.f, 400.f), NSLOCTEXT("Holypaw", "VSignFarm", "Field warning  |  Harvest Overseer north of the mill"));
+	PlaceSign(Emberfen + FVector2D(100.f, 200.f), NSLOCTEXT("Holypaw", "VSignFen", "Fen warning  |  Bog King south in the deepest peat"));
+	PlaceSign(Snowveil + FVector2D(-300.f, 200.f), NSLOCTEXT("Holypaw", "VSignSnow", "Ridge warning  |  Aurora Warden, then Velvet Tyrant, then The Unmaker"));
+}
+
+void AHolypawWorldBuilder::SpawnVillainAt(EHolypawVillain Id, const FVector2D& XY)
+{
+	FActorSpawnParameters Sp;
+	Sp.Owner = this;
+	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const float Z = SampleHeight(XY.X, XY.Y) + 40.f;
+	if (AHostilePet* H = GetWorld()->SpawnActor<AHostilePet>(FVector(XY.X, XY.Y, Z), FRotator::ZeroRotator, Sp))
+	{
+		H->Configure(Id);
+	}
+}
+
+void AHolypawWorldBuilder::SpawnVillainRing(EHolypawVillain Id, const FVector2D& Center, int32 Count, float Radius)
+{
+	const int32 N = FMath::Max(1, Count);
+	for (int32 I = 0; I < N; ++I)
+	{
+		const float Ang = (2.f * PI * I) / static_cast<float>(N) + HashRand(I, static_cast<int32>(Id), 17) * 0.4f;
+		const FVector2D XY = Center + FVector2D(FMath::Cos(Ang) * Radius, FMath::Sin(Ang) * Radius);
+		SpawnVillainAt(Id, XY);
+	}
 }
 
 void AHolypawWorldBuilder::SpawnPlayerStart()

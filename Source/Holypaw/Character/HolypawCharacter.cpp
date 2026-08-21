@@ -102,7 +102,7 @@ void AHolypawCharacter::BeginPlay()
 	Colorize(HeadMesh, FLinearColor(0.95f, 0.72f, 0.66f));
 	Colorize(HaloMesh, FLinearColor(1.f, 0.9f, 0.45f));
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	Toast(TEXT("Wake at the cottage. Follow lanterns to Ribbon City. N opens the map."));
+	Toast(TEXT("Wake at the cottage. Follow lanterns to Ribbon City. V is the Villain Codex. N is the map."));
 }
 
 void AHolypawCharacter::Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color)
@@ -133,6 +133,8 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction(TEXT("Skills"), IE_Pressed, this, &AHolypawCharacter::ToggleSkills);
 	PlayerInputComponent->BindAction(TEXT("Party"), IE_Pressed, this, &AHolypawCharacter::ToggleParty);
 	PlayerInputComponent->BindAction(TEXT("Map"), IE_Pressed, this, &AHolypawCharacter::ToggleMap);
+	PlayerInputComponent->BindAction(TEXT("Codex"), IE_Pressed, this, &AHolypawCharacter::ToggleCodex);
+	PlayerInputComponent->BindAction(TEXT("CloseUI"), IE_Pressed, this, &AHolypawCharacter::CloseOrJump);
 	PlayerInputComponent->BindAction(TEXT("BattleSlap"), IE_Pressed, this, &AHolypawCharacter::BattleSlap);
 	PlayerInputComponent->BindAction(TEXT("BattleBeam"), IE_Pressed, this, &AHolypawCharacter::BattleBeam);
 	PlayerInputComponent->BindAction(TEXT("BattleParty"), IE_Pressed, this, &AHolypawCharacter::BattlePartyAtk);
@@ -281,11 +283,15 @@ void AHolypawCharacter::UpdateZone()
 
 TArray<FString> AHolypawCharacter::GetMapLines() const
 {
+	TArray<FString> Lines;
 	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
-		return It->GetMapLines(GetActorLocation());
+		Lines = It->GetMapLines(GetActorLocation());
+		break;
 	}
-	return {};
+	Lines.Add(FString::Printf(TEXT("Villain Codex  %d seen  %d fell  / %d  (V)"),
+		SeenVillains.Num(), DefeatedVillains.Num(), GetCodexTotal()));
+	return Lines;
 }
 
 AActor* AHolypawCharacter::FindNearestInteractable(float Range) const
@@ -298,6 +304,20 @@ AActor* AHolypawCharacter::FindNearestInteractable(float Range) const
 		if (!I || I == this)
 		{
 			continue;
+		}
+		if (const AHostilePet* H = Cast<AHostilePet>(I))
+		{
+			if (H->bDefeated)
+			{
+				continue;
+			}
+		}
+		if (const AWildFluffy* F = Cast<AWildFluffy>(I))
+		{
+			if (F->bRecruited)
+			{
+				continue;
+			}
 		}
 		const float D = FVector::Dist(GetActorLocation(), I->GetActorLocation());
 		if (D < BestD)
@@ -315,9 +335,7 @@ void AHolypawCharacter::Interact()
 	{
 		if (Mode == EHolypawPawnMode::UI)
 		{
-			bSkillsOpen = false;
-			bPartyOpen = false;
-			Mode = EHolypawPawnMode::Play;
+			ClosePanels();
 		}
 		return;
 	}
@@ -392,10 +410,20 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	BattleEnemy = Enemy;
 	bBattleBusy = false;
 	bPlayerTurn = true;
-	BattleLog = Enemy->DisplayName.ToString() + TEXT(" tries to rip the fluff apart!");
+	BattleTurn = 0;
+	bPartyCut = false;
+	const FVillainDef Def = Enemy->GetDef();
+	BattleLog = Def.IntroLine.IsEmpty()
+		? Enemy->DisplayName.ToString() + TEXT(" tries to rip the fluff apart!")
+		: Def.IntroLine;
 	if (Skills->HasSkill(TEXT("fluffShield")))
 	{
 		BattleLog += TEXT(" Fluff Shield braces you.");
+	}
+	if (!SeenVillains.Contains(Enemy->VillainId))
+	{
+		SeenVillains.Add(Enemy->VillainId);
+		Toast(FString::Printf(TEXT("Codex: %s logged."), *Enemy->DisplayName.ToString()));
 	}
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
@@ -415,7 +443,11 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 
 	if (Kind == TEXT("flee"))
 	{
-		const float Chance = 0.55f + (Skills->HasSkill(TEXT("haloStep")) ? 0.15f : 0.f);
+		float Chance = 0.55f + (Skills->HasSkill(TEXT("haloStep")) ? 0.15f : 0.f);
+		if (E->bBlocksFlee || E->IsBoss())
+		{
+			Chance = 0.12f + (Skills->HasSkill(TEXT("haloStep")) ? 0.08f : 0.f);
+		}
 		if (FMath::FRand() < Chance)
 		{
 			BattleLog = TEXT("You scampered away!");
@@ -423,7 +455,9 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		}
 		else
 		{
-			BattleLog = TEXT("Blocked! No escape.");
+			BattleLog = E->bBlocksFlee
+				? FString::Printf(TEXT("%s blocks the path. No escape."), *E->DisplayName.ToString())
+				: TEXT("Blocked! No escape.");
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 		}
 		return;
@@ -451,9 +485,23 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		const int32 Base = Party->TotalAttack() + 4;
 		const float Mult = Skills->HasSkill(TEXT("partyBond")) ? 1.4f : 1.f;
 		Dmg = FMath::FloorToInt(Base * Mult) + FMath::RandRange(0, 4);
-		BattleLog = Party->Members.Num() > 0
-			? FString::Printf(TEXT("Party Assault deals %d!"), Dmg)
-			: FString::Printf(TEXT("Lonely swipe for %d. Find fluffies!"), Dmg);
+		if (bPartyCut)
+		{
+			Dmg = FMath::Max(1, Dmg / 2);
+			BattleLog = FString::Printf(TEXT("Snipped Party Assault deals %d."), Dmg);
+		}
+		else
+		{
+			BattleLog = Party->Members.Num() > 0
+				? FString::Printf(TEXT("Party Assault deals %d!"), Dmg)
+				: FString::Printf(TEXT("Lonely swipe for %d. Find fluffies!"), Dmg);
+		}
+	}
+
+	if (E->Special == EVillainSpecial::ArmorPlates)
+	{
+		Dmg = FMath::Max(1, FMath::FloorToInt(Dmg * 0.72f));
+		BattleLog += TEXT(" Armor plates dull it.");
 	}
 
 	E->HP -= Dmg;
@@ -470,19 +518,82 @@ void AHolypawCharacter::EnemyBattleSwing()
 	}
 	if (En->HP <= 0)
 	{
+		const FVillainDef Def = En->GetDef();
 		En->Defeat(true);
-		BattleLog = TEXT("The hostile pet is unstuffed!");
-		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.8f, false);
+		BattleLog = Def.DefeatLine.IsEmpty()
+			? TEXT("The hostile pet is unstuffed!")
+			: Def.DefeatLine;
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
 		return;
 	}
 
+	++BattleTurn;
 	int32 Dmg = En->Attack + FMath::RandRange(0, 3);
+	FString Extra;
+	const FString Verb = En->GetDef().AttackLine.IsEmpty() ? TEXT("shreds stuffing") : En->GetDef().AttackLine;
+
+	switch (En->Special)
+	{
+	case EVillainSpecial::DrainFaith:
+	{
+		const int32 Drain = FMath::Min(6, Affection->FP);
+		if (Drain > 0)
+		{
+			Affection->SpendFP(Drain);
+			Extra = FString::Printf(TEXT("  -%d FP."), Drain);
+		}
+		break;
+	}
+	case EVillainSpecial::StealMiracle:
+	{
+		const float Stolen = FMath::Min(10.f, Affection->MiracleCharge);
+		Affection->MiracleCharge = FMath::Max(0.f, Affection->MiracleCharge - Stolen);
+		Extra = TEXT("  Miracle Charge nipped.");
+		break;
+	}
+	case EVillainSpecial::DoubleStrike:
+		Dmg += En->Attack / 2 + FMath::RandRange(0, 2);
+		Extra = TEXT("  Twice!");
+		break;
+	case EVillainSpecial::FrostBite:
+		Dmg += 2;
+		Extra = TEXT("  Seams go numb.");
+		break;
+	case EVillainSpecial::PoisonThread:
+		Dmg += 3;
+		Extra = TEXT("  Poison thread itches.");
+		break;
+	case EVillainSpecial::Rage:
+		if (En->HP * 2 <= En->HPMax)
+		{
+			Dmg = FMath::FloorToInt(Dmg * 1.5f);
+			Extra = TEXT("  RAGE.");
+		}
+		break;
+	case EVillainSpecial::ThreadCut:
+		bPartyCut = true;
+		Extra = TEXT("  Party ribbons snipped.");
+		break;
+	case EVillainSpecial::FaithBurn:
+		Dmg += FMath::Max(0, Affection->FP / 8);
+		Extra = TEXT("  Faith flares against you.");
+		break;
+	default:
+		break;
+	}
+
+	if (En->Rank == EVillainRank::WorldBoss && BattleTurn >= 4)
+	{
+		Dmg += 4;
+		Extra += TEXT("  The air unravels.");
+	}
+
 	if (Skills->HasSkill(TEXT("fluffShield")))
 	{
 		Dmg = FMath::Max(1, Dmg - 3);
 	}
 	HP -= Dmg;
-	BattleLog = En->DisplayName.ToString() + FString::Printf(TEXT(" shreds stuffing for %d!"), Dmg);
+	BattleLog = En->DisplayName.ToString() + TEXT(" ") + Verb + FString::Printf(TEXT(" for %d!"), Dmg) + Extra;
 	if (HP <= 0)
 	{
 		HP = 0;
@@ -529,14 +640,36 @@ void AHolypawCharacter::EndBattle()
 	}
 }
 
-void AHolypawCharacter::GrantKillRewards()
+void AHolypawCharacter::GrantKillRewards(AHostilePet* Fallen)
 {
-	const int32 ApGain = 10 + FMath::RandRange(0, 7);
-	const int32 FpGain = 5 + FMath::RandRange(0, 5);
+	FVillainDef Def;
+	if (Fallen)
+	{
+		Def = Fallen->GetDef();
+		if (!SeenVillains.Contains(Fallen->VillainId))
+		{
+			SeenVillains.Add(Fallen->VillainId);
+		}
+		if (!DefeatedVillains.Contains(Fallen->VillainId))
+		{
+			DefeatedVillains.Add(Fallen->VillainId);
+		}
+	}
+	int32 ApGain = Def.ApReward + FMath::RandRange(0, 7);
+	int32 FpGain = Def.FpReward + FMath::RandRange(0, 5);
+	float Miracle = Def.MiracleReward;
+	if (Fallen && Fallen->IsBoss())
+	{
+		ApGain += 20;
+		FpGain += 12;
+		Miracle += 10.f;
+		HP = FMath::Min(HPMax, HP + 12);
+	}
 	Affection->AddAP(ApGain);
 	Affection->AddFP(FpGain);
-	Affection->AddMiracle(8.f);
-	Toast(FString::Printf(TEXT("Pet defeated! +%d AP · +%d FP"), ApGain, FpGain));
+	Affection->AddMiracle(Miracle);
+	const FString Name = Fallen ? Fallen->DisplayName.ToString() : TEXT("Pet");
+	Toast(FString::Printf(TEXT("%s unstuffed! +%d AP · +%d FP"), *Name, ApGain, FpGain));
 }
 
 void AHolypawCharacter::RestFully()
@@ -596,76 +729,98 @@ void AHolypawCharacter::TryMiracle()
 	Toast(FString::Printf(TEXT("Miracle! Faith floods the land (+%d FP)."), FpGain));
 }
 
-void AHolypawCharacter::ToggleSkills()
+void AHolypawCharacter::ClosePanels()
+{
+	bSkillsOpen = false;
+	bPartyOpen = false;
+	bMapOpen = false;
+	bCodexOpen = false;
+	if (Mode == EHolypawPawnMode::UI)
+	{
+		Mode = EHolypawPawnMode::Play;
+	}
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
+	}
+}
+
+void AHolypawCharacter::SetPanel(bool& Flag)
 {
 	if (Mode == EHolypawPawnMode::Battle)
 	{
 		return;
 	}
-	bSkillsOpen = !bSkillsOpen;
-	bPartyOpen = false;
-	bMapOpen = false;
-	Mode = bSkillsOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	const bool Open = !Flag;
+	ClosePanels();
+	if (Open)
 	{
-		PC->bShowMouseCursor = bSkillsOpen;
-		if (bSkillsOpen)
+		Flag = true;
+		Mode = EHolypawPawnMode::UI;
+		if (APlayerController* PC = Cast<APlayerController>(GetController()))
 		{
+			PC->bShowMouseCursor = true;
 			PC->SetInputMode(FInputModeGameAndUI());
 		}
-		else
-		{
-			PC->SetInputMode(FInputModeGameOnly());
-		}
 	}
+}
+
+void AHolypawCharacter::ToggleSkills()
+{
+	SetPanel(bSkillsOpen);
 }
 
 void AHolypawCharacter::ToggleParty()
 {
-	if (Mode == EHolypawPawnMode::Battle)
-	{
-		return;
-	}
-	bPartyOpen = !bPartyOpen;
-	bSkillsOpen = false;
-	bMapOpen = false;
-	Mode = bPartyOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		PC->bShowMouseCursor = bPartyOpen;
-		if (bPartyOpen)
-		{
-			PC->SetInputMode(FInputModeGameAndUI());
-		}
-		else
-		{
-			PC->SetInputMode(FInputModeGameOnly());
-		}
-	}
+	SetPanel(bPartyOpen);
 }
 
 void AHolypawCharacter::ToggleMap()
 {
-	if (Mode == EHolypawPawnMode::Battle)
+	SetPanel(bMapOpen);
+}
+
+void AHolypawCharacter::ToggleCodex()
+{
+	SetPanel(bCodexOpen);
+}
+
+void AHolypawCharacter::CloseOrJump()
+{
+	if (Mode == EHolypawPawnMode::UI)
 	{
-		return;
+		ClosePanels();
 	}
-	bMapOpen = !bMapOpen;
-	bSkillsOpen = false;
-	bPartyOpen = false;
-	Mode = bMapOpen ? EHolypawPawnMode::UI : EHolypawPawnMode::Play;
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+}
+
+int32 AHolypawCharacter::GetCodexTotal() const
+{
+	return HolypawCatalog::GetVillains().Num();
+}
+
+TArray<FString> AHolypawCharacter::GetCodexLines() const
+{
+	TArray<FString> Lines;
+	for (const FVillainDef& D : HolypawCatalog::GetVillains())
 	{
-		PC->bShowMouseCursor = bMapOpen;
-		if (bMapOpen)
+		const bool Seen = SeenVillains.Contains(D.Id);
+		const bool Beat = DefeatedVillains.Contains(D.Id);
+		if (!Seen)
 		{
-			PC->SetInputMode(FInputModeGameAndUI());
+			Lines.Add(FString::Printf(TEXT("????   %s   ???"), HolypawCatalog::ZoneDisplayName(D.HomeZone)));
+			continue;
 		}
-		else
-		{
-			PC->SetInputMode(FInputModeGameOnly());
-		}
+		const FString Mark = Beat ? TEXT("FELL") : TEXT("SEEN");
+		Lines.Add(FString::Printf(TEXT("%s  %s  %s  %dHP/%dATK  %s"),
+			*D.DisplayName.ToString(),
+			HolypawCatalog::ZoneDisplayName(D.HomeZone),
+			*HolypawCatalog::RankLabel(D.Rank),
+			D.HP,
+			D.Attack,
+			*Mark));
 	}
+	return Lines;
 }
 
 void AHolypawCharacter::TryBuySkill(FName Id)

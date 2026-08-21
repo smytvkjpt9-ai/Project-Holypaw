@@ -28,9 +28,13 @@ void AHolypawPlayerController::OnEscape()
 		{
 			Pawn->ToggleSkills();
 		}
-		else if (Pawn->IsPartyOpen())
+		else if (Pawn->IsMapOpen())
 		{
-			Pawn->ToggleParty();
+			Pawn->ToggleMap();
+		}
+		else if (Pawn->IsCodexOpen())
+		{
+			Pawn->ToggleCodex();
 		}
 	}
 }

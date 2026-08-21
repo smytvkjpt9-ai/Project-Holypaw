@@ -85,7 +85,7 @@ public:
 	bool RecruitFluffy(AWildFluffy* Fluffy);
 	bool HugPerson(AHugHuman* Human);
 	void StartBattle(AHostilePet* Enemy);
-	void GrantKillRewards();
+	void GrantKillRewards(AHostilePet* Fallen);
 	void RestFully();
 	bool BuyFaith(int32 ApCost, int32 FpGain);
 	void TryMiracle();
@@ -111,11 +111,20 @@ public:
 	void ToggleSkills();
 	void ToggleParty();
 	void ToggleMap();
+	void ToggleCodex();
+	void ClosePanels();
 	bool IsSkillsOpen() const { return bSkillsOpen; }
 	bool IsPartyOpen() const { return bPartyOpen; }
 	bool IsMapOpen() const { return bMapOpen; }
+	bool IsCodexOpen() const { return bCodexOpen; }
 	FString GetCompassLine() const { return CompassLine; }
 	TArray<FString> GetMapLines() const;
+	TArray<FString> GetCodexLines() const;
+	int32 GetCodexSeenCount() const { return SeenVillains.Num(); }
+	int32 GetCodexDefeatedCount() const { return DefeatedVillains.Num(); }
+	int32 GetCodexTotal() const;
+	bool HasSeenVillain(EHolypawVillain Id) const { return SeenVillains.Contains(Id); }
+	bool HasDefeatedVillain(EHolypawVillain Id) const { return DefeatedVillains.Contains(Id); }
 	void TryBuySkill(FName Id);
 
 	UFUNCTION()
@@ -130,6 +139,8 @@ public:
 	void Skill5();
 	UFUNCTION()
 	void Skill6();
+	UFUNCTION()
+	void CloseOrJump();
 
 protected:
 	void MoveForward(float Value);
@@ -141,6 +152,7 @@ protected:
 	void UpdateZone();
 	AActor* FindNearestInteractable(float Range) const;
 	void Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color);
+	void SetPanel(bool& Flag);
 
 	UPROPERTY()
 	TObjectPtr<AHostilePet> BattleEnemy;
@@ -148,6 +160,8 @@ protected:
 	FString BattleLog;
 	bool bBattleBusy = false;
 	bool bPlayerTurn = true;
+	int32 BattleTurn = 0;
+	bool bPartyCut = false;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;
@@ -157,7 +171,14 @@ protected:
 	bool bSkillsOpen = false;
 	bool bPartyOpen = false;
 	bool bMapOpen = false;
+	bool bCodexOpen = false;
 	FString CompassLine;
+
+	UPROPERTY()
+	TArray<EHolypawVillain> SeenVillains;
+
+	UPROPERTY()
+	TArray<EHolypawVillain> DefeatedVillains;
 
 	UMaterialInterface* ShapeMat = nullptr;
 

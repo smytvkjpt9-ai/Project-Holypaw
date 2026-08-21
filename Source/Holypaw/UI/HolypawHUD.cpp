@@ -65,15 +65,22 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 220.f, 190.f, P->GetToast(), FLinearColor(1.f, 0.95f, 0.75f), 1.25f);
 	}
 
-	DrawLabel(W - 460.f, Canvas->SizeY - 48.f, TEXT("WASD move  Mouse look  E interact  K skills  P party  M miracle  N map"), FLinearColor(0.75f, 0.7f, 0.9f), 0.85f);
+	DrawLabel(W - 520.f, Canvas->SizeY - 48.f, TEXT("WASD move  Mouse look  E interact  K skills  P party  M miracle  N map  V villains"), FLinearColor(0.75f, 0.7f, 0.9f), 0.85f);
 
 	if (P->Mode == EHolypawPawnMode::Battle)
 	{
 		DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f, P->GetBattleEnemy() ? P->GetBattleEnemy()->DisplayName.ToString() : TEXT("Hostile"), FLinearColor(1.f, 0.55f, 0.62f), 1.8f);
-		DrawLabel(W * 0.5f - 260.f, Canvas->SizeY * 0.28f + 48.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.15f);
 		if (P->GetBattleEnemy())
 		{
-			DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f + 84.f,
+			AHostilePet* E = P->GetBattleEnemy();
+			DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f + 36.f,
+				FString::Printf(TEXT("%s  ·  %s"), *HolypawCatalog::RankLabel(E->Rank), *HolypawCatalog::SpecialLabel(E->Special)),
+				FLinearColor(1.f, 0.72f, 0.55f), 1.05f);
+		}
+		DrawLabel(W * 0.5f - 260.f, Canvas->SizeY * 0.28f + 64.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.15f);
+		if (P->GetBattleEnemy())
+		{
+			DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f + 100.f,
 				FString::Printf(TEXT("Enemy %d/%d"), FMath::Max(0, P->GetBattleEnemy()->HP), P->GetBattleEnemy()->HPMax),
 				FLinearColor(1.f, 0.8f, 0.8f), 1.1f);
 		}
@@ -134,5 +141,23 @@ void AHolypawHUD::DrawHUD()
 			++I;
 		}
 		DrawLabel(W * 0.5f - 90.f, 280.f + I * 30.f + 16.f, TEXT("N to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+	}
+
+	if (P->IsCodexOpen())
+	{
+		DrawLabel(W * 0.5f - 200.f, 200.f, TEXT("Villain Codex"), FLinearColor(1.f, 0.55f, 0.62f), 1.55f);
+		DrawLabel(W * 0.5f - 200.f, 236.f,
+			FString::Printf(TEXT("Seen %d   Fell %d   of %d"), P->GetCodexSeenCount(), P->GetCodexDefeatedCount(), P->GetCodexTotal()),
+			FLinearColor(0.95f, 0.82f, 0.7f), 1.05f);
+		const TArray<FString> Entries = P->GetCodexLines();
+		const int32 ColH = 20;
+		for (int32 I = 0; I < Entries.Num(); ++I)
+		{
+			const bool Left = I < ColH;
+			const float X = Left ? (W * 0.5f - 430.f) : (W * 0.5f + 20.f);
+			const int32 Row = Left ? I : (I - ColH);
+			DrawLabel(X, 270.f + Row * 22.f, Entries[I], FLinearColor(0.92f, 0.86f, 0.95f), 0.82f);
+		}
+		DrawLabel(W * 0.5f - 160.f, Canvas->SizeY - 80.f, TEXT("V or Esc to close   ???? = not yet met"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 }

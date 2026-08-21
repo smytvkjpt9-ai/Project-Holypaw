@@ -31,6 +31,84 @@ enum class EFluffyId : uint8
 	Dragon
 };
 
+UENUM(BlueprintType)
+enum class EHolypawVillain : uint8
+{
+	ScrapDog UMETA(DisplayName = "Scrap Dog"),
+	CorpCat UMETA(DisplayName = "Corp Cat"),
+	RazorPetbot UMETA(DisplayName = "Razor Petbot"),
+	VoidRat UMETA(DisplayName = "Void Rat"),
+	NightThread UMETA(DisplayName = "Night Thread"),
+	StitchedWolf UMETA(DisplayName = "Stitched Wolf"),
+	ParkProwler UMETA(DisplayName = "Park Prowler"),
+	Tatterfox UMETA(DisplayName = "Tatterfox"),
+	AlleyScrapDog UMETA(DisplayName = "Alley Scrap Dog"),
+	RibbonEnforcer UMETA(DisplayName = "Ribbon Enforcer"),
+	TinselGolem UMETA(DisplayName = "Tinsel Golem"),
+	GoldSnipper UMETA(DisplayName = "Gold Snipper"),
+	PlazaCorpCat UMETA(DisplayName = "Plaza Corp Cat"),
+	SewerVoidRat UMETA(DisplayName = "Sewer Void Rat"),
+	SilkMagistrate UMETA(DisplayName = "Silk Magistrate"),
+	SaltCrab UMETA(DisplayName = "Salt Crab"),
+	HarborHook UMETA(DisplayName = "Harbor Hook"),
+	BrineGull UMETA(DisplayName = "Brine Gull"),
+	DockRat UMETA(DisplayName = "Dock Rat"),
+	BrineWarden UMETA(DisplayName = "Brine Warden"),
+	ScarecrowHound UMETA(DisplayName = "Scarecrow Hound"),
+	HaywireScarecrow UMETA(DisplayName = "Haywire Scarecrow"),
+	ThreshCat UMETA(DisplayName = "Thresh Cat"),
+	GrainMite UMETA(DisplayName = "Grain Mite"),
+	HarvestOverseer UMETA(DisplayName = "Harvest Overseer"),
+	MireLurker UMETA(DisplayName = "Mire Lurker"),
+	FenWitchPet UMETA(DisplayName = "Fen Witch-Pet"),
+	BogLeech UMETA(DisplayName = "Bog Leech"),
+	EmberToad UMETA(DisplayName = "Ember Toad"),
+	BogKing UMETA(DisplayName = "Bog King"),
+	FrostMoth UMETA(DisplayName = "Frost Moth"),
+	IceShardCat UMETA(DisplayName = "Ice Shard Cat"),
+	DriftWolf UMETA(DisplayName = "Drift Wolf"),
+	AuroraWisp UMETA(DisplayName = "Aurora Wisp"),
+	AuroraWarden UMETA(DisplayName = "Aurora Warden"),
+	VelvetTyrant UMETA(DisplayName = "Velvet Tyrant"),
+	Unmaker UMETA(DisplayName = "The Unmaker"),
+	MiracleEater UMETA(DisplayName = "Miracle Eater"),
+	ButtonThief UMETA(DisplayName = "Button Thief"),
+	UnstuffedShade UMETA(DisplayName = "Unstuffed Shade")
+};
+
+UENUM(BlueprintType)
+enum class EVillainRank : uint8
+{
+	Minion,
+	Elite,
+	Boss,
+	WorldBoss
+};
+
+UENUM(BlueprintType)
+enum class EVillainShape : uint8
+{
+	Cube,
+	Sphere,
+	Cone,
+	Cylinder
+};
+
+UENUM(BlueprintType)
+enum class EVillainSpecial : uint8
+{
+	Rip,
+	DrainFaith,
+	StealMiracle,
+	DoubleStrike,
+	ArmorPlates,
+	FrostBite,
+	PoisonThread,
+	Rage,
+	ThreadCut,
+	FaithBurn
+};
+
 USTRUCT(BlueprintType)
 struct HOLYPAW_API FFluffyTypeDef
 {
@@ -68,6 +146,75 @@ struct HOLYPAW_API FPartyMember
 
 	UPROPERTY(BlueprintReadOnly)
 	FString Rarity = TEXT("common");
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FVillainDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EHolypawVillain Id = EHolypawVillain::ScrapDog;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EHolypawZone HomeZone = EHolypawZone::ForestCottage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVillainRank Rank = EVillainRank::Minion;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVillainShape Shape = EVillainShape::Cube;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVillainSpecial Special = EVillainSpecial::Rip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor Color = FLinearColor(0.45f, 0.4f, 0.42f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor AccentColor = FLinearColor(0.28f, 0.22f, 0.24f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 HP = 28;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Attack = 7;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Scale = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float AggroRange = 900.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RespawnSeconds = 25.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bBlocksFlee = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 ApReward = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 FpReward = 5;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MiracleReward = 8.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString IntroLine;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString AttackLine;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString DefeatLine;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString CodexBlurb;
 };
 
 USTRUCT(BlueprintType)
@@ -156,4 +303,9 @@ namespace HolypawCatalog
 		default: return TEXT("The Living World");
 		}
 	}
+
+	const TArray<FVillainDef>& GetVillains();
+	FVillainDef GetVillain(EHolypawVillain Id);
+	FString SpecialLabel(EVillainSpecial Special);
+	FString RankLabel(EVillainRank Rank);
 }
