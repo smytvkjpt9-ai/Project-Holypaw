@@ -1,0 +1,25 @@
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+.vs/
+.idea/
+*.log
+
+# Local generated Content (keep folder)
+Content/Holypaw/Maps/
+Content/Holypaw/__ExternalActors__/
+Content/Holypaw/__ExternalObjects__/
+
+# OS
+.DS_Store
+Thumbs.db

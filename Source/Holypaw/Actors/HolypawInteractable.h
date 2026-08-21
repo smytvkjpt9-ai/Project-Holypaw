@@ -1,0 +1,32 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "HolypawInteractable.generated.h"
+
+UCLASS()
+class HOLYPAW_API AHolypawInteractable : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	AHolypawInteractable();
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> Root;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Mesh;
+
+	UFUNCTION(BlueprintCallable, Category = "Holypaw")
+	virtual FText GetPrompt() const { return FText::FromString(TEXT("Interact")); }
+
+	UFUNCTION(BlueprintCallable, Category = "Holypaw")
+	virtual bool Interact(class AHolypawCharacter* InstigatorPawn);
+
+	void SetSolidColor(const FLinearColor& Color);
+
+protected:
+	UStaticMesh* CubeMesh = nullptr;
+	UMaterialInterface* ShapeMat = nullptr;
+};
