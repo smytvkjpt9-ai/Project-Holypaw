@@ -109,6 +109,38 @@ enum class EVillainSpecial : uint8
 	FaithBurn
 };
 
+UENUM(BlueprintType)
+enum class EHolypawSkillTree : uint8
+{
+	Hug UMETA(DisplayName = "Hug Tree"),
+	Miracle UMETA(DisplayName = "Miracle Tree"),
+	Party UMETA(DisplayName = "Party Tree")
+};
+
+UENUM(BlueprintType)
+enum class EHolypawFaction : uint8
+{
+	Wild,
+	PolyMill
+};
+
+UENUM(BlueprintType)
+enum class EHolypawMission : uint8
+{
+	Wake,
+	FirstFriend,
+	FirstRip,
+	FirstMiracle,
+	RibbonGates,
+	ConvertThree,
+	PolyCourt,
+	OutlandRoads,
+	FourRites,
+	VelvetCrown,
+	Unmake,
+	BearFaith
+};
+
 USTRUCT(BlueprintType)
 struct HOLYPAW_API FFluffyTypeDef
 {
@@ -215,6 +247,9 @@ struct HOLYPAW_API FVillainDef
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FString CodexBlurb;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EHolypawFaction Faction = EHolypawFaction::Wild;
 };
 
 USTRUCT(BlueprintType)
@@ -236,6 +271,27 @@ struct HOLYPAW_API FSkillDef
 
 	UPROPERTY(BlueprintReadOnly)
 	FName Prerequisite;
+
+	UPROPERTY(BlueprintReadOnly)
+	EHolypawSkillTree Tree = EHolypawSkillTree::Hug;
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FMissionDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	EHolypawMission Id = EHolypawMission::Wake;
+
+	UPROPERTY(BlueprintReadOnly)
+	FText Title;
+
+	UPROPERTY(BlueprintReadOnly)
+	FText Brief;
+
+	UPROPERTY(BlueprintReadOnly)
+	FText Hint;
 };
 
 namespace HolypawCatalog
@@ -262,27 +318,11 @@ namespace HolypawCatalog
 		return Out;
 	}
 
-	inline TArray<FSkillDef> MakeSkills()
-	{
-		TArray<FSkillDef> Out;
-		auto Add = [&](const TCHAR* Id, const TCHAR* Name, int32 Cost, const TCHAR* Desc, const TCHAR* Req)
-		{
-			FSkillDef S;
-			S.Id = Id;
-			S.DisplayName = FText::FromString(Name);
-			S.Description = FText::FromString(Desc);
-			S.Cost = Cost;
-			S.Prerequisite = Req;
-			Out.Add(S);
-		};
-		Add(TEXT("softFur"), TEXT("Soft Fur"), 15, TEXT("+3 Attack. Your hugs feel irresistible."), TEXT(""));
-		Add(TEXT("buttonEyes"), TEXT("Button Eyes"), 25, TEXT("+20% Affection from hugs."), TEXT("softFur"));
-		Add(TEXT("haloStep"), TEXT("Halo Step"), 40, TEXT("+1.2 move speed and a slight glow."), TEXT("softFur"));
-		Add(TEXT("partyBond"), TEXT("Party Bond"), 35, TEXT("Party Assault deals +40% damage."), TEXT("buttonEyes"));
-		Add(TEXT("miracleEcho"), TEXT("Miracle Echo"), 50, TEXT("Miracles grant +50% Faith."), TEXT("haloStep"));
-		Add(TEXT("fluffShield"), TEXT("Fluff Shield"), 45, TEXT("+20 Max HP and start battles shielded."), TEXT("partyBond"));
-		return Out;
-	}
+	TArray<FSkillDef> MakeSkills();
+	TArray<FSkillDef> SkillsForTree(EHolypawSkillTree Tree);
+	const TCHAR* SkillTreeName(EHolypawSkillTree Tree);
+	const TArray<FMissionDef>& GetMissions();
+	FMissionDef GetMission(EHolypawMission Id);
 
 	inline const TCHAR* ZoneDisplayName(EHolypawZone Zone)
 	{

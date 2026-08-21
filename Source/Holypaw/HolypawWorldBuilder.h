@@ -74,6 +74,7 @@ protected:
 	void SpawnGameplayActors();
 	void SpawnVillainAt(EHolypawVillain Id, const FVector2D& XY);
 	void SpawnVillainRing(EHolypawVillain Id, const FVector2D& Center, int32 Count, float Radius);
+	void BuildPolyMill();
 	void SpawnPlayerStart();
 	void BuildTown(const FVector2D& Center, const FName& Prefix, const FLinearColor& Accent, int32 Cols, int32 Rows, bool bTallSpire);
 	void BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt);

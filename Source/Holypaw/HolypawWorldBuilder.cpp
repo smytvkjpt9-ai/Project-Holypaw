@@ -723,6 +723,7 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	PlaceSign(Hearthfold + FVector2D(-200.f, 400.f), NSLOCTEXT("Holypaw", "VSignFarm", "Field warning  |  Harvest Overseer north of the mill"));
 	PlaceSign(Emberfen + FVector2D(100.f, 200.f), NSLOCTEXT("Holypaw", "VSignFen", "Fen warning  |  Bog King south in the deepest peat"));
 	PlaceSign(Snowveil + FVector2D(-300.f, 200.f), NSLOCTEXT("Holypaw", "VSignSnow", "Ridge warning  |  Aurora Warden, then Velvet Tyrant, then The Unmaker"));
+	BuildPolyMill();
 }
 
 void AHolypawWorldBuilder::SpawnVillainAt(EHolypawVillain Id, const FVector2D& XY)
@@ -746,6 +747,26 @@ void AHolypawWorldBuilder::SpawnVillainRing(EHolypawVillain Id, const FVector2D&
 		const FVector2D XY = Center + FVector2D(FMath::Cos(Ang) * Radius, FMath::Sin(Ang) * Radius);
 		SpawnVillainAt(Id, XY);
 	}
+}
+
+void AHolypawWorldBuilder::BuildPolyMill()
+{
+	const FVector2D Mill = RibbonCity + FVector2D(5200.f, -800.f);
+	const float Z = SampleHeight(Mill.X, Mill.Y);
+	for (int32 I = 0; I < 5; ++I)
+	{
+		PlaceCube(FVector(Mill.X + I * 280.f, Mill.Y, Z + 220.f + I * 40.f),
+			FVector(2.2f, 1.6f, 4.4f + I * 0.4f),
+			FLinearColor(0.55f, 0.52f, 0.48f),
+			MakeName(TEXT("PolyShed")));
+	}
+	PlaceCube(FVector(Mill.X + 400.f, Mill.Y + 200.f, Z + 380.f), FVector(1.2f, 1.2f, 7.5f),
+		FLinearColor(0.72f, 0.28f, 0.38f), MakeName(TEXT("PolyStack")));
+	PlaceSign(Mill + FVector2D(-200.f, 0.f),
+		NSLOCTEXT("Holypaw", "PolyMill", "POLY MILL  |  cheap polyester, identical smiles, no handmade soul"));
+	SpawnVillainAt(EHolypawVillain::RazorPetbot, Mill + FVector2D(600.f, 400.f));
+	SpawnVillainAt(EHolypawVillain::RibbonEnforcer, Mill + FVector2D(200.f, -500.f));
+	SpawnVillainAt(EHolypawVillain::GoldSnipper, Mill + FVector2D(-300.f, 300.f));
 }
 
 void AHolypawWorldBuilder::SpawnPlayerStart()
@@ -790,7 +811,8 @@ FString AHolypawWorldBuilder::GetCompassLine(const FVector& From) const
 		{TEXT("Emberfen"), Emberfen},
 		{TEXT("Snowveil"), Snowveil},
 		{TEXT("Velvet Peak"), PeakCenter},
-		{TEXT("Cottage"), FVector2D(CottageSpawn.X, CottageSpawn.Y)}
+		{TEXT("Cottage"), FVector2D(CottageSpawn.X, CottageSpawn.Y)},
+		{TEXT("Poly Mill"), RibbonCity + FVector2D(5200.f, -800.f)}
 	};
 	FString BestName = TEXT("Ribbon City");
 	float BestD = TNumericLimits<float>::Max();
@@ -831,7 +853,8 @@ TArray<FString> AHolypawWorldBuilder::GetMapLines(const FVector& From) const
 		{TEXT("Hearthfold"), Hearthfold},
 		{TEXT("Emberfen"), Emberfen},
 		{TEXT("Snowveil"), Snowveil},
-		{TEXT("Velvet Peak shrine"), PeakCenter}
+		{TEXT("Velvet Peak shrine"), PeakCenter},
+		{TEXT("Poly Mill"), RibbonCity + FVector2D(5200.f, -800.f)}
 	};
 	const FVector2D P(From.X, From.Y);
 	for (const FHolypawLandmark& M : Marks)

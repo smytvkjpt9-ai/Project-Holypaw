@@ -28,6 +28,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	const TArray<FSkillDef>& GetCatalog() const { return Catalog; }
 
+	UFUNCTION(BlueprintCallable, Category = "Holypaw")
+	TArray<FSkillDef> GetTreeSkills(EHolypawSkillTree Tree) const;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
+	EHolypawSkillTree ActiveTree = EHolypawSkillTree::Hug;
+
+	void CycleTree();
+
 	const FSkillDef* FindDef(FName Id) const;
 
 private:

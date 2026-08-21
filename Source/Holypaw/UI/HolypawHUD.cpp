@@ -2,7 +2,7 @@
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"
 #include "Components/SkillTreeComponent.h"
-#include "Components/PartyComponent.h"
+#include "Components/MissionComponent.h"
 #include "Actors/HostilePet.h"
 #include "HolypawTypes.h"
 #include "Engine/Canvas.h"
@@ -53,6 +53,10 @@ void AHolypawHUD::DrawHUD()
 	if (!P->GetCompassLine().IsEmpty() && P->Mode == EHolypawPawnMode::Play)
 	{
 		DrawLabel(32.f, 176.f, P->GetCompassLine(), FLinearColor(0.85f, 0.9f, 1.f), 1.0f);
+		if (P->Story)
+		{
+			DrawLabel(32.f, 200.f, P->Story->GetCurrent().Title.ToString(), FLinearColor(1.f, 0.82f, 0.7f), 0.95f);
+		}
 	}
 
 	if (!P->GetPrompt().IsEmpty())
@@ -65,36 +69,45 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 220.f, 190.f, P->GetToast(), FLinearColor(1.f, 0.95f, 0.75f), 1.25f);
 	}
 
-	DrawLabel(W - 520.f, Canvas->SizeY - 48.f, TEXT("WASD move  Mouse look  E interact  K skills  P party  M miracle  N map  V villains"), FLinearColor(0.75f, 0.7f, 0.9f), 0.85f);
+	DrawLabel(W - 560.f, Canvas->SizeY - 48.f, TEXT("WASD  E  K trees  J journal  P party  M miracle  N map  V villains"), FLinearColor(0.75f, 0.7f, 0.9f), 0.82f);
 
 	if (P->Mode == EHolypawPawnMode::Battle)
 	{
-		DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f, P->GetBattleEnemy() ? P->GetBattleEnemy()->DisplayName.ToString() : TEXT("Hostile"), FLinearColor(1.f, 0.55f, 0.62f), 1.8f);
+		const float CX = W * 0.5f;
+		const float CY = Canvas->SizeY * 0.22f;
+		FCanvasTileItem Dim(FVector2D(0.f, Canvas->SizeY * 0.12f), FVector2D(W, Canvas->SizeY * 0.5f), FLinearColor(0.04f, 0.02f, 0.06f, 0.55f));
+		Dim.BlendMode = SE_BLEND_Translucent;
+		Canvas->DrawItem(Dim);
+		DrawLabel(CX - 280.f, CY, TEXT("YOU"), FLinearColor(1.f, 0.85f, 0.92f), 1.2f);
+		DrawLabel(CX + 80.f, CY, P->GetBattleEnemy() ? P->GetBattleEnemy()->DisplayName.ToString() : TEXT("Hostile"), FLinearColor(1.f, 0.55f, 0.62f), 1.35f);
+		DrawLabel(CX - 40.f, CY + 8.f, TEXT("VS"), FLinearColor(1.f, 0.9f, 0.5f), 1.6f);
+		DrawLabel(CX - 280.f, CY + 36.f, FString::Printf(TEXT("HP %d/%d"), P->HP, P->HPMax), FLinearColor(0.9f, 0.95f, 1.f), 1.05f);
 		if (P->GetBattleEnemy())
 		{
 			AHostilePet* E = P->GetBattleEnemy();
-			DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f + 36.f,
-				FString::Printf(TEXT("%s  ·  %s"), *HolypawCatalog::RankLabel(E->Rank), *HolypawCatalog::SpecialLabel(E->Special)),
-				FLinearColor(1.f, 0.72f, 0.55f), 1.05f);
+			DrawLabel(CX + 80.f, CY + 36.f,
+				FString::Printf(TEXT("%s  %s  HP %d/%d"), *HolypawCatalog::RankLabel(E->Rank), *HolypawCatalog::SpecialLabel(E->Special), FMath::Max(0, E->HP), E->HPMax),
+				FLinearColor(1.f, 0.8f, 0.8f), 1.0f);
+			if (E->GetDef().Faction == EHolypawFaction::PolyMill)
+			{
+				DrawLabel(CX + 80.f, CY + 60.f, TEXT("Poly Mill — cheap polyester"), FLinearColor(0.85f, 0.7f, 0.45f), 0.95f);
+			}
 		}
-		DrawLabel(W * 0.5f - 260.f, Canvas->SizeY * 0.28f + 64.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.15f);
-		if (P->GetBattleEnemy())
-		{
-			DrawLabel(W * 0.5f - 200.f, Canvas->SizeY * 0.28f + 100.f,
-				FString::Printf(TEXT("Enemy %d/%d"), FMath::Max(0, P->GetBattleEnemy()->HP), P->GetBattleEnemy()->HPMax),
-				FLinearColor(1.f, 0.8f, 0.8f), 1.1f);
-		}
-		DrawLabel(64.f, Canvas->SizeY - 220.f, TEXT("1  Soft Slap"), FLinearColor(1.f, 1.f, 1.f), 1.3f);
-		DrawLabel(64.f, Canvas->SizeY - 180.f, TEXT("2  Cuddle Beam (12 FP)"), FLinearColor(0.85f, 0.8f, 1.f), 1.3f);
-		DrawLabel(64.f, Canvas->SizeY - 140.f, TEXT("3  Party Assault"), FLinearColor(0.7f, 0.95f, 0.85f), 1.3f);
-		DrawLabel(64.f, Canvas->SizeY - 100.f, TEXT("4  Flee"), FLinearColor(1.f, 0.7f, 0.75f), 1.3f);
+		DrawLabel(CX - 300.f, CY + 88.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.12f);
+		DrawLabel(64.f, Canvas->SizeY - 260.f, TEXT("1  Soft Slap"), FLinearColor(1.f, 1.f, 1.f), 1.2f);
+		DrawLabel(64.f, Canvas->SizeY - 228.f, TEXT("2  Cuddle Beam (12 FP)"), FLinearColor(0.85f, 0.8f, 1.f), 1.2f);
+		DrawLabel(64.f, Canvas->SizeY - 196.f, TEXT("3  Party Assault"), FLinearColor(0.7f, 0.95f, 0.85f), 1.2f);
+		DrawLabel(64.f, Canvas->SizeY - 164.f, TEXT("4  Flee"), FLinearColor(1.f, 0.7f, 0.75f), 1.2f);
+		DrawLabel(64.f, Canvas->SizeY - 132.f, TEXT("5  Guard"), FLinearColor(0.85f, 0.9f, 1.f), 1.2f);
+		DrawLabel(64.f, Canvas->SizeY - 100.f, TEXT("6  Hymn (8 FP)"), FLinearColor(1.f, 0.85f, 0.55f), 1.2f);
 	}
 
 	if (P->IsSkillsOpen() && P->Skills)
 	{
-		DrawLabel(W * 0.5f - 160.f, 230.f, TEXT("Affection Skill Tree"), FLinearColor(1.f, 0.8f, 0.9f), 1.5f);
+		DrawLabel(W * 0.5f - 200.f, 210.f, HolypawCatalog::SkillTreeName(P->Skills->ActiveTree), FLinearColor(1.f, 0.8f, 0.9f), 1.5f);
+		DrawLabel(W * 0.5f - 200.f, 242.f, TEXT("Tab cycles Hug / Miracle / Party trees"), FLinearColor(0.8f, 0.75f, 0.9f), 0.95f);
 		int32 I = 1;
-		for (const FSkillDef& S : P->Skills->GetCatalog())
+		for (const FSkillDef& S : P->Skills->GetTreeSkills(P->Skills->ActiveTree))
 		{
 			const bool Owned = P->Skills->HasSkill(S.Id);
 			const bool Can = P->Skills->CanBuy(S.Id, P->Affection->AP);
@@ -104,10 +117,11 @@ void AHolypawHUD::DrawHUD()
 				S.Cost,
 				Owned ? TEXT("  OWNED") : TEXT(""),
 				(!Owned && Can) ? TEXT("  [buy]") : TEXT(""));
-			DrawLabel(W * 0.5f - 220.f, 270.f + I * 28.f, Line, Owned ? FLinearColor(0.7f, 0.55f, 1.f) : (Can ? FLinearColor(1.f, 0.8f, 0.9f) : FLinearColor(0.55f, 0.5f, 0.6f)), 1.05f);
+			DrawLabel(W * 0.5f - 240.f, 268.f + I * 30.f, Line, Owned ? FLinearColor(0.7f, 0.55f, 1.f) : (Can ? FLinearColor(1.f, 0.8f, 0.9f) : FLinearColor(0.55f, 0.5f, 0.6f)), 1.05f);
+			DrawLabel(W * 0.5f - 220.f, 268.f + I * 30.f + 16.f, S.Description.ToString(), FLinearColor(0.7f, 0.65f, 0.78f), 0.8f);
 			++I;
 		}
-		DrawLabel(W * 0.5f - 180.f, 270.f + I * 28.f + 12.f, TEXT("Press 1-6 to buy   K to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+		DrawLabel(W * 0.5f - 180.f, 268.f + I * 30.f + 20.f, TEXT("Press 1-6 to buy   K to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 
 	if (P->IsPartyOpen() && P->Party)
@@ -159,5 +173,17 @@ void AHolypawHUD::DrawHUD()
 			DrawLabel(X, 270.f + Row * 22.f, Entries[I], FLinearColor(0.92f, 0.86f, 0.95f), 0.82f);
 		}
 		DrawLabel(W * 0.5f - 160.f, Canvas->SizeY - 80.f, TEXT("V or Esc to close   ???? = not yet met"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+	}
+
+	if (P->IsJournalOpen())
+	{
+		DrawLabel(W * 0.5f - 180.f, 200.f, TEXT("Bear Faith Journal"), FLinearColor(1.f, 0.85f, 0.65f), 1.5f);
+		int32 I = 0;
+		for (const FString& Line : P->GetJournalLines())
+		{
+			DrawLabel(W * 0.5f - 360.f, 250.f + I * 24.f, Line, FLinearColor(0.95f, 0.9f, 0.82f), 0.95f);
+			++I;
+		}
+		DrawLabel(W * 0.5f - 90.f, Canvas->SizeY - 80.f, TEXT("J or Esc to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 }

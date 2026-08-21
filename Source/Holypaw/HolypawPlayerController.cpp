@@ -32,9 +32,9 @@ void AHolypawPlayerController::OnEscape()
 		{
 			Pawn->ToggleMap();
 		}
-		else if (Pawn->IsCodexOpen())
+		else if (Pawn->IsJournalOpen())
 		{
-			Pawn->ToggleCodex();
+			Pawn->ToggleJournal();
 		}
 	}
 }

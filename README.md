@@ -1,71 +1,69 @@
 # The Fluffy Ascendancy (Project Holypaw)
 
-Unreal Engine **5.8** C++ prototype. Same painterly / plush look everywhere. No Megascans. No Pokémon IP.
+Unreal Engine **5.8** C++ prototype. Same painterly / plush look everywhere. No Megascans. No Pokémon IP. No Sanrio IP.
 
-You wake in a **forest cottage**, follow lanterns into **Ribbon City**, then out to four more settlements. The old browser toy is in [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
+You are a **handmade teddy**. The **Poly Mill** mass-produces cheap polyester copies and wants the world identical and unloved. You hug people into the **Bear Faith**, recruit fluffies, and unstuff Poly officers until humans keep handmade toys and drop the factory empire.
 
-## The living world (generated at Play)
+The old browser toy is in [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
-| Place | What it is |
-| --- | --- |
-| Stuffed Park cottage | Home. Heal on the porch. |
-| Ribbon City | Main city: plaza, spire, market stall, people |
-| Tidewell | Harbor town on the coast, docks, water |
-| Hearthfold | Farm town in the homestead hills |
-| Emberfen | Stilted village in Crimson Hollow |
-| Snowveil | Alpine hamlet on the way to the peak |
-| Velvet Peak | Sacred mountain and shrine. **Velvet Tyrant** and **The Unmaker** |
+## Campaign (J journal)
 
-Roads with lanterns connect cottage → Ribbon City → the other towns. Press **N** for distances. Press **V** for the Villain Codex.
+Twelve missions, start to finish:
 
-## Villains (all 40 in the world)
+1. Wake in Stuffed Park
+2. Recruit a fluffy
+3. Unstuff a Scrap Dog
+4. Fire your first Miracle (M)
+5. Reach Ribbon City
+6. Convert three people by hugging
+7. Defeat Silk Magistrate (Poly Court)
+8. Visit Tidewell, Hearthfold, Emberfen, Snowveil
+9. Four Rites — the four regional bosses
+10. Velvet Tyrant on the peak
+11. The Unmaker
+12. Miracle on Velvet Peak — people kneel, Poly Mill falls
 
-The four hostiles from the HTML prototype (Scrap Dog, Corp Cat, Razor Petbot, Void Rat) plus regional packs, elites, bosses, and two world bosses. Each has a catalog id, look, special, intro/attack/defeat lines, and Codex entry.
+## Combat
 
-| Region | Boss | Special |
-| --- | --- | --- |
-| Ribbon City | Silk Magistrate | Faith Burn, blocks flee |
-| Tidewell | Brine Warden | Double Strike, blocks flee |
-| Hearthfold | Harvest Overseer | Cut Party, blocks flee |
-| Emberfen | Bog King | Poison Thread, blocks flee |
-| Snowveil | Aurora Warden | Frostbite, blocks flee |
-| Velvet Peak | Velvet Tyrant (world) | Rage |
-| Velvet Peak | The Unmaker (world) | Faith Burn |
+Camera pulls in. Commands: **1** Slap **2** Beam **3** Party **4** Flee **5** Guard **6** Hymn. Poly Mill enemies take extra damage from **Poly Rip**.
 
-Specials: Rip, Drain Faith, Eat Miracle, Double Strike, Armor Plates, Frostbite, Poison Thread, Rage, Cut Party, Faith Burn. First sighting logs the Codex. Boss kills pay extra AP/FP and mend stuffing.
+## Three skill trees (K, Tab to cycle)
 
-## Open in Unreal 5.8
+Hug, Miracle, Party — six skills each (1–6 to buy the current tree).
 
-1. Install **Unreal Engine 5.8** and a C++ toolchain (VS 2022 Game development / Xcode).
-2. Right-click `Holypaw.uproject` → Generate project files.
-3. Open the project, compile `Holypaw`, press **Play**.
+## Art honesty
 
-Plugins in the `.uproject`: Python Editor Script, Procedural Mesh, Enhanced Input, Model Context Protocol (optional).
+This cloud VM cannot sculpt Nanite characters or ship a production FBX pipeline. Actors are **assembled engine primitives** (ears, snout, paws, eyes, human heads/arms, fluffy tails) in the Holypaw palette. Drop real meshes in Unreal on your PC later; the C++ sockets are already named.
 
-Optional editor helper: `py "Tools/GenerateWorld.py"` after compile.
+## Testing without the editor
+
+```
+python3 Tools/ValidateHolypaw.py
+```
+
+Checks villain/mission catalogs, world spawns, skill-tree counts, and campaign hooks. Playtesting still needs UE 5.8 on your machine.
 
 ## Controls
 
 | Input | Action |
 | --- | --- |
-| WASD / left stick | Move |
-| Mouse / right stick | Look |
-| Space | Jump |
-| E | Interact (recruit, hug, rest, stall, sign, challenge) |
-| K | Skill tree (1–6 to buy) |
+| WASD / mouse | Move / look |
+| E | Interact |
+| K | Skill trees (Tab cycles) |
+| J | Journal |
 | P | Party |
-| M | Miracle (bar full) |
-| N | Survey map |
+| M | Miracle |
+| N | Map |
 | V | Villain Codex |
 | Esc | Close menus |
-| 1–4 in battle | Slap / Cuddle Beam / Party Assault / Flee |
+| 1–6 in battle | Slap / Beam / Party / Flee / Guard / Hymn |
 
-Faith stalls in each city: **10 AP → 8 FP**.
+Faith stalls: **10 AP → 8 FP**.
 
-## Art
+## Open in Unreal 5.8
 
-One look for cottage, woods, every city, snow, and coast. No Quixel / Megascans. Plush palette (rose, mint, gold, powder blue). Villains use the same painterly shapes, just meaner colors.
+1. Install **Unreal Engine 5.8** and a C++ toolchain.
+2. Right-click `Holypaw.uproject` → Generate project files.
+3. Compile `Holypaw`, press **Play**.
 
-## Cursor MCP later (your PC)
-
-`ModelContextProtocol.StartServer` → `http://127.0.0.1:8000/mcp`. See `.cursor/mcp.json.example`.
+Optional: `py "Tools/GenerateWorld.py"` after compile. MCP later: `ModelContextProtocol.StartServer` → see `.cursor/mcp.json.example`.

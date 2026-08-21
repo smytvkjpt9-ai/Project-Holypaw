@@ -27,6 +27,15 @@ public:
 
 	FVector Home = FVector::ZeroVector;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> EarL;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> EarR;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Tail;
+
 private:
 	float WanderT = 0.f;
 	FVector Vel = FVector::ZeroVector;

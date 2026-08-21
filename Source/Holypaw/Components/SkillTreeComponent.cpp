@@ -50,3 +50,22 @@ bool USkillTreeComponent::Buy(FName Id, int32& InOutAP)
 	Owned.Add(Id, true);
 	return true;
 }
+
+TArray<FSkillDef> USkillTreeComponent::GetTreeSkills(EHolypawSkillTree Tree) const
+{
+	TArray<FSkillDef> Out;
+	for (const FSkillDef& S : Catalog)
+	{
+		if (S.Tree == Tree)
+		{
+			Out.Add(S);
+		}
+	}
+	return Out;
+}
+
+void USkillTreeComponent::CycleTree()
+{
+	const uint8 N = static_cast<uint8>(ActiveTree) + 1;
+	ActiveTree = static_cast<EHolypawSkillTree>(N % 3);
+}

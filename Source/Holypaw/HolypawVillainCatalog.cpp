@@ -356,6 +356,19 @@ namespace HolypawCatalog
 			TEXT("The shade folds into a spare blanket."),
 			TEXT("Peak remnant of failed hugs. Hurts more if you carry Faith."));
 
+		const TArray<EHolypawVillain> Poly = {
+			EHolypawVillain::CorpCat, EHolypawVillain::RazorPetbot, EHolypawVillain::PlazaCorpCat,
+			EHolypawVillain::RibbonEnforcer, EHolypawVillain::TinselGolem, EHolypawVillain::GoldSnipper,
+			EHolypawVillain::SilkMagistrate, EHolypawVillain::MiracleEater, EHolypawVillain::Unmaker
+		};
+		for (FVillainDef& D : Out)
+		{
+			if (Poly.Contains(D.Id))
+			{
+				D.Faction = EHolypawFaction::PolyMill;
+			}
+		}
+
 		return Out;
 	}
 

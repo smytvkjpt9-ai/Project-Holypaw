@@ -10,6 +10,7 @@ class UCameraComponent;
 class UAffectionComponent;
 class USkillTreeComponent;
 class UPartyComponent;
+class UHolypawMissionComponent;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
@@ -50,6 +51,30 @@ public:
 	TObjectPtr<UStaticMeshComponent> HaloMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> EarL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> EarR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Snout;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> PawL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> PawR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Belly;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> EyeL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> EyeR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAffectionComponent> Affection;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -57,6 +82,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UPartyComponent> Party;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UHolypawMissionComponent> Story;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
 	int32 HP = 50;
@@ -89,7 +117,9 @@ public:
 	void RestFully();
 	bool BuyFaith(int32 ApCost, int32 FpGain);
 	void TryMiracle();
+	void CompleteBearFaith();
 	void ApplySkillEffects(FName Id);
+	bool IsGuarding() const { return bGuarding; }
 	void Toast(const FString& Msg);
 	FString GetToast() const { return ToastMsg; }
 	float GetToastAlpha() const { return ToastTime > 0.f ? 1.f : 0.f; }
@@ -112,11 +142,14 @@ public:
 	void ToggleParty();
 	void ToggleMap();
 	void ToggleCodex();
+	void ToggleJournal();
 	void ClosePanels();
 	bool IsSkillsOpen() const { return bSkillsOpen; }
 	bool IsPartyOpen() const { return bPartyOpen; }
 	bool IsMapOpen() const { return bMapOpen; }
 	bool IsCodexOpen() const { return bCodexOpen; }
+	bool IsJournalOpen() const { return bJournalOpen; }
+	TArray<FString> GetJournalLines() const;
 	FString GetCompassLine() const { return CompassLine; }
 	TArray<FString> GetMapLines() const;
 	TArray<FString> GetCodexLines() const;
@@ -141,6 +174,8 @@ public:
 	void Skill6();
 	UFUNCTION()
 	void CloseOrJump();
+	UFUNCTION()
+	void CycleSkillTree();
 
 protected:
 	void MoveForward(float Value);
@@ -153,6 +188,7 @@ protected:
 	AActor* FindNearestInteractable(float Range) const;
 	void Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color);
 	void SetPanel(bool& Flag);
+	void TryBuyTreeSlot(int32 Index);
 
 	UPROPERTY()
 	TObjectPtr<AHostilePet> BattleEnemy;
@@ -162,6 +198,9 @@ protected:
 	bool bPlayerTurn = true;
 	int32 BattleTurn = 0;
 	bool bPartyCut = false;
+	bool bGuarding = false;
+	float ExploreArm = 480.f;
+	float BattleArm = 290.f;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;
@@ -172,6 +211,7 @@ protected:
 	bool bPartyOpen = false;
 	bool bMapOpen = false;
 	bool bCodexOpen = false;
+	bool bJournalOpen = false;
 	FString CompassLine;
 
 	UPROPERTY()
@@ -189,4 +229,5 @@ protected:
 
 	TArray<FVector> Trail;
 	UStaticMesh* SphereMesh = nullptr;
+	UStaticMesh* ConeMesh = nullptr;
 };
