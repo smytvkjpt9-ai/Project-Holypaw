@@ -204,6 +204,22 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			case EHolypawZone::Mire:
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.62f, 0.32f, 0.28f), 0.4f);
 				break;
+			case EHolypawZone::LanternAngeles:
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.92f, 0.74f, 0.42f), 0.32f);
+				SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.82f, 0.45f), 0.2f);
+				break;
+			case EHolypawZone::Mossgate:
+			case EHolypawZone::Quiltland:
+				FogDensity += 0.014f;
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.48f, 0.68f, 0.62f), 0.4f);
+				break;
+			case EHolypawZone::PalmaDusk:
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.35f, 0.72f, 0.58f), 0.3f);
+				SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.72f, 0.42f), 0.18f);
+				break;
+			case EHolypawZone::CherryLoom:
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.92f, 0.55f, 0.68f), 0.32f);
+				break;
 			case EHolypawZone::DustMesa:
 			case EHolypawZone::Desert:
 			case EHolypawZone::SandHymn:
@@ -266,6 +282,10 @@ void AHolypawWorldBuilder::GenerateWorld()
 	BuildHearthfoldDistricts();
 	BuildEmberfenDistricts();
 	BuildSnowveilDistricts();
+	BuildLanternAngelesDistricts();
+	BuildMossgateDistricts();
+	BuildPalmaDuskDistricts();
+	BuildCherryLoomDistricts();
 	BuildSkyRift();
 	SpawnGameplayActors();
 	SpawnPlayerStart();
@@ -383,6 +403,10 @@ void AHolypawWorldBuilder::CacheCityCoords()
 	Hearthfold = CityXY(EHolypawZone::Hearthfold);
 	Emberfen = CityXY(EHolypawZone::Emberfen);
 	Snowveil = CityXY(EHolypawZone::Snowveil);
+	LanternAngeles = CityXY(EHolypawZone::LanternAngeles);
+	Mossgate = CityXY(EHolypawZone::Mossgate);
+	PalmaDusk = CityXY(EHolypawZone::PalmaDusk);
+	CherryLoom = CityXY(EHolypawZone::CherryLoom);
 }
 
 FVector2D AHolypawWorldBuilder::CityXY(EHolypawZone Zone) const
@@ -975,6 +999,165 @@ void AHolypawWorldBuilder::BuildSnowveilDistricts()
 	PlaceCube(FVector(Stoop.X, Stoop.Y, SampleHeight(Stoop.X, Stoop.Y) + 220.f), FVector(0.8f, 0.8f, 0.35f), FLinearColor(0.65f, 0.82f, 1.f), MakeName(TEXT("AuroraLamp")));
 }
 
+void AHolypawWorldBuilder::BuildLanternAngelesDistricts()
+{
+	const FVector2D Walk = LanternAngeles + FVector2D(80.f, -40.f);
+	const FVector2D Lot = LanternAngeles + FVector2D(-800.f, 500.f);
+	const FVector2D Alley = LanternAngeles + FVector2D(200.f, -900.f);
+	const FVector2D Grid = LanternAngeles + FVector2D(1100.f, 200.f);
+	const FVector2D Choir = LanternAngeles + FVector2D(-200.f, 1100.f);
+
+	PlaceSign(Walk, NSLOCTEXT("Holypaw", "LAWalk", "Marquee Walk  |  gold posters lie, fur does not"));
+	PlaceSign(Lot, NSLOCTEXT("Holypaw", "LALot", "Lot Nine  |  commercials for identical pets, lights dropped on purpose"));
+	PlaceSign(Alley, NSLOCTEXT("Holypaw", "LAAlley", "Extra Alley  |  clap off-script, crate of leftover takes"));
+	PlaceSign(Grid, NSLOCTEXT("Holypaw", "LAGrid", "Lamp Grid  |  cables that used to power identical smiles"));
+	PlaceSign(Choir, NSLOCTEXT("Holypaw", "LAChoir", "Poster Choir  |  popcorn theology, toss a thought"));
+
+	PlaceShrine(Walk + FVector2D(220.f, 80.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "LAInn", "Lot Inn"));
+	PlaceShrine(Lot + FVector2D(60.f, 40.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "LAChap", "Marquee Chapel"));
+	PlaceShrine(Choir + FVector2D(40.f, 20.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "PosterFont", "Poster Font"));
+	PlaceShrine(Alley + FVector2D(-40.f, 50.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "LACrate", "Take Crate"));
+	PlaceStall(Walk + FVector2D(160.f, -80.f));
+
+	PlacePickup(Walk + FVector2D(-70.f, 60.f), TEXT("goldPoster"), NSLOCTEXT("Holypaw", "PosterPick", "gold poster"));
+
+	for (int32 I = 0; I < 4; ++I)
+	{
+		const float X = Walk.X + I * 160.f;
+		const float Y = Walk.Y - 50.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 140.f), FVector(1.1f, 0.12f, 1.8f), FLinearColor(0.95f, 0.72f, 0.28f), MakeName(TEXT("Marquee")));
+		PlaceCube(FVector(X, Y, Z + 40.f), FVector(0.18f, 0.18f, 0.8f), FLinearColor(0.35f, 0.28f, 0.22f), MakeName(TEXT("MarqueePole")));
+	}
+	for (int32 I = 0; I < 5; ++I)
+	{
+		const float X = Grid.X + (I % 3) * 140.f;
+		const float Y = Grid.Y + (I / 3) * 160.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 160.f), FVector(0.1f, 0.1f, 3.0f), FLinearColor(0.92f, 0.82f, 0.45f), MakeName(TEXT("LotLamp")));
+	}
+	PlaceCube(FVector(Lot.X, Lot.Y, SampleHeight(Lot.X, Lot.Y) + 18.f), FVector(4.2f, 3.4f, 0.12f), FLinearColor(0.42f, 0.4f, 0.38f), MakeName(TEXT("LotFloor")));
+}
+
+void AHolypawWorldBuilder::BuildMossgateDistricts()
+{
+	const FVector2D Gate = Mossgate + FVector2D(40.f, 40.f);
+	const FVector2D Tea = Mossgate + FVector2D(-700.f, 200.f);
+	const FVector2D Choir = Mossgate + FVector2D(100.f, 900.f);
+	const FVector2D Stoop = Mossgate + FVector2D(800.f, -200.f);
+	const FVector2D Path = Mossgate + FVector2D(-200.f, -800.f);
+
+	PlaceSign(Gate, NSLOCTEXT("Holypaw", "MossGate", "Fog Gate  |  damp on purpose, dry thoughts mill faster"));
+	PlaceSign(Tea, NSLOCTEXT("Holypaw", "MossTea", "Tea Walk  |  fog that tastes like a bear if you believe"));
+	PlaceSign(Choir, NSLOCTEXT("Holypaw", "MossChoir", "Moss Choir  |  hymns dunked in humidity"));
+	PlaceSign(Stoop, NSLOCTEXT("Holypaw", "MossStoop", "Rain Stoop  |  wishes that come back steamed"));
+	PlaceSign(Path, NSLOCTEXT("Holypaw", "MossPath", "Quilt Path  |  north woods, Night Thread in the rain"));
+
+	PlaceShrine(Gate + FVector2D(200.f, 60.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "FogInn", "Fog Inn"));
+	PlaceShrine(Choir + FVector2D(40.f, 20.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "MossChap", "Moss Chapel"));
+	PlaceShrine(Stoop + FVector2D(-30.f, 40.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "RainFont", "Rain Font"));
+	PlaceShrine(Path + FVector2D(50.f, 20.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "MossCrate", "Moss Crate"));
+
+	PlacePickup(Tea + FVector2D(50.f, -40.f), TEXT("fogTea"), NSLOCTEXT("Holypaw", "TeaPick", "fog tea"));
+
+	PlaceCube(FVector(Gate.X - 70.f, Gate.Y, SampleHeight(Gate.X, Gate.Y) + 140.f), FVector(0.28f, 2.0f, 2.8f), FLinearColor(0.42f, 0.58f, 0.52f), MakeName(TEXT("FogPost")));
+	PlaceCube(FVector(Gate.X + 70.f, Gate.Y, SampleHeight(Gate.X, Gate.Y) + 140.f), FVector(0.28f, 2.0f, 2.8f), FLinearColor(0.42f, 0.58f, 0.52f), MakeName(TEXT("FogPostB")));
+	for (int32 I = 0; I < 4; ++I)
+	{
+		const float X = Tea.X + I * 130.f;
+		const float Y = Tea.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 55.f), FVector(0.45f, 0.45f, 0.7f), FLinearColor(0.72f, 0.62f, 0.42f), MakeName(TEXT("TeaCart")));
+		PlaceCube(FVector(X, Y, Z + 95.f), FVector(0.22f, 0.22f, 0.28f), FLinearColor(0.55f, 0.72f, 0.62f), MakeName(TEXT("TeaSteam")));
+	}
+	for (int32 I = 0; I < 5; ++I)
+	{
+		const float X = Path.X + I * 110.f;
+		const float Y = Path.Y + (I % 2) * 40.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 28.f), FVector(0.55f, 0.4f, 0.35f), FLinearColor(0.38f, 0.52f, 0.42f), MakeName(TEXT("MossStack")));
+	}
+}
+
+void AHolypawWorldBuilder::BuildPalmaDuskDistricts()
+{
+	const FVector2D Walk = PalmaDusk + FVector2D(-600.f, 80.f);
+	const FVector2D Pier = PalmaDusk + FVector2D(400.f, 200.f);
+	const FVector2D Choir = PalmaDusk + FVector2D(80.f, 1000.f);
+	const FVector2D Stoop = PalmaDusk + FVector2D(800.f, -180.f);
+	const FVector2D Notch = PalmaDusk + FVector2D(-100.f, -750.f);
+
+	PlaceSign(Walk, NSLOCTEXT("Holypaw", "PalmWalk", "Palm Walk  |  trunks that refuse to be a brochure"));
+	PlaceSign(Pier, NSLOCTEXT("Holypaw", "PalmPier", "Clap Pier  |  palms copy you if you glow"));
+	PlaceSign(Choir, NSLOCTEXT("Holypaw", "PalmChoir", "Dusk Choir  |  off-key on purpose, salt optional"));
+	PlaceSign(Stoop, NSLOCTEXT("Holypaw", "PalmStoop", "Usher Stoop  |  better plot, same chairs"));
+	PlaceSign(Notch, NSLOCTEXT("Holypaw", "PalmNotch", "Sand Notch  |  last warm cube before the dunes"));
+
+	PlaceShrine(Pier + FVector2D(180.f, 60.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "PalmInn", "Palm Inn"));
+	PlaceShrine(Choir + FVector2D(40.f, 20.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "DuskChap", "Dusk Chapel"));
+	PlaceShrine(Stoop + FVector2D(-30.f, 40.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "DuskFont", "Dusk Font"));
+	PlaceShrine(Notch + FVector2D(50.f, 20.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "PalmCrate", "Pier Crate"));
+
+	PlacePickup(Pier + FVector2D(-80.f, 70.f), TEXT("palmClap"), NSLOCTEXT("Holypaw", "ClapPick", "palm clap"));
+
+	for (int32 I = 0; I < 5; ++I)
+	{
+		const float X = Walk.X + I * 150.f;
+		const float Y = Walk.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 120.f), FVector(0.18f, 0.18f, 2.4f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("PalmTrunk")));
+		PlaceCube(FVector(X, Y, Z + 250.f), FVector(1.1f, 1.1f, 0.7f), FLinearColor(0.28f, 0.72f, 0.48f), MakeName(TEXT("PalmCrown")));
+	}
+	for (int32 I = 0; I < 6; ++I)
+	{
+		const float X = Pier.X + I * 90.f;
+		const float Y = Pier.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 8.f + I * 6.f), FVector(1.5f, 4.0f, 0.12f), FLinearColor(0.62f, 0.52f, 0.38f), MakeName(TEXT("ClapPlank")));
+	}
+	PlaceCube(FVector(Choir.X, Choir.Y, SampleHeight(Choir.X, Choir.Y) + 36.f), FVector(1.6f, 1.6f, 0.18f), FLinearColor(0.32f, 0.68f, 0.62f), MakeName(TEXT("DuskPool")));
+}
+
+void AHolypawWorldBuilder::BuildCherryLoomDistricts()
+{
+	const FVector2D Gate = CherryLoom + FVector2D(40.f, 40.f);
+	const FVector2D Loom = CherryLoom + FVector2D(-750.f, 280.f);
+	const FVector2D Choir = CherryLoom + FVector2D(120.f, 950.f);
+	const FVector2D Stoop = CherryLoom + FVector2D(780.f, -160.f);
+	const FVector2D Notch = CherryLoom + FVector2D(-80.f, -720.f);
+
+	PlaceSign(Gate, NSLOCTEXT("Holypaw", "CherryGate", "Blossom Gate  |  no logos, only pink"));
+	PlaceSign(Loom, NSLOCTEXT("Holypaw", "CherryLoomWalk", "Loom Walk  |  thread that remembers fingers"));
+	PlaceSign(Choir, NSLOCTEXT("Holypaw", "CherryChoir", "Pink Choir  |  hymns dunked in sap"));
+	PlaceSign(Stoop, NSLOCTEXT("Holypaw", "CherryStoop", "Thread Stoop  |  wishes that come back wrapped"));
+	PlaceSign(Notch, NSLOCTEXT("Holypaw", "CherryNotch", "Ferry Notch  |  hop off the island when the wrap holds"));
+
+	PlaceShrine(Gate + FVector2D(210.f, 70.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "BlossomInn", "Blossom Inn"));
+	PlaceShrine(Choir + FVector2D(40.f, 20.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "PinkChap", "Pink Chapel"));
+	PlaceShrine(Stoop + FVector2D(-30.f, 40.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "ThreadFont", "Thread Font"));
+	PlaceShrine(Notch + FVector2D(50.f, 20.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "CherryCrate", "Isle Crate"));
+
+	PlacePickup(Loom + FVector2D(60.f, -50.f), TEXT("cherryThread"), NSLOCTEXT("Holypaw", "CherryPick", "cherry thread"));
+
+	PlaceCube(FVector(Gate.X - 80.f, Gate.Y, SampleHeight(Gate.X, Gate.Y) + 150.f), FVector(0.32f, 2.2f, 3.0f), FLinearColor(0.92f, 0.55f, 0.65f), MakeName(TEXT("BlossomPost")));
+	PlaceCube(FVector(Gate.X + 80.f, Gate.Y, SampleHeight(Gate.X, Gate.Y) + 150.f), FVector(0.32f, 2.2f, 3.0f), FLinearColor(0.92f, 0.55f, 0.65f), MakeName(TEXT("BlossomPostB")));
+	for (int32 I = 0; I < 4; ++I)
+	{
+		const float X = Loom.X + I * 140.f;
+		const float Y = Loom.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 70.f), FVector(1.2f, 0.35f, 0.9f), FLinearColor(0.72f, 0.42f, 0.48f), MakeName(TEXT("LoomFrame")));
+		PlaceCube(FVector(X + 20.f, Y, Z + 160.f), FVector(0.55f, 0.55f, 0.45f), FLinearColor(0.95f, 0.62f, 0.72f), MakeName(TEXT("Blossom")));
+	}
+	for (int32 I = 0; I < 6; ++I)
+	{
+		const float X = Choir.X + (I % 3) * 110.f - 80.f;
+		const float Y = Choir.Y + (I / 3) * 90.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 50.f), FVector(0.2f, 0.2f, 0.85f), FLinearColor(0.88f, 0.45f, 0.58f), MakeName(TEXT("PinkStem")));
+	}
+}
+
 void AHolypawWorldBuilder::BuildSkyRift()
 {
 	const float Z = SampleHeight(PeakCenter.X, PeakCenter.Y);
@@ -1238,14 +1421,26 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Ridge Child"), FVector2D(Snowveil.X + 680.f, Snowveil.Y - 180.f), FLinearColor(0.75f, 0.85f, 1.f));
 	SpawnHuman(TEXT("Peak Acolyte"), FVector2D(PeakCenter.X - 600.f, PeakCenter.Y - 900.f), FLinearColor(0.75f, 0.65f, 0.95f));
 	SpawnHuman(TEXT("Studio Grip"), CityXY(EHolypawZone::LanternAngeles) + FVector2D(200.f, -150.f), FLinearColor(0.95f, 0.78f, 0.35f));
+	SpawnHuman(TEXT("Best Boy"), LanternAngeles + FVector2D(1080.f, 180.f), FLinearColor(0.88f, 0.62f, 0.32f));
+	SpawnHuman(TEXT("Extra"), LanternAngeles + FVector2D(180.f, -860.f), FLinearColor(0.78f, 0.55f, 0.62f));
+	SpawnHuman(TEXT("Marquee Bear"), LanternAngeles + FVector2D(-180.f, 1080.f), FLinearColor(0.95f, 0.82f, 0.42f));
 	SpawnHuman(TEXT("Fog Baker"), CityXY(EHolypawZone::Mossgate) + FVector2D(-120.f, 80.f), FLinearColor(0.55f, 0.72f, 0.68f));
+	SpawnHuman(TEXT("Moss Warden"), Mossgate + FVector2D(80.f, 60.f), FLinearColor(0.42f, 0.62f, 0.55f));
+	SpawnHuman(TEXT("Tea Cart"), Mossgate + FVector2D(-680.f, 220.f), FLinearColor(0.72f, 0.58f, 0.4f));
+	SpawnHuman(TEXT("Gate Priest"), Mossgate + FVector2D(120.f, 920.f), FLinearColor(0.62f, 0.78f, 0.72f));
 	SpawnHuman(TEXT("Quilt Ranger"), CityXY(EHolypawZone::Quiltland) + FVector2D(80.f, -60.f), FLinearColor(0.42f, 0.58f, 0.4f));
 	SpawnHuman(TEXT("Mesa Guide"), CityXY(EHolypawZone::DustMesa) + FVector2D(40.f, 90.f), FLinearColor(0.85f, 0.6f, 0.35f));
 	SpawnHuman(TEXT("Palm Singer"), CityXY(EHolypawZone::PalmaDusk) + FVector2D(-80.f, 40.f), FLinearColor(0.35f, 0.78f, 0.55f));
+	SpawnHuman(TEXT("Dusk Usher"), PalmaDusk + FVector2D(780.f, -160.f), FLinearColor(0.92f, 0.62f, 0.4f));
+	SpawnHuman(TEXT("Clap Kid"), PalmaDusk + FVector2D(-580.f, 100.f), FLinearColor(0.45f, 0.82f, 0.7f));
+	SpawnHuman(TEXT("Pier Priest"), PalmaDusk + FVector2D(100.f, 980.f), FLinearColor(0.55f, 0.7f, 0.78f));
 	SpawnHuman(TEXT("Ivory Clerk"), CityXY(EHolypawZone::IvorySpire) + FVector2D(60.f, -40.f), FLinearColor(0.9f, 0.86f, 0.75f));
 	SpawnHuman(TEXT("Sand Priest"), CityXY(EHolypawZone::SandHymn) + FVector2D(90.f, 20.f), FLinearColor(0.92f, 0.74f, 0.4f));
 	SpawnHuman(TEXT("Cape Lookout"), CityXY(EHolypawZone::CapePlush) + FVector2D(-50.f, 70.f), FLinearColor(0.55f, 0.45f, 0.7f));
 	SpawnHuman(TEXT("Loom Weaver"), CityXY(EHolypawZone::CherryLoom) + FVector2D(140.f, -90.f), FLinearColor(0.92f, 0.5f, 0.6f));
+	SpawnHuman(TEXT("Cherry Priest"), CherryLoom + FVector2D(140.f, 940.f), FLinearColor(0.95f, 0.55f, 0.68f));
+	SpawnHuman(TEXT("Silk Child"), CherryLoom + FVector2D(760.f, -140.f), FLinearColor(0.88f, 0.62f, 0.78f));
+	SpawnHuman(TEXT("Gate Watch"), CherryLoom + FVector2D(60.f, 80.f), FLinearColor(0.72f, 0.42f, 0.52f));
 	SpawnHuman(TEXT("Aurora Child"), CityXY(EHolypawZone::AuroraBorough) + FVector2D(-70.f, 40.f), FLinearColor(0.55f, 0.8f, 0.95f));
 	SpawnHuman(TEXT("Tundra Keeper"), CityXY(EHolypawZone::TundraParish) + FVector2D(30.f, -40.f), FLinearColor(0.8f, 0.85f, 0.95f));
 	SpawnHuman(TEXT("Confetti Baker"), CityXY(EHolypawZone::CarnivalBahia) + FVector2D(120.f, -80.f), FLinearColor(0.95f, 0.5f, 0.4f));
@@ -1383,6 +1578,10 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	PlaceSign(Hearthfold + FVector2D(-200.f, 400.f), NSLOCTEXT("Holypaw", "VSignFarm", "Field warning  |  Harvest Overseer north of the mill"));
 	PlaceSign(Emberfen + FVector2D(100.f, 200.f), NSLOCTEXT("Holypaw", "VSignFen", "Fen warning  |  Bog King south in the deepest peat"));
 	PlaceSign(Snowveil + FVector2D(-300.f, 200.f), NSLOCTEXT("Holypaw", "VSignSnow", "Ridge warning  |  Aurora Warden, then Velvet Tyrant, then The Unmaker"));
+	PlaceSign(LanternAngeles + FVector2D(80.f, 200.f), NSLOCTEXT("Holypaw", "VSignLA", "Lot warning  |  Plaza Corp Cats and Razor Petbots between takes"));
+	PlaceSign(Mossgate + FVector2D(-40.f, 120.f), NSLOCTEXT("Holypaw", "VSignMoss", "Fog warning  |  Night Thread in the rain, Quiltland further north"));
+	PlaceSign(PalmaDusk + FVector2D(60.f, 160.f), NSLOCTEXT("Holypaw", "VSignPalm", "Pier warning  |  Salt Crabs pinch. Cape Plush if the water argues"));
+	PlaceSign(CherryLoom + FVector2D(-60.f, 140.f), NSLOCTEXT("Holypaw", "VSignCherry", "Isle warning  |  Void Rats on the west walk. Globe Trek ends when the wrap holds"));
 	BuildPolyMill();
 }
 

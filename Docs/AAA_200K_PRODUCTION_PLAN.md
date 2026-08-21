@@ -5,7 +5,7 @@
 **Target:** a shippable PC AAA-scoped original — not a prototype, not a Pokémon clone, not a Sanrio parody
 **Hard floor:** **200,000 lines** of *real* game code and authored content (C++ / headers / catalogs / tests / tools). Comments, blank lines, and duplicated empty classes do **not** count.
 
-Today the playable module is about **6,200 lines**. That is a vertical slice. This document is the production bible that turns the slice into a title.
+Today the playable module is tracked with `python3 Tools/CountHolypawLoc.py`. That is still a vertical slice, not a store-page AAA title. This document is the production bible that turns the slice into a title.
 
 ---
 
@@ -43,20 +43,18 @@ AAA is not a line-count trophy. It is:
 
 ## 2. Why the current game is not AAA
 
-The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening.
+The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening, 3-slot save, lantern travel, shops, talk errands, day/night, shrines, a thin dialogue VM, and a thin battle director. **Nine cities** have named districts (Ribbon, Tidewell, Hearthfold, Emberfen, Snowveil, Lantern Angeles, Mossgate, Palma Dusk, Cherry Loom).
 
-It is missing everything a store-page title needs:
+It is still not a store-page title:
 
-- No save game, no title screen, no settings, no gamepad remap.
-- Cities are kits, not interiors + named people + shops + schedules.
-- Combat is one enemy, six buttons, no status engine, no boss phases.
-- No audio. No animation beyond bounces.
-- No inventory, economy, or crafting.
-- No dialogue graph (toasts and one-liners).
-- `AHolypawCharacter` owns battle, HUD flags, hug, miracle, map, codex — a god class.
-- World is one actor (`HolypawWorldBuilder.cpp` ~1,100 lines) generating the globe in one shot.
+- **17 cities** remain kits with one NPC each — no interiors, schedules, or local events.
+- Dialogue VM is listen / hint / turn-in / accept only. No skill-check nodes, cinematics, or 650 speakers.
+- Combat director is lullaby / hit-stop / outgoing mods. Not 80 abilities or 12 authored boss scripts.
+- `AHolypawCharacter` still owns HUD, hug, miracle, map, and battle flow.
+- World is one actor generating the globe in one shot (no streaming ring).
+- This VM cannot sculpt Nanite, record WAV, or ship a Shipping `.exe`. Those stay on the user's PC.
 
-The 200k-line rewrite **splits that god class**, **fills the globe with play**, and **ships systems**.
+The 200k-line rewrite **splits that god class**, **fills the remaining globe with play**, and **ships systems**.
 
 ---
 

@@ -29,6 +29,10 @@ namespace HolypawCatalog
 			Add(TEXT("wheatEar"), TEXT("Wheat Ear"), TEXT("Lumpy grain from Hearthfold's choir. The Farmer wants it (talk 3)."), 0, 0, 0);
 			Add(TEXT("peatBead"), TEXT("Peat Bead"), TEXT("Cooled jam from Emberfen. Mud Sculptor will make a wet bear (talk 3)."), 0, 0, 0);
 			Add(TEXT("auroraThread"), TEXT("Aurora Thread"), TEXT("Snowveil scarf-walk yarn. The mill cannot copy it. Warden wants it (talk 3)."), 0, 0, 0);
+			Add(TEXT("goldPoster"), TEXT("Gold Poster"), TEXT("A Lantern Angeles marquee lie. Studio Grip files it as Exhibit Glow (talk 3)."), 0, 0, 0);
+			Add(TEXT("fogTea"), TEXT("Fog Tea"), TEXT("Mossgate rain steeped in a cup. Fog Baker believes a bear (talk 3)."), 0, 0, 4);
+			Add(TEXT("palmClap"), TEXT("Palm Clap"), TEXT("A Palma Dusk token that claps when you glow. Palm Singer wants the duet (talk 3)."), 0, 0, 0);
+			Add(TEXT("cherryThread"), TEXT("Cherry Thread"), TEXT("Pink loom yarn that can wrap a rumor. Loom Weaver will finish the wrap (talk 3)."), 0, 0, 0);
 			return Out;
 		}();
 		return All;

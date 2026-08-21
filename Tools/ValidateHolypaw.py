@@ -279,8 +279,10 @@ if not (ROOT / "Source/Holypaw/Actors/HolypawShrine.cpp").exists():
     errors.append("missing HolypawShrine.cpp")
 if not (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists():
     errors.append("missing HolypawQuestCatalog.cpp")
-if not (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").exists():
-    errors.append("missing HolypawBattleMath.cpp")
+if not (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").exists():
+    errors.append("missing HolypawDialogueVM.cpp")
+if not (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").exists():
+    errors.append("missing HolypawBattleDirector.cpp")
 for needle, blob, label in (
     ("PlaceShrine", WORLD, "world"),
     ("TickClockLighting", WORLD, "world"),
@@ -319,6 +321,23 @@ for needle, blob, label in (
     ("Frog Bell", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Scarf Knitter", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("wheatHymn", (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists() else "", "quests"),
+    ("BuildLanternAngelesDistricts", WORLD, "world"),
+    ("BuildMossgateDistricts", WORLD, "world"),
+    ("BuildPalmaDuskDistricts", WORLD, "world"),
+    ("BuildCherryLoomDistricts", WORLD, "world"),
+    ("goldPoster", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("fogTea", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("palmClap", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("cherryThread", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("goldReel", (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists() else "", "quests"),
+    ("Best Boy", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Tea Cart", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Clap Kid", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Gate Watch", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("VerbFromSlot", (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").read_text() if (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").exists() else "", "dialogue VM"),
+    ("RollLullaby", (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").exists() else "", "battle director"),
+    ("ApplyTalkVerb", CHAR, "character"),
+    ("ApplyOutgoing", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

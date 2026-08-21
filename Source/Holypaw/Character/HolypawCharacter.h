@@ -260,6 +260,7 @@ protected:
 	void Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color);
 	void SetPanel(bool& Flag);
 	void TryBuyTreeSlot(int32 Index);
+	void ApplyTalkVerb(uint8 Verb);
 
 	UPROPERTY()
 	TObjectPtr<AHostilePet> BattleEnemy;

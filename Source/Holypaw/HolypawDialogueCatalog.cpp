@@ -178,12 +178,36 @@ namespace HolypawCatalog
 				TEXT("Up. Always up. The rift likes company."));
 			Add(TEXT("Studio Grip"),
 				TEXT("Lantern Angeles shot a commercial for identical pets. I dropped the light on purpose."),
-				TEXT("Gold posters lie. Your fur does not."),
-				TEXT("Pacific camp between here and Mossgate."));
+				TEXT("Gold posters lie. Key 4 takes Exhibit Glow. Key 3 when a marquee is in your paw."),
+				TEXT("Marquee Walk. Lot Nine. Pacific camp between here and Mossgate."));
+			Add(TEXT("Best Boy"),
+				TEXT("I carry cables that used to power identical smiles. Now they power a bear."),
+				TEXT("Lot Nine still has Razor Petbots between takes. Bring a party."),
+				TEXT("Lamp Grid east. Inn the warm cube. Grip wants a poster."));
+			Add(TEXT("Extra"),
+				TEXT("I was hired to clap on cue. You hugged me off-script. Union pending."),
+				TEXT("Extra Alley hides a crate. Sometimes mill scrap. Sometimes dust. Same take."),
+				TEXT("Alley south of the marquee. Then hop the lantern if the lot gets beige."));
+			Add(TEXT("Marquee Bear"),
+				TEXT("I am not a bear. I am a person in a gold sign that aspires. Close enough."),
+				TEXT("Poster Choir is the font. Toss a thought. Faith comes back smelling like popcorn theology."),
+				TEXT("Font north. Chapel if you need Miracle Charge between commercials."));
 			Add(TEXT("Fog Baker"),
 				TEXT("Fog tastes like tea if you believe a bear. I believe a bear."),
-				TEXT("Mossgate rain forgives polyester slower than hugs do."),
-				TEXT("Quiltland is further north woods."));
+				TEXT("Tea Walk hid a cup. Key 4. Key 3 when the rain has steeped."),
+				TEXT("Mossgate lantern. Fog Inn. Quiltland further north woods."));
+			Add(TEXT("Moss Warden"),
+				TEXT("I kept the gate damp on purpose. Dry thoughts mill faster."),
+				TEXT("Night Thread still works the rain. Unstuff it kindly."),
+				TEXT("Fog Gate. Then Tea Walk west if you like cups that argue."));
+			Add(TEXT("Tea Cart"),
+				TEXT("I roll a cart of opinions that steep. The mill asked for beige bags. I threw moss."),
+				TEXT("Fog tea is on the walk. Baker files it as weather. Rain Stoop wishes."),
+				TEXT("Tea Walk. Cups, steam, one round pickup."));
+			Add(TEXT("Gate Priest"),
+				TEXT("I baptize nothing. I dunk hymns in fog. The mill cannot franchise humidity."),
+				TEXT("Moss Choir claps wetly. Chapel fills Miracle Charge even when you cannot see it."),
+				TEXT("Choir north of the gate. Gold roof in the tea."));
 			Add(TEXT("Quilt Ranger"),
 				TEXT("I patch pines. You patch people. Union pending."),
 				TEXT("Bring a ribbon. The trees like accessories."),
@@ -194,8 +218,20 @@ namespace HolypawCatalog
 				TEXT("Palma Dusk if you want palms that clap."));
 			Add(TEXT("Palm Singer"),
 				TEXT("We clap at hymns. You clap at humans. Collaboration."),
-				TEXT("Two oceans argue politely at Cape Plush."),
-				TEXT("Sand Hymn dunes hum at noon. Dusk is ruder and better."));
+				TEXT("Clap Pier dropped a token. Key 4. Key 3 when it claps back in your paw."),
+				TEXT("Palma Dusk lantern. Palm Inn. Two oceans argue politely at Cape Plush."));
+			Add(TEXT("Dusk Usher"),
+				TEXT("I seated identical tourists. Now I seat converted ones. Same chairs. Better plot."),
+				TEXT("Usher Stoop is the font. Toss a thought. Dusk is ruder and better."),
+				TEXT("Stoop east. Sand Notch south is the last warm cube before the dunes."));
+			Add(TEXT("Clap Kid"),
+				TEXT("The palms copy you if you glow. I glowed. They copied. We are a pier now."),
+				TEXT("Palm Walk has trunks that refuse to be identical. The mill asked for a brochure. We clapped."),
+				TEXT("Walk west. Then the pier if you like tokens."));
+			Add(TEXT("Pier Priest"),
+				TEXT("I dunk ribbons in dusk. Salt optional. Theology mandatory."),
+				TEXT("Dusk Choir fills Miracle Charge. Salt crabs pinch. Bring a party anyway."),
+				TEXT("Choir north. Chapel gold-on-mint. Cape Plush if the water argues."));
 			Add(TEXT("Ivory Clerk"),
 				TEXT("Old stone, new stuffing. I stamped your coup. It is legal because I said so."),
 				TEXT("North-shore spire. The mill wanted a franchise. I lost the form."),
@@ -210,8 +246,20 @@ namespace HolypawCatalog
 				TEXT("Coral Choir if you can stand being serenaded by reef."));
 			Add(TEXT("Loom Weaver"),
 				TEXT("Cherry thread can wrap a moon. We wrapped a mayor instead. More useful."),
-				TEXT("Globe Trek ends when you've seen our blossoms and still wanted hugs."),
-				TEXT("Silk Delta west, Spice Harbor southwest."));
+				TEXT("Loom Walk dropped a thread. Key 4. Key 3 when the wrap is in your paw. Globe Trek ends when it holds."),
+				TEXT("Cherry Loom lantern. Blossom Inn. Silk Delta west, Spice Harbor southwest."));
+			Add(TEXT("Cherry Priest"),
+				TEXT("I baptize thread in pink. The mill baptizes nothing and calls it a brand."),
+				TEXT("Pink Choir is the chapel. Miracle Charge. Then Void Rats if you like beige with teeth."),
+				TEXT("Choir north of the gate. Gold roof, pink air."));
+			Add(TEXT("Silk Child"),
+				TEXT("I tied a blossom to a rumor. The rumor converted. I clapped."),
+				TEXT("Thread Stoop wishes. Toss a thought. Faith comes back smelling like sap."),
+				TEXT("Stoop east. Ferry Notch south hops you off the island."));
+			Add(TEXT("Gate Watch"),
+				TEXT("I watch blossoms so nobody mills them into a logo. You are already a logo. Allowed."),
+				TEXT("Blossom Gate. Inn the warm cube. Crate on the notch. Handmade, pink, correct."),
+				TEXT("Gate. Then Loom Walk if you like yarn that remembers fingers."));
 			Add(TEXT("Aurora Child"),
 				TEXT("The lights are shy until you glow. Then they copy you. Rude. Cute."),
 				TEXT("Tundra Parish keeps the cold honest."),

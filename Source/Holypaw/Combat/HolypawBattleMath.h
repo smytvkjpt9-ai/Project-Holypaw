@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "HolypawTypes.h"
 
-/** Pure combat helpers. Battle flow still lives on the teddy until the director extract. */
+/** Pure combat helpers. Timing and outgoing mods live in HolypawBattleDirector. */
 namespace HolypawBattle
 {
 	constexpr float CritChance = 0.12f;

@@ -114,6 +114,6 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 
 Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
-Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Journal (**J**) lists errands: cellar hymn, mill scrap, postcard, child's bun, Tidewell pearl, brine ribbon, Hearthfold wheat, Emberfen peat bead, Snowveil aurora thread.
+Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Journal (**J**) lists errands: cellar hymn, mill scrap, postcard, child's bun, Tidewell pearl, brine ribbon, Hearthfold wheat, Emberfen peat bead, Snowveil aurora thread, Lantern Angeles gold poster, Mossgate fog tea, Palma Dusk palm clap, Cherry Loom cherry thread.
 
-Dressed cities so far: **Ribbon City**, **Tidewell**, **Hearthfold** (Grain Square, Hymn Barn, Scarecrow Row), **Emberfen** (Peat Walk, Jam Pool, Witch Stoop), **Snowveil** (Ridge Gate, Scarf Walk, Ice Choir). Each has an inn, a font or chapel, and a pickup. Fog tints by biome.
+Dressed cities so far: **Ribbon City**, **Tidewell**, **Hearthfold**, **Emberfen**, **Snowveil**, plus Globe Trek **Lantern Angeles** (Marquee Walk, Lot Nine), **Mossgate** (Fog Gate, Tea Walk), **Palma Dusk** (Palm Walk, Clap Pier), **Cherry Loom** (Blossom Gate, Loom Walk). Each has an inn, a font or chapel, and a pickup. Fog tints by biome. Talk 1–4 runs through a thin dialogue VM. Combat lullaby, hit-stop, frost, armor, and stagger run through a thin battle director.

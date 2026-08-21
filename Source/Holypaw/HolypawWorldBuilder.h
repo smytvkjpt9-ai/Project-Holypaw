@@ -102,6 +102,10 @@ protected:
 	void BuildHearthfoldDistricts();
 	void BuildEmberfenDistricts();
 	void BuildSnowveilDistricts();
+	void BuildLanternAngelesDistricts();
+	void BuildMossgateDistricts();
+	void BuildPalmaDuskDistricts();
+	void BuildCherryLoomDistricts();
 	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();
@@ -142,6 +146,10 @@ protected:
 	FVector2D Hearthfold = FVector2D(2000.f, 24000.f);
 	FVector2D Emberfen = FVector2D(6000.f, -23000.f);
 	FVector2D Snowveil = FVector2D(-2000.f, 20000.f);
+	FVector2D LanternAngeles = FVector2D(-82000.f, -22000.f);
+	FVector2D Mossgate = FVector2D(-86000.f, 18000.f);
+	FVector2D PalmaDusk = FVector2D(12000.f, -72000.f);
+	FVector2D CherryLoom = FVector2D(104000.f, 10000.f);
 	FVector2D PeakCenter = FVector2D(2000.f, 16000.f);
 
 	int32 GridN = 168;

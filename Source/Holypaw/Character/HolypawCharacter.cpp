@@ -9,6 +9,8 @@
 #include "Actors/HolypawInteractable.h"
 #include "Actors/HolypawShrine.h"
 #include "Combat/HolypawBattleMath.h"
+#include "Combat/HolypawBattleDirector.h"
+#include "Narrative/HolypawDialogueVM.h"
 #include "HolypawWorldBuilder.h"
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveCodec.h"
@@ -717,7 +719,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		PoisonTurns = 0;
 		HymnShield = 2;
 		BattleLog = FString::Printf(TEXT("Hymn mends %d stuffing, clears poison, and raises a shield."), Heal);
-		if (FMath::FRand() < 0.28f)
+		if (HolypawBattleDirector::RollLullaby())
 		{
 			BattleLog += TEXT(" Lullaby — they snooze a turn.");
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::ResumePlayerTurn, 0.75f, false);
@@ -796,26 +798,16 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		BattleLog += TEXT(" Crit!");
 	}
 
-	if (FrostTurns > 0)
+	const HolypawBattleDirector::FOutgoing Outgoing = HolypawBattleDirector::ApplyOutgoing(
+		Dmg, FrostTurns, E->Special, Kind == TEXT("beam"), bCrit, BattleLog);
+	Dmg = Outgoing.Damage;
+	if (Outgoing.bFrostConsumed)
 	{
-		Dmg = HolypawBattle::ScaleForFrost(Dmg, FrostTurns);
 		--FrostTurns;
-		BattleLog += TEXT(" Frost slows the paw.");
 	}
-
-	const int32 BeforeArmor = Dmg;
-	Dmg = HolypawBattle::ScaleForArmor(Dmg, E->Special, Kind == TEXT("beam"));
-	if (Dmg < BeforeArmor)
-	{
-		BattleLog += Kind == TEXT("beam")
-			? TEXT(" Beam slips the plates.")
-			: TEXT(" Armor plates dull it.");
-	}
-
-	if (HolypawBattle::ShouldStagger(Dmg, bCrit))
+	if (Outgoing.bStaggered)
 	{
 		bEnemyStaggered = true;
-		BattleLog += TEXT(" Staggered!");
 	}
 
 	E->HP -= Dmg;
@@ -833,7 +825,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.35f, false);
 		return;
 	}
-	const float HitStop = (bCrit || bEnemyStaggered) ? 0.95f : 0.7f;
+	const float HitStop = HolypawBattleDirector::HitStopSeconds(bCrit, bEnemyStaggered);
 	GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, HitStop, false);
 }
 
@@ -1386,7 +1378,7 @@ TArray<FString> AHolypawCharacter::GetJournalLines() const
 	}
 	if (Shown == 0)
 	{
-		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Park, Ribbon, Tidewell, Hearthfold, Emberfen, Snowveil."));
+		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Park, Ribbon, Tidewell, farms, fen, snow, Globe Trek."));
 	}
 	return Lines;
 }
@@ -1505,10 +1497,11 @@ void AHolypawCharacter::TryBuyTreeSlot(int32 Index)
 	{
 		if (bTalkOpen)
 		{
-			if (Index == 0) { AdvanceTalk(); }
-			else if (Index == 1) { AskTalkHint(); }
-			else if (Index == 2) { TurnInErrand(); }
-			else if (Index == 3) { AcceptQuest(); }
+			const HolypawDialogue::ETalkVerb Verb = HolypawDialogue::VerbFromSlot(Index);
+			if (Verb != HolypawDialogue::ETalkVerb::None)
+			{
+				ApplyTalkVerb(static_cast<uint8>(Verb));
+			}
 		}
 		else if (bShopOpen)
 		{
@@ -2238,99 +2231,83 @@ bool AHolypawCharacter::StartTalk(AHugHuman* Human)
 
 void AHolypawCharacter::AdvanceTalk()
 {
-	if (!bTalkOpen)
-	{
-		return;
-	}
-	if (!bTalkSecond)
-	{
-		if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(TalkSpeaker))
-		{
-			TalkBody = Talk->LineB;
-		}
-		bTalkSecond = true;
-		PlayCue(TEXT("Talk"));
-		return;
-	}
-	ClosePanels();
+	ApplyTalkVerb(static_cast<uint8>(HolypawDialogue::ETalkVerb::Listen));
 }
 
 void AHolypawCharacter::AskTalkHint()
 {
-	Toast(TalkHint.IsEmpty() ? TEXT("Lanterns. Tab. E. The globe shrinks.") : TalkHint);
-	PlayCue(TEXT("Talk"));
+	ApplyTalkVerb(static_cast<uint8>(HolypawDialogue::ETalkVerb::Hint));
 }
 
 void AHolypawCharacter::TurnInErrand()
 {
-	if (!bTalkOpen)
-	{
-		return;
-	}
-	bool bAny = false;
-	for (const FHolypawQuestDef& Q : HolypawCatalog::GetQuests())
-	{
-		if (!Q.TurnIn.Equals(TalkSpeaker, ESearchCase::IgnoreCase))
-		{
-			continue;
-		}
-		bAny = true;
-		if (QuestDone.Contains(Q.Id))
-		{
-			Toast(TEXT("That errand already clapped. Find another round person."));
-			return;
-		}
-		if (!ConsumeItem(Q.NeedItem, Q.NeedCount))
-		{
-			const FHolypawItemDef* Item = HolypawCatalog::FindItem(Q.NeedItem);
-			Toast(FString::Printf(TEXT("Need %s. %s"), Item ? *Item->DisplayName.ToString() : *Q.NeedItem.ToString(), *Q.Brief.ToString()));
-			return;
-		}
-		QuestActive.Remove(Q.Id);
-		QuestDone.AddUnique(Q.Id);
-		if (Affection)
-		{
-			Affection->AddAP(Q.RewardAP);
-			Affection->AddFP(Q.RewardFP);
-			if (Q.RewardMiracle > 0.f)
-			{
-				Affection->AddMiracle(Q.RewardMiracle);
-			}
-		}
-		PlayCue(TEXT("Convert"));
-		Toast(Q.DoneLine.IsEmpty()
-			? FString::Printf(TEXT("Errand done: %s  +%d AP"), *Q.Title.ToString(), Q.RewardAP)
-			: Q.DoneLine);
-		return;
-	}
-	Toast(bAny ? TEXT("Nothing to hand over.") : TEXT("They do not have an errand. Hug, clap, or ask the way."));
+	ApplyTalkVerb(static_cast<uint8>(HolypawDialogue::ETalkVerb::TurnIn));
 }
 
 void AHolypawCharacter::AcceptQuest()
 {
-	if (!bTalkOpen)
+	ApplyTalkVerb(static_cast<uint8>(HolypawDialogue::ETalkVerb::Accept));
+}
+
+void AHolypawCharacter::ApplyTalkVerb(uint8 Verb)
+{
+	HolypawDialogue::FTalkState State;
+	State.Speaker = TalkSpeaker;
+	State.bTalkOpen = bTalkOpen;
+	State.bTalkSecond = bTalkSecond;
+	State.TalkBody = TalkBody;
+	State.TalkHint = TalkHint;
+	State.QuestActive = QuestActive;
+	State.QuestDone = QuestDone;
+	const HolypawDialogue::FTalkOutcome O = HolypawDialogue::Run(
+		static_cast<HolypawDialogue::ETalkVerb>(Verb), State, [this](FName Id)
+	{
+		return GetItemCount(Id);
+	});
+	if (!O.bHandled)
 	{
 		return;
 	}
-	const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(TalkSpeaker);
-	if (!Q)
+	if (!O.TalkBody.IsEmpty())
 	{
-		Toast(TEXT("No job on this person. Try Ranger, Child, Choir Bear, mill, Net Weaver, Salt Priest, Farmer, Mud Sculptor, Snow Warden."));
+		TalkBody = O.TalkBody;
+	}
+	bTalkSecond = O.bTalkSecond;
+	if (O.bConsumeItem && !ConsumeItem(O.NeedItem, O.NeedCount))
+	{
+		Toast(TEXT("Pockets argued. Try again."));
 		return;
 	}
-	if (QuestDone.Contains(Q->Id))
+	if (O.bMarkQuestDone)
 	{
-		Toast(TEXT("Already finished. They are still clapping about it."));
-		return;
+		QuestActive.Remove(O.QuestId);
+		QuestDone.AddUnique(O.QuestId);
+		if (Affection)
+		{
+			Affection->AddAP(O.RewardAP);
+			Affection->AddFP(O.RewardFP);
+			if (O.RewardMiracle > 0.f)
+			{
+				Affection->AddMiracle(O.RewardMiracle);
+			}
+		}
 	}
-	if (QuestActive.Contains(Q->Id))
+	if (O.bMarkQuestActive)
 	{
-		Toast(Q->Brief.ToString());
-		return;
+		QuestActive.AddUnique(O.QuestId);
 	}
-	QuestActive.AddUnique(Q->Id);
-	PlayCue(TEXT("Talk"));
-	Toast(Q->OfferLine.IsEmpty() ? Q->Brief.ToString() : Q->OfferLine);
+	if (O.Cue != NAME_None)
+	{
+		PlayCue(O.Cue);
+	}
+	if (!O.Toast.IsEmpty())
+	{
+		Toast(O.Toast);
+	}
+	if (O.bCloseTalk)
+	{
+		ClosePanels();
+	}
 }
 
 void AHolypawCharacter::SetQuestState(const TArray<FName>& Active, const TArray<FName>& Done)

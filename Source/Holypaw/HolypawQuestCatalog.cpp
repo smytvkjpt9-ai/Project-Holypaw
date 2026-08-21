@@ -70,6 +70,26 @@ namespace HolypawCatalog
 				TEXT("Snow Warden"), TEXT("Snow Warden"), TEXT("auroraThread"), 1, 16, 8, 10.f,
 				TEXT("The scarves dropped a thread the mill cannot copy. Bring it."),
 				TEXT("Warden knits the ridge shut against beige. Peak is next."));
+			Add(TEXT("goldReel"), TEXT("Exhibit Glow"),
+				TEXT("Pocket a gold poster on Lantern Angeles' Marquee Walk and give it to Studio Grip."),
+				TEXT("Studio Grip"), TEXT("Studio Grip"), TEXT("goldPoster"), 1, 16, 8, 6.f,
+				TEXT("Steal a gold poster. I dropped the light. You drop the lie. Key 3 when it shines."),
+				TEXT("Grip stamps the poster Exhibit Glow. The lot converts between takes."));
+			Add(TEXT("teaFog"), TEXT("Fog cup"),
+				TEXT("Find fog tea on Mossgate's Tea Walk and give it to the Fog Baker."),
+				TEXT("Fog Baker"), TEXT("Fog Baker"), TEXT("fogTea"), 1, 14, 8, 8.f,
+				TEXT("Tea that tastes like rain if you believe a bear. Key 4. Key 3 when the cup is warm."),
+				TEXT("Fog Baker pours. Mossgate forgives polyester a little slower, on purpose."));
+			Add(TEXT("duskClap"), TEXT("Palm duet"),
+				TEXT("Pick a palm clap on Palma Dusk's Clap Pier and give it to the Palm Singer."),
+				TEXT("Palm Singer"), TEXT("Palm Singer"), TEXT("palmClap"), 1, 16, 8, 10.f,
+				TEXT("Palms clap at hymns. Bring the token. We will duet until dusk agrees."),
+				TEXT("Palm Singer and the pier clap together. Two oceans take notes."));
+			Add(TEXT("loomWrap"), TEXT("Cherry wrap"),
+				TEXT("Take cherry thread from Cherry Loom's Loom Walk to the Loom Weaver."),
+				TEXT("Loom Weaver"), TEXT("Loom Weaver"), TEXT("cherryThread"), 1, 18, 10, 8.f,
+				TEXT("Thread enough to wrap a mayor. Fetch it. Globe Trek ends when the wrap holds."),
+				TEXT("Weaver wraps the rumor shut. Cherry Isle claps in pink."));
 			return Out;
 		}();
 		return All;
