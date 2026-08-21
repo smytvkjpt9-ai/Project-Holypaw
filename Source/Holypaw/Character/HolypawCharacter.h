@@ -145,12 +145,14 @@ public:
 	void SetInventory(const TArray<FHolypawItemStack>& Stacks);
 	int32 GetItemCount(FName Id) const;
 	void AddItem(FName Id, int32 Amount = 1);
+	bool ConsumeItem(FName Id, int32 Amount = 1);
 	bool UseItem(FName Id);
 	void OpenShop();
 	void BuyShopSlot(int32 Index);
 	bool StartTalk(AHugHuman* Human);
 	void AdvanceTalk();
 	void AskTalkHint();
+	void TurnInErrand();
 	void ToggleInventory();
 	bool IsTalkOpen() const { return bTalkOpen; }
 	bool IsShopOpen() const { return bShopOpen; }

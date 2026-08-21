@@ -1,5 +1,6 @@
 #include "Actors/HostilePet.h"
 #include "Character/HolypawCharacter.h"
+#include "Combat/HolypawBattleMath.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "TimerManager.h"
@@ -87,6 +88,8 @@ void AHostilePet::ApplyFromCatalog()
 	HPMax = D.HP;
 	HP = D.HP;
 	Attack = D.Attack;
+	BaseAttack = D.Attack;
+	bPhaseTwo = false;
 	Rank = D.Rank;
 	Special = D.Special;
 	AggroRange = D.AggroRange;
@@ -262,6 +265,27 @@ void AHostilePet::PulseHit()
 	HitPulse = 1.f;
 }
 
+bool AHostilePet::TryEnterPhaseTwo()
+{
+	if (bPhaseTwo || bDefeated || (!IsBoss() && Rank != EVillainRank::Elite))
+	{
+		return false;
+	}
+	if (HP * 2 > HPMax)
+	{
+		return false;
+	}
+	bPhaseTwo = true;
+	Attack = BaseAttack + FMath::Max(3, BaseAttack / 3);
+	PulseHit();
+	return true;
+}
+
+FString AHostilePet::GetPhaseLine() const
+{
+	return HolypawBattle::BossPhaseLine(VillainId, DisplayName.ToString());
+}
+
 void AHostilePet::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -339,6 +363,9 @@ void AHostilePet::RespawnLater()
 {
 	bDefeated = false;
 	HP = HPMax;
+	bPhaseTwo = false;
+	Attack = BaseAttack;
+	HitPulse = 0.f;
 	SetActorHiddenInGame(false);
 	SetActorEnableCollision(true);
 	const FVector Jitter(FMath::FRandRange(-200.f, 200.f), FMath::FRandRange(-200.f, 200.f), 0.f);

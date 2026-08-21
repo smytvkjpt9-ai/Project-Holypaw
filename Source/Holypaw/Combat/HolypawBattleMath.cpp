@@ -85,4 +85,29 @@ namespace HolypawBattle
 		}
 		return Out;
 	}
+
+	FString BossPhaseLine(const EHolypawVillain Id, const FString& DisplayName)
+	{
+		switch (Id)
+		{
+		case EHolypawVillain::SilkMagistrate:
+			return TEXT("Silk Magistrate adjourns into shears. Phase two!");
+		case EHolypawVillain::BrineWarden:
+			return TEXT("Brine Warden floods the dock with salt law. Phase two!");
+		case EHolypawVillain::HarvestOverseer:
+			return TEXT("Harvest Overseer rings a mill bell. Phase two!");
+		case EHolypawVillain::BogKing:
+			return TEXT("Bog King stands up. The peat stands up with him. Phase two!");
+		case EHolypawVillain::AuroraWarden:
+			return TEXT("Aurora Warden pins the sky to a spear. Phase two!");
+		case EHolypawVillain::VelvetTyrant:
+			return TEXT("Velvet Tyrant unbuttons the mountain. Phase two!");
+		case EHolypawVillain::Unmaker:
+			return TEXT("The Unmaker remembers your stuffing by name. Phase two!");
+		case EHolypawVillain::MiracleEater:
+			return TEXT("Miracle Eater bites the choir in half. Phase two!");
+		default:
+			return DisplayName + TEXT(" rips a seam in the sky. Phase two!");
+		}
+	}
 }

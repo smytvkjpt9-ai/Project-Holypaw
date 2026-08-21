@@ -62,8 +62,8 @@ namespace HolypawCatalog
 				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."));
 			Add(TEXT("Choir Bear"),
 				TEXT("I am not a bear. I am a person in a choir that aspires. Close enough."),
-				TEXT("The chapel fills Miracle Charge. Dusk makes the sky sing along."),
-				TEXT("Bear Chapel, gold roof. Hymn, then go pick a fight with polyester."));
+				TEXT("The chapel fills Miracle Charge. Bring the cellar hymn sheet and press 3. Dusk sings along."),
+				TEXT("Cottage cellar for the sheet. Chapel gold roof. Then polyester."));
 			Add(TEXT("Seamstress"),
 				TEXT("I stitch hymn ribbons that the mill called inefficient. They were correct. I clapped."),
 				TEXT("Eight AP, one ribbon. Faith you can tie around a paw."),
@@ -82,8 +82,16 @@ namespace HolypawCatalog
 				TEXT("Plaza fountain. E to wish. Inn east, chapel west, mill rude and further east."));
 			Add(TEXT("Mill Whistleblower"),
 				TEXT("I filed a complaint that polyester has no soul. They offered a coupon. I took a hymn."),
-				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap."),
+				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap. Key 3 if you have some."),
 				TEXT("Poly Mill, grey sheds, red stack. Handmade not polyester — the sign is not subtle."));
+			Add(TEXT("Plaza Florist"),
+				TEXT("I sell roses that refuse to be identical. The mill asked for a bulk beige. I sent a thorn."),
+				TEXT("Toss a thought in the fountain. Faith comes back smelling like wet stone and hope."),
+				TEXT("Fountain wish is E. Inn is the warm cube. Chapel the tall gold one."));
+			Add(TEXT("Night Watch"),
+				TEXT("Quiet Rows after dusk. I watch windows, not opinions. Yours are already round."),
+				TEXT("Night paints the fog blue. The mill stays beige on purpose. That is a crime of taste."),
+				TEXT("South of the plaza. Lamp Lighter keeps the street honest."));
 			Add(TEXT("Harbor Hand"),
 				TEXT("Nets catch fish. You catch governments. Same wrist motion."),
 				TEXT("Brine Warden walks the outer dock. He's very tall about it."),

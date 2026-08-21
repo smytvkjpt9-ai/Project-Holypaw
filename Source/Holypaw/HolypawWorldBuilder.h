@@ -116,6 +116,7 @@ protected:
 	void PlaceCamp(const FVector2D& XY, const FText& Name);
 	void PlaceLantern(const FVector2D& XY, EHolypawZone Zone);
 	void PlaceShrine(const FVector2D& XY, EHolypawShrineKind Kind, const FText& Name);
+	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY);
 	void PlaceSign(const FVector2D& XY, const FText& Message);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;

@@ -126,6 +126,10 @@ void AHolypawHUD::DrawHUD()
 			{
 				DrawLabel(CX + 80.f, CY + 60.f, TEXT("Poly Mill — cheap polyester"), FLinearColor(0.85f, 0.7f, 0.45f), 0.95f);
 			}
+			if (E->bPhaseTwo)
+			{
+				DrawLabel(CX + 80.f, CY + 78.f, TEXT("PHASE TWO"), FLinearColor(1.f, 0.55f, 0.42f), 1.05f);
+			}
 		}
 		DrawLabel(CX - 300.f, CY + 88.f, P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.12f);
 		if (!P->GetBattleStatusLine().IsEmpty())

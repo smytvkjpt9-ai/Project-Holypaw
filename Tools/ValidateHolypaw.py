@@ -273,6 +273,8 @@ if "OpenShop" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text()
 if "StartTalk" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
     errors.append("believers should talk, not re-hug")
 
+if not (ROOT / "Source/Holypaw/Actors/HolypawPickup.cpp").exists():
+    errors.append("missing HolypawPickup.cpp")
 if not (ROOT / "Source/Holypaw/Actors/HolypawShrine.cpp").exists():
     errors.append("missing HolypawShrine.cpp")
 if not (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").exists():
@@ -291,6 +293,13 @@ for needle, blob, label in (
     ("Spire Guard", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Mill Whistleblower", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("ScaleForArmor", (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").read_text(), "battle math"),
+    ("BossPhaseLine", (ROOT / "Source/Holypaw/Combat/HolypawBattleMath.cpp").read_text(), "battle math"),
+    ("TryEnterPhaseTwo", (ROOT / "Source/Holypaw/Actors/HostilePet.cpp").read_text(), "hostile"),
+    ("TurnInErrand", CHAR, "character"),
+    ("CottageLoft", WORLD, "world"),
+    ("PlacePickup", WORLD, "world"),
+    ("hymnSheet", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("Plaza Florist", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

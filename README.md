@@ -69,7 +69,7 @@ Wild biomes fill the land between cities: Stuffed Park, Nursery Hills, Cozy Home
 
 ## Combat (UMG)
 
-Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands: **1** Soft Slap **2** Cuddle Beam **3** Party Assault **4** Flee **5** Guard **6** Hymn. Slap builds a combo; ~12% crits can **stagger** (enemy special fumbles). Beam slips **armor plates** better than slaps. Frost slows your paw. Poison thread ticks between turns. Hymn clears poison and raises a shield. Hits flash the villain. Poly Mill enemies take extra damage from **Poly Rip**.
+Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands: **1** Soft Slap **2** Cuddle Beam **3** Party Assault **4** Flee **5** Guard **6** Hymn. Slap builds a combo; ~12% crits can **stagger** (enemy special fumbles). Elites and bosses enter **phase two** under half stuffing. Beam slips **armor plates** better than slaps. Frost slows your paw. Poison thread ticks between turns. Hymn clears poison and raises a shield. Hits flash the villain. Poly Mill enemies take extra damage from **Poly Rip**.
 
 ## Three skill trees (K, Tab to cycle)
 
@@ -114,4 +114,6 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 
 Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
-Converted humans **talk** (testimony) instead of being hugged again. 1 keeps listening, 2 asks the way.
+Converted humans **talk** (testimony) instead of being hugged again. 1 keeps listening, 2 asks the way, 3 turns in an errand (mill scrap to the whistleblower, cellar hymn sheet to Choir Bear).
+
+Cottage cellar and porch hold pickups. Pocket the hymn sheet before you leave the park.

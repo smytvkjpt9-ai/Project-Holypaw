@@ -74,6 +74,11 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 				PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX + 80.f, Size.Y * 0.235f),
 					TEXT("Poly Mill — cheap polyester"), FLinearColor(0.85f, 0.7f, 0.45f), 0.9f);
 			}
+			if (E->bPhaseTwo)
+			{
+				PaintText(OutDrawElements, Layer + 3, AllottedGeometry, FVector2D(CX + 80.f, Size.Y * 0.255f),
+					TEXT("PHASE TWO"), FLinearColor(1.f, 0.55f, 0.42f), 1.05f);
+			}
 		}
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 300.f, Size.Y * 0.27f), P->GetBattleLog(), FLinearColor(0.95f, 0.9f, 1.f), 1.05f);
 		const FString Status = P->GetBattleStatusLine();

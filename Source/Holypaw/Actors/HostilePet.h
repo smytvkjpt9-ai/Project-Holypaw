@@ -68,9 +68,13 @@ public:
 	void RespawnLater();
 
 	void PulseHit();
+	bool TryEnterPhaseTwo();
+	FString GetPhaseLine() const;
 	float HitPulse = 0.f;
 	FVector Home = FVector::ZeroVector;
 	float BodyScale = 1.f;
+	bool bPhaseTwo = false;
+	int32 BaseAttack = 7;
 
 private:
 	void ApplyFromCatalog();

@@ -16,4 +16,5 @@ namespace HolypawBattle
 	int32 SlapComboBonus(int32 Combo);
 	bool ShouldStagger(int32 Dmg, bool bCrit);
 	FString FormatStatus(int32 SlapCombo, int32 PoisonTurns, int32 FrostTurns, int32 HymnShield, bool bStaggered);
+	FString BossPhaseLine(EHolypawVillain Id, const FString& DisplayName);
 }

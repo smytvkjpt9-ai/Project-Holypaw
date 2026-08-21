@@ -9,6 +9,7 @@
 #include "Actors/FaithStall.h"
 #include "Actors/Signpost.h"
 #include "Actors/TravelLantern.h"
+#include "Actors/HolypawPickup.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -607,6 +608,12 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 85.f), FVector(1.1f, 1.1f, 0.9f), FLinearColor(0.55f, 0.38f, 0.28f), MakeName(TEXT("CottageTable")));
 	PlaceCube(FVector(CottageSpawn.X + 310.f, CottageSpawn.Y, Z + 150.f), FVector(0.18f, 1.5f, 2.4f), FLinearColor(0.38f, 0.24f, 0.18f), MakeName(TEXT("CottageDoor")));
 	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree")));
+	PlaceCube(FVector(CottageSpawn.X - 40.f, CottageSpawn.Y, Z + 280.f), FVector(4.2f, 3.4f, 0.16f), FLinearColor(0.68f, 0.5f, 0.4f), MakeName(TEXT("CottageLoft")));
+	PlaceCube(FVector(CottageSpawn.X - 90.f, CottageSpawn.Y - 40.f, Z + 310.f), FVector(1.4f, 0.7f, 0.5f), FLinearColor(0.55f, 0.4f, 0.32f), MakeName(TEXT("LoftTrunk")));
+	PlaceCube(FVector(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f, Z - 20.f), FVector(3.2f, 2.6f, 0.9f), FLinearColor(0.32f, 0.24f, 0.2f), MakeName(TEXT("CottageCellar")));
+	PlaceCube(FVector(CottageSpawn.X + 240.f, CottageSpawn.Y + 70.f, Z + 70.f), FVector(0.7f, 0.7f, 0.55f), FLinearColor(0.72f, 0.52f, 0.38f), MakeName(TEXT("PorchChair")));
+	PlacePickup(FVector2D(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f), TEXT("hymnSheet"), NSLOCTEXT("Holypaw", "HymnSheetPick", "cellar hymn sheet"));
+	PlacePickup(FVector2D(CottageSpawn.X + 260.f, CottageSpawn.Y - 40.f), TEXT("stuffedPostcard"), NSLOCTEXT("Holypaw", "PostcardPick", "porch postcard"));
 
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
@@ -911,6 +918,20 @@ void AHolypawWorldBuilder::PlaceShrine(const FVector2D& XY, EHolypawShrineKind K
 	}
 }
 
+void AHolypawWorldBuilder::PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label)
+{
+	const float Z = SampleHeight(XY.X, XY.Y);
+	FActorSpawnParameters Sp;
+	Sp.Owner = this;
+	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	if (AHolypawPickup* P = GetWorld()->SpawnActor<AHolypawPickup>(FVector(XY.X, XY.Y, Z + 28.f), FRotator::ZeroRotator, Sp))
+	{
+		P->ItemId = ItemId;
+		P->Label = Label;
+		P->SetActorScale3D(FVector(0.55f, 0.7f, 0.12f));
+	}
+}
+
 FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
 {
 	if (Zone == EHolypawZone::ForestCottage)
@@ -1008,6 +1029,8 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Lamp Lighter"), FVector2D(RibbonCity.X + 80.f, RibbonCity.Y - 3100.f), FLinearColor(1.f, 0.82f, 0.42f));
 	SpawnHuman(TEXT("Spire Guard"), FVector2D(RibbonCity.X - 80.f, RibbonCity.Y + 80.f), FLinearColor(0.62f, 0.55f, 0.72f));
 	SpawnHuman(TEXT("Mill Whistleblower"), FVector2D(RibbonCity.X + 4800.f, RibbonCity.Y - 700.f), FLinearColor(0.7f, 0.68f, 0.6f));
+	SpawnHuman(TEXT("Plaza Florist"), FVector2D(RibbonCity.X - 160.f, RibbonCity.Y - 280.f), FLinearColor(0.88f, 0.45f, 0.62f));
+	SpawnHuman(TEXT("Night Watch"), FVector2D(RibbonCity.X + 240.f, RibbonCity.Y - 3600.f), FLinearColor(0.35f, 0.42f, 0.62f));
 	SpawnHuman(TEXT("Harbor Hand"), FVector2D(Tidewell.X + 400.f, Tidewell.Y + 200.f), FLinearColor(0.45f, 0.55f, 0.7f));
 	SpawnHuman(TEXT("Net Weaver"), FVector2D(Tidewell.X - 200.f, Tidewell.Y - 300.f), FLinearColor(0.4f, 0.7f, 0.75f));
 	SpawnHuman(TEXT("Farmer"), FVector2D(Hearthfold.X + 250.f, Hearthfold.Y - 200.f), FLinearColor(0.7f, 0.6f, 0.3f));

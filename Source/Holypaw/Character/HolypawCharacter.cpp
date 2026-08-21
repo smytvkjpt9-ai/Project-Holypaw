@@ -815,6 +815,11 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	LastDamageDealt = Dmg;
 	DamagePopupTime = 0.9f;
 	PlayCue(TEXT("BattleHit"));
+	if (E->TryEnterPhaseTwo())
+	{
+		BattleLog += TEXT(" ");
+		BattleLog += E->GetPhaseLine();
+	}
 	if (E->HP <= 0)
 	{
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.35f, false);
@@ -913,6 +918,11 @@ void AHolypawCharacter::EnemyBattleSwing()
 	{
 		Dmg += 4;
 		Extra += TEXT("  The air unravels.");
+	}
+	if (En->bPhaseTwo)
+	{
+		Dmg += 2 + En->Attack / 5;
+		Extra += TEXT("  Phase two.");
 	}
 
 	if (Skills->HasSkill(TEXT("faithArmor")))
@@ -1467,6 +1477,7 @@ void AHolypawCharacter::TryBuyTreeSlot(int32 Index)
 		{
 			if (Index == 0) { AdvanceTalk(); }
 			else if (Index == 1) { AskTalkHint(); }
+			else if (Index == 2) { TurnInErrand(); }
 		}
 		else if (bShopOpen)
 		{
@@ -2058,6 +2069,28 @@ void AHolypawCharacter::AddItem(FName Id, int32 Amount)
 	Inventory.Add(S);
 }
 
+bool AHolypawCharacter::ConsumeItem(FName Id, int32 Amount)
+{
+	if (Amount <= 0 || Id.IsNone())
+	{
+		return false;
+	}
+	for (int32 I = 0; I < Inventory.Num(); ++I)
+	{
+		if (Inventory[I].Id != Id || Inventory[I].Count < Amount)
+		{
+			continue;
+		}
+		Inventory[I].Count -= Amount;
+		if (Inventory[I].Count <= 0)
+		{
+			Inventory.RemoveAt(I);
+		}
+		return true;
+	}
+	return false;
+}
+
 bool AHolypawCharacter::UseItem(FName Id)
 {
 	const FHolypawItemDef* Def = HolypawCatalog::FindItem(Id);
@@ -2195,12 +2228,53 @@ void AHolypawCharacter::AskTalkHint()
 	PlayCue(TEXT("Talk"));
 }
 
+void AHolypawCharacter::TurnInErrand()
+{
+	if (!bTalkOpen)
+	{
+		return;
+	}
+	if (TalkSpeaker.Equals(TEXT("Mill Whistleblower"), ESearchCase::IgnoreCase))
+	{
+		if (!ConsumeItem(TEXT("millScrap"), 1))
+		{
+			Toast(TEXT("Bring mill scrap from a Poly fight. The whistleblower will gasp on purpose."));
+			return;
+		}
+		if (Affection)
+		{
+			Affection->AddAP(18);
+			Affection->AddFP(8);
+		}
+		PlayCue(TEXT("Convert"));
+		Toast(TEXT("Whistleblower files the scrap as Exhibit Bear. +18 AP · +8 FP."));
+		return;
+	}
+	if (TalkSpeaker.Equals(TEXT("Choir Bear"), ESearchCase::IgnoreCase))
+	{
+		if (!ConsumeItem(TEXT("hymnSheet"), 1))
+		{
+			Toast(TEXT("The cottage cellar hid a hymn sheet. Choir Bear wants the lyrics."));
+			return;
+		}
+		if (Affection)
+		{
+			Affection->AddMiracle(40.f);
+			Affection->AddFP(6);
+		}
+		PlayCue(TEXT("Miracle"));
+		Toast(TEXT("Choir Bear sight-reads your cellar hymn. Miracle Charge leaps."));
+		return;
+	}
+	Toast(TEXT("They do not have an errand. Hug, clap, or ask the way."));
+}
+
 TArray<FString> AHolypawCharacter::GetTalkLines() const
 {
 	TArray<FString> Lines;
 	Lines.Add(TalkSpeaker);
 	Lines.Add(TalkBody);
-	Lines.Add(TEXT("1  keep listening    2  ask the way    E/Esc done"));
+	Lines.Add(TEXT("1  keep listening    2  ask the way    3  errand    E/Esc done"));
 	return Lines;
 }
 
