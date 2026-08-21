@@ -54,6 +54,38 @@ AHolypawWorldBuilder::AHolypawWorldBuilder()
 	Reeds->SetupAttachment(RootComponent);
 	Reeds->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	WallRose = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WallRose"));
+	WallRose->SetupAttachment(RootComponent);
+	WallRose->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WallRose->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
+	WallMint = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WallMint"));
+	WallMint->SetupAttachment(RootComponent);
+	WallMint->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WallMint->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
+	WallGold = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WallGold"));
+	WallGold->SetupAttachment(RootComponent);
+	WallGold->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WallGold->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
+	Roofs = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Roofs"));
+	Roofs->SetupAttachment(RootComponent);
+	Roofs->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Roofs->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
+	RoadTiles = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("RoadTiles"));
+	RoadTiles->SetupAttachment(RootComponent);
+	RoadTiles->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	WaterTiles = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WaterTiles"));
+	WaterTiles->SetupAttachment(RootComponent);
+	WaterTiles->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Cacti = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Cacti"));
+	Cacti->SetupAttachment(RootComponent);
+	Cacti->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeFinder(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
@@ -79,7 +111,9 @@ void AHolypawWorldBuilder::GenerateWorld()
 		return;
 	}
 	bGenerated = true;
-	UE_LOG(LogHolypaw, Log, TEXT("Holypaw world: cottage, five settlements, roads, water, biomes."));
+	UE_LOG(LogHolypaw, Log, TEXT("Holypaw world: Earth-analog globe, %d cities, oceans, deserts, ice."), HolypawCatalog::GetCities().Num());
+	CacheCityCoords();
+	BindKits();
 	HideTemplateFloor();
 	SpawnAtmosphere();
 	BuildTerrain();
@@ -130,7 +164,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 			C->SetLightColor(FLinearColor(1.f, 0.93f, 0.82f));
 			C->SetAtmosphereSunLight(true);
 			C->SetCastShadows(true);
-			C->SetDynamicShadowDistanceMovableLight(50000.f);
+			C->SetDynamicShadowDistanceMovableLight(90000.f);
 		}
 	}
 	if (ASkyLight* Sky = GetWorld()->SpawnActor<ASkyLight>(FVector(0.f, 0.f, 400.f), FRotator::ZeroRotator, Sp))
@@ -180,12 +214,28 @@ float AHolypawWorldBuilder::HashRand(int32 X, int32 Y, int32 Salt) const
 bool AHolypawWorldBuilder::IsInAnyTown(float X, float Y, float Extra) const
 {
 	const FVector2D P(X, Y);
-	if (FVector2D::Distance(P, RibbonCity) < 6500.f + Extra) { return true; }
-	if (FVector2D::Distance(P, Tidewell) < 4200.f + Extra) { return true; }
-	if (FVector2D::Distance(P, Hearthfold) < 3800.f + Extra) { return true; }
-	if (FVector2D::Distance(P, Emberfen) < 3600.f + Extra) { return true; }
-	if (FVector2D::Distance(P, Snowveil) < 3200.f + Extra) { return true; }
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		if (FVector2D::Distance(P, C.Pos) < C.Radius + Extra)
+		{
+			return true;
+		}
+	}
 	return false;
+}
+
+void AHolypawWorldBuilder::CacheCityCoords()
+{
+	RibbonCity = CityXY(EHolypawZone::RibbonCity);
+	Tidewell = CityXY(EHolypawZone::Tidewell);
+	Hearthfold = CityXY(EHolypawZone::Hearthfold);
+	Emberfen = CityXY(EHolypawZone::Emberfen);
+	Snowveil = CityXY(EHolypawZone::Snowveil);
+}
+
+FVector2D AHolypawWorldBuilder::CityXY(EHolypawZone Zone) const
+{
+	return HolypawCatalog::GetCity(Zone).Pos;
 }
 
 void AHolypawWorldBuilder::FlattenNearTowns(float X, float Y, float& InOutHeight) const
@@ -199,11 +249,10 @@ void AHolypawWorldBuilder::FlattenNearTowns(float X, float Y, float& InOutHeight
 			InOutHeight = FMath::Lerp(InOutHeight, Target, T * T);
 		}
 	};
-	Flatten(RibbonCity, 8000.f, 55.f);
-	Flatten(Tidewell, 5000.f, 28.f);
-	Flatten(Hearthfold, 4500.f, 70.f);
-	Flatten(Emberfen, 4200.f, 22.f);
-	Flatten(Snowveil, 3800.f, 140.f);
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		Flatten(C.Pos, C.Radius * 1.15f, C.FlattenZ);
+	}
 	const float Fd = FVector2D::Distance(FVector2D(X, Y), FVector2D(CottageSpawn.X, CottageSpawn.Y));
 	if (Fd < 3500.f)
 	{
@@ -213,12 +262,12 @@ void AHolypawWorldBuilder::FlattenNearTowns(float X, float Y, float& InOutHeight
 
 float AHolypawWorldBuilder::SampleHeight(float X, float Y) const
 {
-	const float Nx = X / 18000.f;
-	const float Ny = Y / 18000.f;
-	float H = 90.f;
-	H += 140.f * FMath::Sin(Nx * 1.15f) * FMath::Cos(Ny * 0.95f);
-	H += 65.f * FMath::Sin(Nx * 2.8f + Ny * 1.7f);
-	H += 40.f * FMath::Sin(Nx * 6.1f) * FMath::Sin(Ny * 5.4f);
+	const float Nx = X / 22000.f;
+	const float Ny = Y / 22000.f;
+	float H = 40.f + HolypawCatalog::LandHeightBias(FVector2D(X, Y));
+	H += 90.f * FMath::Sin(Nx * 1.15f) * FMath::Cos(Ny * 0.95f);
+	H += 48.f * FMath::Sin(Nx * 2.8f + Ny * 1.7f);
+	H += 28.f * FMath::Sin(Nx * 6.1f) * FMath::Sin(Ny * 5.4f);
 
 	const float Md = FVector2D::Distance(FVector2D(X, Y), PeakCenter);
 	H += 3200.f * FMath::Exp(-FMath::Square(Md / 8500.f));
@@ -227,15 +276,30 @@ float AHolypawWorldBuilder::SampleHeight(float X, float Y) const
 		H += 900.f * (1.f - Md / 3500.f);
 	}
 
+	const float Andes = FVector2D::Distance(FVector2D(X, Y), CityXY(EHolypawZone::AndesLoom));
+	H += 1100.f * FMath::Exp(-FMath::Square(Andes / 11000.f));
+
+	const float SilkRidge = FVector2D::Distance(FVector2D(X, Y), FVector2D(82000.f, 4000.f));
+	H += 1500.f * FMath::Exp(-FMath::Square(SilkRidge / 9000.f));
+
 	FlattenNearTowns(X, Y, H);
 
-	if (X > 36000.f)
+	const EHolypawZone ZGuess = ResolveZone(FVector(X, Y, H));
+	if (ZGuess == EHolypawZone::Ocean)
 	{
-		H -= (X - 36000.f) * 0.045f;
+		H = 4.f;
 	}
-	if (Y < -16000.f)
+	if (ZGuess == EHolypawZone::Desert)
 	{
-		H -= 25.f;
+		H = FMath::Lerp(H, 36.f, 0.55f);
+	}
+	if (ZGuess == EHolypawZone::Ice)
+	{
+		H += 80.f;
+	}
+	if (ZGuess == EHolypawZone::Jungle)
+	{
+		H += 18.f * FMath::Sin(X / 2400.f);
 	}
 	return H;
 }
@@ -260,24 +324,7 @@ void AHolypawWorldBuilder::BuildTerrain()
 			UV.Add(FVector2D(I / float(N - 1) * 18.f, J / float(N - 1) * 18.f));
 
 			const EHolypawZone Zid = ResolveZone(FVector(X, Y, Z));
-			FLinearColor C(0.45f, 0.62f, 0.38f);
-			switch (Zid)
-			{
-			case EHolypawZone::ForestCottage: C = FLinearColor(0.32f, 0.52f, 0.34f); break;
-			case EHolypawZone::NurseryHills: C = FLinearColor(0.55f, 0.72f, 0.40f); break;
-			case EHolypawZone::RibbonCity: C = FLinearColor(0.62f, 0.58f, 0.52f); break;
-			case EHolypawZone::Tidewell: C = FLinearColor(0.55f, 0.62f, 0.68f); break;
-			case EHolypawZone::Hearthfold: C = FLinearColor(0.62f, 0.70f, 0.38f); break;
-			case EHolypawZone::Emberfen: C = FLinearColor(0.52f, 0.34f, 0.30f); break;
-			case EHolypawZone::Snowveil: C = FLinearColor(0.82f, 0.86f, 0.92f); break;
-			case EHolypawZone::Homestead: C = FLinearColor(0.58f, 0.68f, 0.36f); break;
-			case EHolypawZone::Coast: C = FLinearColor(0.78f, 0.72f, 0.52f); break;
-			case EHolypawZone::Mire: C = FLinearColor(0.48f, 0.32f, 0.28f); break;
-			case EHolypawZone::Highlands: C = FLinearColor(0.55f, 0.52f, 0.50f); break;
-			case EHolypawZone::Snow: C = FLinearColor(0.90f, 0.93f, 0.97f); break;
-			default: break;
-			}
-			Colors.Add(C.ToFColor(true));
+			Colors.Add(HolypawCatalog::ZoneTerrainColor(Zid).ToFColor(true));
 		}
 	}
 	for (int32 J = 0; J < N - 1; ++J)
@@ -312,6 +359,39 @@ void AHolypawWorldBuilder::ColorMesh(UStaticMeshComponent* Mesh, const FLinearCo
 	}
 }
 
+void AHolypawWorldBuilder::BindKits()
+{
+	auto Bind = [&](UInstancedStaticMeshComponent* ISM, UStaticMesh* Mesh, const FLinearColor& Color)
+	{
+		if (!ISM || !Mesh) { return; }
+		ISM->SetStaticMesh(Mesh);
+		if (ShapeMat)
+		{
+			UMaterialInstanceDynamic* Mid = UMaterialInstanceDynamic::Create(ShapeMat, this);
+			Mid->SetVectorParameterValue(TEXT("Color"), Color);
+			ISM->SetMaterial(0, Mid);
+		}
+	};
+	Bind(Trees, CylMesh ? CylMesh : CubeMesh, FLinearColor(0.38f, 0.24f, 0.16f));
+	Bind(Canopies, ConeMesh ? ConeMesh : SphereMesh, FLinearColor(0.28f, 0.52f, 0.32f));
+	Bind(Grass, CubeMesh, FLinearColor(0.40f, 0.68f, 0.36f));
+	Bind(Rocks, SphereMesh ? SphereMesh : CubeMesh, FLinearColor(0.55f, 0.52f, 0.48f));
+	Bind(Reeds, CubeMesh, FLinearColor(0.35f, 0.42f, 0.28f));
+	Bind(WallRose, CubeMesh, FLinearColor(0.85f, 0.62f, 0.58f));
+	Bind(WallMint, CubeMesh, FLinearColor(0.62f, 0.75f, 0.70f));
+	Bind(WallGold, CubeMesh, FLinearColor(0.90f, 0.78f, 0.55f));
+	Bind(Roofs, CubeMesh, FLinearColor(0.55f, 0.28f, 0.32f));
+	Bind(RoadTiles, CubeMesh, FLinearColor(0.72f, 0.62f, 0.46f));
+	Bind(WaterTiles, CubeMesh, FLinearColor(0.35f, 0.55f, 0.72f));
+	Bind(Cacti, ConeMesh ? ConeMesh : CubeMesh, FLinearColor(0.42f, 0.62f, 0.32f));
+}
+
+void AHolypawWorldBuilder::AddKit(UInstancedStaticMeshComponent* ISM, const FVector& Loc, const FRotator& Rot, const FVector& Scale)
+{
+	if (!ISM) { return; }
+	ISM->AddInstance(FTransform(Rot, Loc, Scale), true);
+}
+
 UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name)
 {
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this, Name);
@@ -333,69 +413,72 @@ UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const 
 
 void AHolypawWorldBuilder::ScatterFlora()
 {
-	auto Bind = [&](UInstancedStaticMeshComponent* ISM, UStaticMesh* Mesh, const FLinearColor& Color)
-	{
-		if (!ISM || !Mesh) { return; }
-		ISM->SetStaticMesh(Mesh);
-		if (ShapeMat)
-		{
-			UMaterialInstanceDynamic* Mid = UMaterialInstanceDynamic::Create(ShapeMat, this);
-			Mid->SetVectorParameterValue(TEXT("Color"), Color);
-			ISM->SetMaterial(0, Mid);
-		}
-	};
-	Bind(Trees, CylMesh ? CylMesh : CubeMesh, FLinearColor(0.38f, 0.24f, 0.16f));
-	Bind(Canopies, ConeMesh ? ConeMesh : SphereMesh, FLinearColor(0.28f, 0.52f, 0.32f));
-	Bind(Grass, CubeMesh, FLinearColor(0.40f, 0.68f, 0.36f));
-	Bind(Rocks, SphereMesh ? SphereMesh : CubeMesh, FLinearColor(0.55f, 0.52f, 0.48f));
-	Bind(Reeds, CubeMesh, FLinearColor(0.35f, 0.42f, 0.28f));
-
 	const float Half = (GridN - 1) * Cell * 0.5f;
 	int32 TreeCount = 0;
-	for (int32 N = 0; N < 2200 && TreeCount < 900; ++N)
+	for (int32 N = 0; N < 2800 && TreeCount < 1200; ++N)
 	{
 		const float X = FMath::FRandRange(-Half * 0.92f, Half * 0.92f);
 		const float Y = FMath::FRandRange(-Half * 0.92f, Half * 0.92f);
 		if (IsInAnyTown(X, Y, 400.f)) { continue; }
 		const EHolypawZone Z = ResolveZone(FVector(X, Y, 0.f));
-		if (Z == EHolypawZone::Coast) { continue; }
+		if (Z == EHolypawZone::Coast || Z == EHolypawZone::Ocean || Z == EHolypawZone::Desert || Z == EHolypawZone::Ice) { continue; }
 		const float Zs = SampleHeight(X, Y);
 		float H = 160.f + HashRand(int32(X), int32(Y), 7) * 180.f;
-		if (Z == EHolypawZone::Snow || Z == EHolypawZone::Snowveil) { H *= 0.7f; }
-		Trees->AddInstance(FTransform(FRotator::ZeroRotator, FVector(X, Y, Zs + H * 0.5f), FVector(0.45f, 0.45f, H / 100.f)), true);
-		Canopies->AddInstance(FTransform(FRotator::ZeroRotator, FVector(X, Y, Zs + H + 80.f), FVector(2.4f, 2.4f, 2.1f)), true);
+		if (Z == EHolypawZone::Snow || Z == EHolypawZone::Snowveil || Z == EHolypawZone::TundraParish || Z == EHolypawZone::AuroraBorough || Z == EHolypawZone::FeltIceCamp) { H *= 0.7f; }
+		if (Z == EHolypawZone::Jungle || Z == EHolypawZone::PalmaDusk || Z == EHolypawZone::Quiltland || Z == EHolypawZone::CarnivalBahia) { H *= 1.28f; }
+		AddKit(Trees, FVector(X, Y, Zs + H * 0.5f), FRotator::ZeroRotator, FVector(0.45f, 0.45f, H / 100.f));
+		AddKit(Canopies, FVector(X, Y, Zs + H + 80.f), FRotator::ZeroRotator, FVector(2.4f, 2.4f, 2.1f));
 		++TreeCount;
 	}
 	int32 GrassCount = 0;
-	for (int32 N = 0; N < 1600 && GrassCount < 1100; ++N)
+	for (int32 N = 0; N < 2000 && GrassCount < 1400; ++N)
 	{
-		const float X = FMath::FRandRange(-Half * 0.88f, Half * 0.7f);
-		const float Y = FMath::FRandRange(-Half * 0.7f, Half * 0.7f);
+		const float X = FMath::FRandRange(-Half * 0.88f, Half * 0.88f);
+		const float Y = FMath::FRandRange(-Half * 0.88f, Half * 0.88f);
 		if (IsInAnyTown(X, Y)) { continue; }
+		const EHolypawZone Z = ResolveZone(FVector(X, Y, 0.f));
+		if (Z == EHolypawZone::Ocean || Z == EHolypawZone::Ice || Z == EHolypawZone::Desert) { continue; }
 		const float Zs = SampleHeight(X, Y);
-		Grass->AddInstance(FTransform(FRotator::ZeroRotator, FVector(X, Y, Zs + 18.f), FVector(0.12f, 0.12f, 0.35f + HashRand(int32(X), int32(Y), 11) * 0.3f)), true);
+		AddKit(Grass, FVector(X, Y, Zs + 18.f), FRotator::ZeroRotator, FVector(0.12f, 0.12f, 0.35f + HashRand(int32(X), int32(Y), 11) * 0.3f));
 		++GrassCount;
 	}
 	int32 RockCount = 0;
-	for (int32 N = 0; N < 500 && RockCount < 220; ++N)
+	for (int32 N = 0; N < 700 && RockCount < 280; ++N)
 	{
 		const float X = FMath::FRandRange(-Half * 0.85f, Half * 0.85f);
 		const float Y = FMath::FRandRange(-Half * 0.85f, Half * 0.85f);
 		if (IsInAnyTown(X, Y, 200.f)) { continue; }
+		const EHolypawZone Z = ResolveZone(FVector(X, Y, 0.f));
+		if (Z == EHolypawZone::Ocean) { continue; }
 		const float Zs = SampleHeight(X, Y);
 		const float S = 0.8f + HashRand(int32(X), int32(Y), 19) * 1.6f;
-		Rocks->AddInstance(FTransform(FRotator(HashRand(int32(X), int32(Y), 4) * 40.f, HashRand(int32(X), int32(Y), 5) * 90.f, 0.f), FVector(X, Y, Zs + 20.f), FVector(S)), true);
+		AddKit(Rocks, FVector(X, Y, Zs + 20.f), FRotator(HashRand(int32(X), int32(Y), 4) * 40.f, HashRand(int32(X), int32(Y), 5) * 90.f, 0.f), FVector(S));
 		++RockCount;
 	}
 	int32 ReedCount = 0;
-	for (int32 N = 0; N < 400 && ReedCount < 280; ++N)
+	for (int32 N = 0; N < 500 && ReedCount < 320; ++N)
 	{
-		const float X = FMath::FRandRange(-8000.f, 18000.f);
+		const float X = FMath::FRandRange(-20000.f, 22000.f);
 		const float Y = FMath::FRandRange(-Half * 0.9f, -14000.f);
 		if (IsInAnyTown(X, Y)) { continue; }
+		const EHolypawZone Z = ResolveZone(FVector(X, Y, 0.f));
+		if (Z == EHolypawZone::Ocean || Z == EHolypawZone::Desert) { continue; }
 		const float Zs = SampleHeight(X, Y);
-		Reeds->AddInstance(FTransform(FRotator::ZeroRotator, FVector(X, Y, Zs + 40.f), FVector(0.08f, 0.08f, 0.9f + HashRand(int32(X), int32(Y), 21) * 0.6f)), true);
+		AddKit(Reeds, FVector(X, Y, Zs + 40.f), FRotator::ZeroRotator, FVector(0.08f, 0.08f, 0.9f + HashRand(int32(X), int32(Y), 21) * 0.6f));
 		++ReedCount;
+	}
+	int32 CactusCount = 0;
+	for (int32 N = 0; N < 400 && CactusCount < 180; ++N)
+	{
+		const float X = FMath::FRandRange(-Half * 0.8f, Half * 0.8f);
+		const float Y = FMath::FRandRange(-Half * 0.8f, Half * 0.4f);
+		if (IsInAnyTown(X, Y, 300.f)) { continue; }
+		const EHolypawZone Z = ResolveZone(FVector(X, Y, 0.f));
+		if (Z != EHolypawZone::Desert && Z != EHolypawZone::DustMesa && Z != EHolypawZone::SandHymn) { continue; }
+		const float Zs = SampleHeight(X, Y);
+		const float H = 90.f + HashRand(int32(X), int32(Y), 31) * 110.f;
+		AddKit(Cacti, FVector(X, Y, Zs + H * 0.5f), FRotator::ZeroRotator, FVector(0.55f, 0.55f, H / 100.f));
+		++CactusCount;
 	}
 }
 
@@ -422,13 +505,16 @@ void AHolypawWorldBuilder::BuildCottage()
 
 void AHolypawWorldBuilder::BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt)
 {
+	const FVector2D Delta = B - A;
+	const float Yaw = FMath::RadiansToDegrees(FMath::Atan2(Delta.Y, Delta.X));
+	const FRotator Facing(0.f, Yaw, 0.f);
 	for (int32 I = 0; I <= Steps; ++I)
 	{
 		const float T = I / float(Steps);
 		const float X = FMath::Lerp(A.X, B.X, T);
 		const float Y = FMath::Lerp(A.Y, B.Y, T) + FMath::Sin(T * PI * 1.1f + Salt) * 700.f;
 		const float Z = SampleHeight(X, Y);
-		PlaceCube(FVector(X, Y, Z + 8.f), FVector(7.2f, 2.0f, 0.12f), FLinearColor(0.72f, 0.62f, 0.46f), MakeName(TEXT("Road")));
+		AddKit(RoadTiles, FVector(X, Y, Z + 8.f), Facing, FVector(7.2f, 2.0f, 0.12f));
 		if (I % 4 == 0)
 		{
 			PlaceCube(FVector(X, Y + 150.f, Z + 90.f), FVector(0.18f, 0.18f, 1.7f), FLinearColor(0.35f, 0.28f, 0.22f), MakeName(TEXT("LampPole")));
@@ -441,26 +527,26 @@ void AHolypawWorldBuilder::BuildRoads()
 {
 	const FVector2D Cottage(CottageSpawn.X, CottageSpawn.Y);
 	BuildRoad(Cottage, RibbonCity, 32, 0);
-	BuildRoad(RibbonCity, Tidewell, 18, 1);
-	BuildRoad(RibbonCity, Hearthfold, 22, 2);
-	BuildRoad(RibbonCity, Emberfen, 22, 3);
-	BuildRoad(Hearthfold, Snowveil, 12, 4);
+	BuildRoad(Cottage, CityXY(EHolypawZone::Quiltland), 18, 8);
 	BuildRoad(Snowveil, PeakCenter, 10, 5);
+	for (const HolypawCatalog::FHolypawRoadLink& R : HolypawCatalog::GetRoads())
+	{
+		BuildRoad(CityXY(R.A), CityXY(R.B), R.Steps, R.Salt);
+	}
 }
 
-void AHolypawWorldBuilder::BuildTown(const FVector2D& Center, const FName& Prefix, const FLinearColor& Accent, int32 Cols, int32 Rows, bool bTallSpire)
+void AHolypawWorldBuilder::BuildTown(const FHolypawCity& City)
 {
+	const FVector2D Center = City.Pos;
+	const int32 Cols = City.Cols;
+	const int32 Rows = City.Rows;
 	const float Zc = SampleHeight(Center.X, Center.Y);
-	PlaceCube(FVector(Center.X, Center.Y, Zc + 12.f), FVector(Cols * 2.6f, Rows * 2.4f, 0.2f), FLinearColor(0.70f, 0.64f, 0.56f), MakeName(*Prefix.ToString()));
-	const float SpireH = bTallSpire ? 18.f : 10.f;
-	PlaceCube(FVector(Center.X - 120.f, Center.Y + 140.f, Zc + SpireH * 50.f), FVector(2.2f, 2.2f, SpireH), Accent, MakeName(TEXT("Spire")));
+	AddKit(RoadTiles, FVector(Center.X, Center.Y, Zc + 12.f), FRotator::ZeroRotator, FVector(Cols * 2.6f, Rows * 2.4f, 0.2f));
+	const float SpireH = City.bTallSpire ? 18.f : 10.f;
+	PlaceCube(FVector(Center.X - 120.f, Center.Y + 140.f, Zc + SpireH * 50.f), FVector(2.2f, 2.2f, SpireH), City.Accent, MakeName(TEXT("Spire")));
 	PlaceCube(FVector(Center.X - 120.f, Center.Y + 140.f, Zc + SpireH * 100.f + 40.f), FVector(3.2f, 3.2f, 1.1f), FLinearColor(0.95f, 0.75f, 0.35f), MakeName(TEXT("SpireCap")));
 
-	const TArray<FLinearColor> Walls = {
-		FLinearColor(0.85f, 0.62f, 0.58f), Accent,
-		FLinearColor(0.72f, 0.68f, 0.82f), FLinearColor(0.62f, 0.75f, 0.70f),
-		FLinearColor(0.90f, 0.78f, 0.55f)
-	};
+	UInstancedStaticMeshComponent* Walls[3] = { WallRose.Get(), WallMint.Get(), WallGold.Get() };
 	for (int32 Row = -Rows; Row <= Rows; ++Row)
 	{
 		for (int32 Col = -Cols; Col <= Cols; ++Col)
@@ -471,21 +557,24 @@ void AHolypawWorldBuilder::BuildTown(const FVector2D& Center, const FName& Prefi
 			const float Z = SampleHeight(X, Y);
 			const float W = 2.2f + HashRand(Col, Row, 5) * 1.6f;
 			const float D = 2.0f + HashRand(Col, Row, 6) * 1.3f;
-			const float H = 2.8f + HashRand(Col, Row, 8) * (bTallSpire ? 7.f : 4.2f);
-			const FLinearColor Wall = Walls[(Col + Row + 16) % Walls.Num()];
-			PlaceCube(FVector(X, Y, Z + H * 50.f), FVector(W, D, H), Wall, MakeName(TEXT("Bldg")));
-			PlaceCube(FVector(X, Y, Z + H * 100.f + 36.f), FVector(W + 0.3f, D + 0.3f, 0.5f), FLinearColor(0.55f, 0.28f, 0.32f), MakeName(TEXT("Roof")));
+			const float H = 2.8f + HashRand(Col, Row, 8) * (City.bTallSpire ? 7.f : 4.2f);
+			UInstancedStaticMeshComponent* Wall = Walls[(Col + Row + 16) % 3];
+			AddKit(Wall, FVector(X, Y, Z + H * 50.f), FRotator::ZeroRotator, FVector(W, D, H));
+			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 36.f), FRotator::ZeroRotator, FVector(W + 0.3f, D + 0.3f, 0.5f));
 		}
 	}
 }
 
 void AHolypawWorldBuilder::BuildAllSettlements()
 {
-	BuildTown(RibbonCity, TEXT("RibbonPlaza"), FLinearColor(0.82f, 0.42f, 0.55f), 5, 4, true);
-	BuildTown(Tidewell, TEXT("TidePlaza"), FLinearColor(0.40f, 0.62f, 0.78f), 3, 3, false);
-	BuildTown(Hearthfold, TEXT("HearthPlaza"), FLinearColor(0.78f, 0.62f, 0.28f), 3, 2, false);
-	BuildTown(Emberfen, TEXT("FenPlaza"), FLinearColor(0.62f, 0.32f, 0.28f), 3, 2, false);
-	BuildTown(Snowveil, TEXT("SnowPlaza"), FLinearColor(0.75f, 0.82f, 0.95f), 2, 2, false);
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		BuildTown(C);
+		PlaceStall(C.Pos + FVector2D(280.f, -180.f));
+		PlaceSign(C.Pos + FVector2D(-700.f, 80.f),
+			FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %s"),
+				*C.DisplayName.ToString(), *C.Continent.ToString(), *C.Flavor.ToString())));
+	}
 
 	for (int32 I = 0; I < 7; ++I)
 	{
@@ -499,18 +588,22 @@ void AHolypawWorldBuilder::BuildAllSettlements()
 	PlaceCamp(FVector2D((RibbonCity.X + Hearthfold.X) * 0.5f, (RibbonCity.Y + Hearthfold.Y) * 0.5f), NSLOCTEXT("Holypaw", "CampFarm", "Homestead Camp"));
 	PlaceCamp(FVector2D((RibbonCity.X + Emberfen.X) * 0.5f, (RibbonCity.Y + Emberfen.Y) * 0.5f), NSLOCTEXT("Holypaw", "CampMire", "Hollow Camp"));
 	PlaceCamp(FVector2D((Hearthfold.X + Snowveil.X) * 0.5f, (Hearthfold.Y + Snowveil.Y) * 0.5f), NSLOCTEXT("Holypaw", "CampSnow", "Ridge Camp"));
+	PlaceCamp((CityXY(EHolypawZone::LanternAngeles) + CityXY(EHolypawZone::Mossgate)) * 0.5f, NSLOCTEXT("Holypaw", "CampWest", "Pacific Camp"));
+	PlaceCamp((CityXY(EHolypawZone::PalmaDusk) + CityXY(EHolypawZone::SandHymn)) * 0.5f, NSLOCTEXT("Holypaw", "CampSouth", "Tropic Camp"));
+	PlaceCamp((Hearthfold + CityXY(EHolypawZone::AuroraBorough)) * 0.5f, NSLOCTEXT("Holypaw", "CampNorth", "Aurora Camp"));
+	PlaceCamp(FVector2D(Tidewell.X + 6000.f, Tidewell.Y), NSLOCTEXT("Holypaw", "CampFerry", "Cherry Ferry Camp"));
+	PlaceCamp(FVector2D((Tidewell.X + CityXY(EHolypawZone::Clockhaven).X) * 0.5f,
+		(Tidewell.Y + CityXY(EHolypawZone::Clockhaven).Y) * 0.5f), NSLOCTEXT("Holypaw", "CampChannel", "Channel Ferry Camp"));
+	PlaceCamp((CityXY(EHolypawZone::Clockhaven) + CityXY(EHolypawZone::VelvetSeine)) * 0.5f, NSLOCTEXT("Holypaw", "CampOld", "Old World Camp"));
+	PlaceCamp((CityXY(EHolypawZone::SpiceHarbor) + CityXY(EHolypawZone::SilkDelta)) * 0.5f, NSLOCTEXT("Holypaw", "CampSilk", "Silk Road Camp"));
+	PlaceCamp((CityXY(EHolypawZone::CapePlush) + CityXY(EHolypawZone::CoralChoir)) * 0.5f, NSLOCTEXT("Holypaw", "CampReef", "Reef Ferry Camp"));
+	PlaceCamp((CityXY(EHolypawZone::AndesLoom) + CityXY(EHolypawZone::CarnivalBahia)) * 0.5f, NSLOCTEXT("Holypaw", "CampAndes", "Andes Camp"));
+}
 
-	PlaceStall(RibbonCity + FVector2D(500.f, -400.f));
-	PlaceStall(Tidewell + FVector2D(300.f, 200.f));
-	PlaceStall(Hearthfold + FVector2D(-200.f, 250.f));
-	PlaceStall(Emberfen + FVector2D(180.f, -160.f));
-	PlaceStall(Snowveil + FVector2D(120.f, 80.f));
-
-	PlaceSign(RibbonCity + FVector2D(-900.f, 0.f), NSLOCTEXT("Holypaw", "RSign", "Ribbon City  |  Tidewell east  Hearthfold north  Emberfen south"));
-	PlaceSign(Tidewell + FVector2D(-600.f, 0.f), NSLOCTEXT("Holypaw", "TSign", "Tidewell Harbor  |  sea to the east"));
-	PlaceSign(Hearthfold + FVector2D(0.f, -700.f), NSLOCTEXT("Holypaw", "HSign", "Hearthfold  |  Snowveil and Velvet Peak further north"));
-	PlaceSign(Emberfen + FVector2D(0.f, 700.f), NSLOCTEXT("Holypaw", "ESign", "Emberfen  |  stay on the boards in the hollow"));
-	PlaceSign(Snowveil + FVector2D(400.f, 0.f), NSLOCTEXT("Holypaw", "SSign", "Snowveil  |  shrine of Velvet Peak ahead"));
+void AHolypawWorldBuilder::PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name)
+{
+	const float Z = SampleHeight(Center.X, Center.Y);
+	PlaceCube(FVector(Center.X, Center.Y, Z + ExtraH * 0.35f), FVector(16.f, 12.f, ExtraH / 80.f), Color, MakeName(Name));
 }
 
 void AHolypawWorldBuilder::BuildMountain()
@@ -520,17 +613,38 @@ void AHolypawWorldBuilder::BuildMountain()
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y, Z + 1600.f), FVector(8.f, 7.f, 8.f), FLinearColor(0.88f, 0.90f, 0.95f), MakeName(TEXT("PeakSnow")));
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2100.f), FVector(2.2f, 2.2f, 1.4f), FLinearColor(0.85f, 0.7f, 1.f), MakeName(TEXT("Shrine")));
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2280.f), FVector(0.9f, 0.9f, 0.9f), FLinearColor(1.f, 0.9f, 0.45f), MakeName(TEXT("ShrineOrb")));
+	PlaceRangeMass(CityXY(EHolypawZone::AndesLoom) + FVector2D(-1800.f, 400.f), 900.f, FLinearColor(0.52f, 0.42f, 0.34f), TEXT("AndesMass"));
+	PlaceRangeMass(FVector2D(82000.f, 4000.f), 1200.f, FLinearColor(0.62f, 0.58f, 0.55f), TEXT("SilkRidge"));
 }
 
 void AHolypawWorldBuilder::BuildWater()
 {
-	for (int32 I = 0; I < 18; ++I)
+	PlaceWaterSheet(38000.f, -8000.f, 10, 10, 1800.f, 10.f);
+	PlaceWaterSheet(-118000.f, -50000.f, 8, 12, 2400.f, 6.f);
+	PlaceWaterSheet(118000.f, -20000.f, 6, 10, 2200.f, 8.f);
+	PlaceWaterSheet(-8000.f, -118000.f, 10, 5, 2200.f, 4.f);
+	PlaceWaterSheet(96000.f, 2000.f, 5, 6, 1800.f, 10.f);
+	PlaceWaterSheet(43000.f, 8000.f, 6, 8, 1600.f, 9.f);
+	PlaceWaterSheet(90000.f, -40000.f, 8, 6, 2000.f, 7.f);
+}
+
+void AHolypawWorldBuilder::PlaceWaterSheet(float OriginX, float OriginY, int32 NX, int32 NY, float Step, float Z)
+{
+	for (int32 I = 0; I < NX; ++I)
 	{
-		for (int32 J = 0; J < 8; ++J)
+		for (int32 J = 0; J < NY; ++J)
 		{
-			const float X = 38000.f + I * 1400.f;
-			const float Y = -4000.f + J * 2200.f;
-			PlaceCube(FVector(X, Y, 12.f), FVector(14.f, 22.f, 0.18f), FLinearColor(0.35f, 0.55f, 0.72f), MakeName(TEXT("Water")));
+			const float X = OriginX + I * Step;
+			const float Y = OriginY + J * Step;
+			if (IsInAnyTown(X, Y, 800.f))
+			{
+				continue;
+			}
+			if (HolypawCatalog::LandHeightBias(FVector2D(X, Y)) > 40.f)
+			{
+				continue;
+			}
+			AddKit(WaterTiles, FVector(X, Y, Z), FRotator::ZeroRotator, FVector(Step / 100.f, Step / 100.f, 0.18f));
 		}
 	}
 }
@@ -631,6 +745,38 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Mud Sculptor"), FVector2D(Emberfen.X - 220.f, Emberfen.Y - 120.f), FLinearColor(0.5f, 0.38f, 0.3f));
 	SpawnHuman(TEXT("Snow Warden"), FVector2D(Snowveil.X + 160.f, Snowveil.Y - 80.f), FLinearColor(0.8f, 0.85f, 0.95f));
 	SpawnHuman(TEXT("Peak Acolyte"), FVector2D(PeakCenter.X - 600.f, PeakCenter.Y - 900.f), FLinearColor(0.75f, 0.65f, 0.95f));
+	SpawnHuman(TEXT("Studio Grip"), CityXY(EHolypawZone::LanternAngeles) + FVector2D(200.f, -150.f), FLinearColor(0.95f, 0.78f, 0.35f));
+	SpawnHuman(TEXT("Fog Baker"), CityXY(EHolypawZone::Mossgate) + FVector2D(-120.f, 80.f), FLinearColor(0.55f, 0.72f, 0.68f));
+	SpawnHuman(TEXT("Quilt Ranger"), CityXY(EHolypawZone::Quiltland) + FVector2D(80.f, -60.f), FLinearColor(0.42f, 0.58f, 0.4f));
+	SpawnHuman(TEXT("Mesa Guide"), CityXY(EHolypawZone::DustMesa) + FVector2D(40.f, 90.f), FLinearColor(0.85f, 0.6f, 0.35f));
+	SpawnHuman(TEXT("Palm Singer"), CityXY(EHolypawZone::PalmaDusk) + FVector2D(-80.f, 40.f), FLinearColor(0.35f, 0.78f, 0.55f));
+	SpawnHuman(TEXT("Ivory Clerk"), CityXY(EHolypawZone::IvorySpire) + FVector2D(60.f, -40.f), FLinearColor(0.9f, 0.86f, 0.75f));
+	SpawnHuman(TEXT("Sand Priest"), CityXY(EHolypawZone::SandHymn) + FVector2D(90.f, 20.f), FLinearColor(0.92f, 0.74f, 0.4f));
+	SpawnHuman(TEXT("Cape Lookout"), CityXY(EHolypawZone::CapePlush) + FVector2D(-50.f, 70.f), FLinearColor(0.55f, 0.45f, 0.7f));
+	SpawnHuman(TEXT("Loom Weaver"), CityXY(EHolypawZone::CherryLoom) + FVector2D(140.f, -90.f), FLinearColor(0.92f, 0.5f, 0.6f));
+	SpawnHuman(TEXT("Aurora Child"), CityXY(EHolypawZone::AuroraBorough) + FVector2D(-70.f, 40.f), FLinearColor(0.55f, 0.8f, 0.95f));
+	SpawnHuman(TEXT("Tundra Keeper"), CityXY(EHolypawZone::TundraParish) + FVector2D(30.f, -40.f), FLinearColor(0.8f, 0.85f, 0.95f));
+	SpawnHuman(TEXT("Confetti Baker"), CityXY(EHolypawZone::CarnivalBahia) + FVector2D(120.f, -80.f), FLinearColor(0.95f, 0.5f, 0.4f));
+	SpawnHuman(TEXT("Wool Climber"), CityXY(EHolypawZone::AndesLoom) + FVector2D(-90.f, 70.f), FLinearColor(0.72f, 0.5f, 0.35f));
+	SpawnHuman(TEXT("Bell Warden"), CityXY(EHolypawZone::Clockhaven) + FVector2D(80.f, 40.f), FLinearColor(0.6f, 0.66f, 0.78f));
+	SpawnHuman(TEXT("Ribbon Baker"), CityXY(EHolypawZone::VelvetSeine) + FVector2D(-60.f, -50.f), FLinearColor(0.82f, 0.55f, 0.74f));
+	SpawnHuman(TEXT("Column Sitter"), CityXY(EHolypawZone::MarbleForum) + FVector2D(70.f, 90.f), FLinearColor(0.9f, 0.84f, 0.7f));
+	SpawnHuman(TEXT("Grass Bell"), CityXY(EHolypawZone::SavannahBell) + FVector2D(-40.f, 60.f), FLinearColor(0.88f, 0.72f, 0.35f));
+	SpawnHuman(TEXT("Delta Weaver"), CityXY(EHolypawZone::SilkDelta) + FVector2D(110.f, -70.f), FLinearColor(0.88f, 0.35f, 0.4f));
+	SpawnHuman(TEXT("Pepper Clerk"), CityXY(EHolypawZone::SpiceHarbor) + FVector2D(-80.f, 50.f), FLinearColor(0.92f, 0.58f, 0.25f));
+	SpawnHuman(TEXT("Reef Choir"), CityXY(EHolypawZone::CoralChoir) + FVector2D(50.f, -40.f), FLinearColor(0.35f, 0.78f, 0.82f));
+	SpawnHuman(TEXT("Ice Scarf"), CityXY(EHolypawZone::FeltIceCamp) + FVector2D(-30.f, 40.f), FLinearColor(0.85f, 0.92f, 0.98f));
+
+	SpawnFluffy(4, CityXY(EHolypawZone::LanternAngeles) + FVector2D(-900.f, 400.f));
+	SpawnFluffy(2, CityXY(EHolypawZone::PalmaDusk) + FVector2D(700.f, -300.f));
+	SpawnFluffy(0, CityXY(EHolypawZone::CherryLoom) + FVector2D(-600.f, 500.f));
+	SpawnFluffy(5, CityXY(EHolypawZone::AuroraBorough) + FVector2D(800.f, -400.f));
+	SpawnFluffy(3, CityXY(EHolypawZone::IvorySpire) + FVector2D(500.f, 600.f));
+	SpawnFluffy(1, CityXY(EHolypawZone::CarnivalBahia) + FVector2D(-500.f, 400.f));
+	SpawnFluffy(4, CityXY(EHolypawZone::Clockhaven) + FVector2D(600.f, -300.f));
+	SpawnFluffy(0, CityXY(EHolypawZone::SilkDelta) + FVector2D(-700.f, 200.f));
+	SpawnFluffy(2, CityXY(EHolypawZone::CoralChoir) + FVector2D(400.f, -500.f));
+	SpawnFluffy(5, CityXY(EHolypawZone::FeltIceCamp) + FVector2D(300.f, 200.f));
 
 	auto SpawnHostile = [&](EHolypawVillain Id, const FVector2D& XY)
 	{
@@ -716,6 +862,28 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHostile(EHolypawVillain::Unmaker, FVector2D(PeakCenter.X - 1400.f, PeakCenter.Y + 2200.f));
 	SpawnHostile(EHolypawVillain::UnstuffedShade, FVector2D(PeakCenter.X + 1800.f, PeakCenter.Y + 400.f));
 	SpawnHostile(EHolypawVillain::UnstuffedShade, FVector2D(PeakCenter.X - 2200.f, PeakCenter.Y - 2400.f));
+	SpawnHostile(EHolypawVillain::PlazaCorpCat, CityXY(EHolypawZone::LanternAngeles) + FVector2D(1600.f, -900.f));
+	SpawnHostile(EHolypawVillain::RazorPetbot, CityXY(EHolypawZone::LanternAngeles) + FVector2D(-1200.f, 800.f));
+	SpawnHostile(EHolypawVillain::NightThread, CityXY(EHolypawZone::Mossgate) + FVector2D(900.f, -700.f));
+	SpawnHostile(EHolypawVillain::StitchedWolf, CityXY(EHolypawZone::Quiltland) + FVector2D(1100.f, 600.f));
+	SpawnHostile(EHolypawVillain::GoldSnipper, CityXY(EHolypawZone::DustMesa) + FVector2D(-800.f, 900.f));
+	SpawnHostile(EHolypawVillain::SaltCrab, CityXY(EHolypawZone::PalmaDusk) + FVector2D(1400.f, -600.f));
+	SpawnHostile(EHolypawVillain::RibbonEnforcer, CityXY(EHolypawZone::IvorySpire) + FVector2D(-1000.f, 700.f));
+	SpawnHostile(EHolypawVillain::MiracleEater, CityXY(EHolypawZone::SandHymn) + FVector2D(800.f, -500.f));
+	SpawnHostile(EHolypawVillain::HarborHook, CityXY(EHolypawZone::CapePlush) + FVector2D(900.f, 400.f));
+	SpawnHostile(EHolypawVillain::VoidRat, CityXY(EHolypawZone::CherryLoom) + FVector2D(-1400.f, 700.f));
+	SpawnHostile(EHolypawVillain::FrostMoth, CityXY(EHolypawZone::AuroraBorough) + FVector2D(1200.f, 500.f));
+	SpawnHostile(EHolypawVillain::DriftWolf, CityXY(EHolypawZone::TundraParish) + FVector2D(-700.f, 600.f));
+	SpawnHostile(EHolypawVillain::PlazaCorpCat, CityXY(EHolypawZone::CarnivalBahia) + FVector2D(1500.f, -800.f));
+	SpawnHostile(EHolypawVillain::StitchedWolf, CityXY(EHolypawZone::AndesLoom) + FVector2D(-900.f, 700.f));
+	SpawnHostile(EHolypawVillain::RibbonEnforcer, CityXY(EHolypawZone::Clockhaven) + FVector2D(1100.f, 400.f));
+	SpawnHostile(EHolypawVillain::GoldSnipper, CityXY(EHolypawZone::VelvetSeine) + FVector2D(-800.f, 600.f));
+	SpawnHostile(EHolypawVillain::TinselGolem, CityXY(EHolypawZone::MarbleForum) + FVector2D(900.f, -500.f));
+	SpawnHostile(EHolypawVillain::ScarecrowHound, CityXY(EHolypawZone::SavannahBell) + FVector2D(-1000.f, 500.f));
+	SpawnHostile(EHolypawVillain::MiracleEater, CityXY(EHolypawZone::SilkDelta) + FVector2D(1300.f, -700.f));
+	SpawnHostile(EHolypawVillain::HarborHook, CityXY(EHolypawZone::SpiceHarbor) + FVector2D(-1100.f, 600.f));
+	SpawnHostile(EHolypawVillain::SaltCrab, CityXY(EHolypawZone::CoralChoir) + FVector2D(800.f, 400.f));
+	SpawnHostile(EHolypawVillain::IceShardCat, CityXY(EHolypawZone::FeltIceCamp) + FVector2D(-500.f, 300.f));
 
 	PlaceSign(FVector2D(-22000.f, 400.f), NSLOCTEXT("Holypaw", "VSignPark", "Park notice  |  Scrap Dogs and Night Thread after dusk. Codex: V"));
 	PlaceSign(RibbonCity + FVector2D(-500.f, 800.f), NSLOCTEXT("Holypaw", "VSignCity", "Watch  |  Silk Magistrate holds court north of the plaza"));
@@ -784,36 +952,33 @@ void AHolypawWorldBuilder::SpawnPlayerStart()
 EHolypawZone AHolypawWorldBuilder::ResolveZone(const FVector& WorldPos) const
 {
 	const FVector2D P(WorldPos.X, WorldPos.Y);
-	if (FVector2D::Distance(P, Snowveil) < 3200.f) { return EHolypawZone::Snowveil; }
-	if (FVector2D::Distance(P, RibbonCity) < 6500.f) { return EHolypawZone::RibbonCity; }
-	if (FVector2D::Distance(P, Tidewell) < 4200.f) { return EHolypawZone::Tidewell; }
-	if (FVector2D::Distance(P, Hearthfold) < 3800.f) { return EHolypawZone::Hearthfold; }
-	if (FVector2D::Distance(P, Emberfen) < 3600.f) { return EHolypawZone::Emberfen; }
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		if (FVector2D::Distance(P, C.Pos) < C.Radius)
+		{
+			return C.Zone;
+		}
+	}
 
 	const float Md = FVector2D::Distance(P, PeakCenter);
 	if (Md < 7000.f && WorldPos.Z > 900.f)
 	{
 		return WorldPos.Z > 1800.f ? EHolypawZone::Snow : EHolypawZone::Highlands;
 	}
-	if (WorldPos.X > 36000.f) { return EHolypawZone::Coast; }
-	if (WorldPos.Y < -14000.f) { return EHolypawZone::Mire; }
-	if (WorldPos.Y > 10000.f && WorldPos.X > -8000.f && WorldPos.X < 16000.f) { return EHolypawZone::Homestead; }
-	if (WorldPos.X < -20000.f) { return EHolypawZone::ForestCottage; }
-	return EHolypawZone::NurseryHills;
+
+	return HolypawCatalog::ResolveWilderness(P);
 }
 
 FString AHolypawWorldBuilder::GetCompassLine(const FVector& From) const
 {
-	const TArray<FHolypawLandmark> Marks = {
-		{TEXT("Ribbon City"), RibbonCity},
-		{TEXT("Tidewell"), Tidewell},
-		{TEXT("Hearthfold"), Hearthfold},
-		{TEXT("Emberfen"), Emberfen},
-		{TEXT("Snowveil"), Snowveil},
-		{TEXT("Velvet Peak"), PeakCenter},
-		{TEXT("Cottage"), FVector2D(CottageSpawn.X, CottageSpawn.Y)},
-		{TEXT("Poly Mill"), RibbonCity + FVector2D(5200.f, -800.f)}
-	};
+	TArray<FHolypawLandmark> Marks;
+	Marks.Add({TEXT("Cottage"), FVector2D(CottageSpawn.X, CottageSpawn.Y)});
+	Marks.Add({TEXT("Velvet Peak"), PeakCenter});
+	Marks.Add({TEXT("Poly Mill"), RibbonCity + FVector2D(5200.f, -800.f)});
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		Marks.Add({C.DisplayName.ToString(), C.Pos});
+	}
 	FString BestName = TEXT("Ribbon City");
 	float BestD = TNumericLimits<float>::Max();
 	FVector2D BestPos = RibbonCity;
@@ -845,22 +1010,25 @@ FString AHolypawWorldBuilder::GetCompassLine(const FVector& From) const
 TArray<FString> AHolypawWorldBuilder::GetMapLines(const FVector& From) const
 {
 	TArray<FString> Lines;
-	Lines.Add(TEXT("Living World  (N close)"));
-	const TArray<FHolypawLandmark> Marks = {
-		{TEXT("Cottage (home)"), FVector2D(CottageSpawn.X, CottageSpawn.Y)},
-		{TEXT("Ribbon City"), RibbonCity},
-		{TEXT("Tidewell Harbor"), Tidewell},
-		{TEXT("Hearthfold"), Hearthfold},
-		{TEXT("Emberfen"), Emberfen},
-		{TEXT("Snowveil"), Snowveil},
-		{TEXT("Velvet Peak shrine"), PeakCenter},
-		{TEXT("Poly Mill"), RibbonCity + FVector2D(5200.f, -800.f)}
-	};
-	const FVector2D P(From.X, From.Y);
-	for (const FHolypawLandmark& M : Marks)
+	Lines.Add(FString::Printf(TEXT("Plush Earth  —  %d cities  (N close)"), HolypawCatalog::GetCities().Num()));
+	TArray<FHolypawLandmark> Marks;
+	Marks.Add({TEXT("Cottage (home)"), FVector2D(CottageSpawn.X, CottageSpawn.Y)});
+	Marks.Add({TEXT("Velvet Peak shrine"), PeakCenter});
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
 	{
-		const int32 Meters = FMath::RoundToInt(FVector2D::Distance(P, M.Pos) / 100.f);
-		Lines.Add(FString::Printf(TEXT("%s   %dm"), *M.Name, Meters));
+		Marks.Add({FString::Printf(TEXT("%s  [%s]"), *C.DisplayName.ToString(), *C.Continent.ToString()), C.Pos});
 	}
+	const FVector2D P(From.X, From.Y);
+	Marks.Sort([&](const FHolypawLandmark& A, const FHolypawLandmark& B)
+	{
+		return FVector2D::Distance(P, A.Pos) < FVector2D::Distance(P, B.Pos);
+	});
+	const int32 Show = FMath::Min(16, Marks.Num());
+	for (int32 I = 0; I < Show; ++I)
+	{
+		const int32 Meters = FMath::RoundToInt(FVector2D::Distance(P, Marks[I].Pos) / 100.f);
+		Lines.Add(FString::Printf(TEXT("%s   %dm"), *Marks[I].Name, Meters));
+	}
+	Lines.Add(TEXT("Continents like Earth. Follow lanterns. J for the Globe Trek."));
 	return Lines;
 }

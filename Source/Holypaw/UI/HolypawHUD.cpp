@@ -151,10 +151,10 @@ void AHolypawHUD::DrawHUD()
 		int32 I = 0;
 		for (const FString& Line : P->GetMapLines())
 		{
-			DrawLabel(W * 0.5f - 220.f, 280.f + I * 30.f, Line, FLinearColor(0.92f, 0.88f, 1.f), 1.12f);
+		DrawLabel(W * 0.5f - 220.f, 270.f + I * 24.f, Line, FLinearColor(0.92f, 0.88f, 1.f), 0.95f);
 			++I;
 		}
-		DrawLabel(W * 0.5f - 90.f, 280.f + I * 30.f + 16.f, TEXT("N to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+		DrawLabel(W * 0.5f - 90.f, 270.f + I * 24.f + 12.f, TEXT("N to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 
 	if (P->IsCodexOpen())

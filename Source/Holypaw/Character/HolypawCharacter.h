@@ -96,7 +96,7 @@ public:
 	int32 Attack = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
-	float WalkSpeed = 520.f;
+	float WalkSpeed = 640.f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
 	EHolypawPawnMode Mode = EHolypawPawnMode::Play;

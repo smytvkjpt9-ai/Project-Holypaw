@@ -18,8 +18,8 @@ struct FHolypawLandmark
 };
 
 /**
- * Runtime open world: cottage start, roads, five settlements, biomes, water.
- * Same painterly/plush palette everywhere. No Megascans.
+ * Runtime open world: Earth-analog globe from HolypawAtlas (cities, roads, landmasses).
+ * Mass geometry uses instanced kits. Same painterly/plush palette. No Megascans.
  */
 UCLASS()
 class HOLYPAW_API AHolypawWorldBuilder : public AActor
@@ -61,9 +61,32 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UInstancedStaticMeshComponent> Reeds;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> WallRose;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> WallMint;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> WallGold;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Roofs;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> RoadTiles;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> WaterTiles;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Cacti;
+
 protected:
 	void HideTemplateFloor();
 	void SpawnAtmosphere();
+	void BindKits();
+	void AddKit(UInstancedStaticMeshComponent* ISM, const FVector& Loc, const FRotator& Rot, const FVector& Scale);
 	void BuildTerrain();
 	void ScatterFlora();
 	void BuildCottage();
@@ -76,13 +99,17 @@ protected:
 	void SpawnVillainRing(EHolypawVillain Id, const FVector2D& Center, int32 Count, float Radius);
 	void BuildPolyMill();
 	void SpawnPlayerStart();
-	void BuildTown(const FVector2D& Center, const FName& Prefix, const FLinearColor& Accent, int32 Cols, int32 Rows, bool bTallSpire);
+	void CacheCityCoords();
+	FVector2D CityXY(EHolypawZone Zone) const;
+	void PlaceWaterSheet(float OriginX, float OriginY, int32 NX, int32 NY, float Step, float Z);
+	void BuildTown(const FHolypawCity& City);
 	void BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt);
 	void PlaceCamp(const FVector2D& XY, const FText& Name);
 	void PlaceStall(const FVector2D& XY);
 	void PlaceSign(const FVector2D& XY, const FText& Message);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;
+	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
 
 	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
 	void ColorMesh(UStaticMeshComponent* Mesh, const FLinearColor& Color);
@@ -101,8 +128,8 @@ protected:
 	FVector2D Snowveil = FVector2D(-2000.f, 20000.f);
 	FVector2D PeakCenter = FVector2D(2000.f, 16000.f);
 
-	int32 GridN = 120;
-	float Cell = 1050.f;
+	int32 GridN = 168;
+	float Cell = 1620.f;
 
 	UStaticMesh* CubeMesh = nullptr;
 	UStaticMesh* SphereMesh = nullptr;

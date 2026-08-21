@@ -17,7 +17,71 @@ enum class EHolypawZone : uint8
 	Coast UMETA(DisplayName = "Ribbon Coast"),
 	Mire UMETA(DisplayName = "Crimson Hollow"),
 	Highlands UMETA(DisplayName = "Velvet Peak"),
-	Snow UMETA(DisplayName = "Alabaster Ridge")
+	Snow UMETA(DisplayName = "Alabaster Ridge"),
+	LanternAngeles UMETA(DisplayName = "Lantern Angeles"),
+	Mossgate UMETA(DisplayName = "Mossgate"),
+	Quiltland UMETA(DisplayName = "Quiltland"),
+	DustMesa UMETA(DisplayName = "Dust Mesa"),
+	PalmaDusk UMETA(DisplayName = "Palma Dusk"),
+	IvorySpire UMETA(DisplayName = "Ivory Spire"),
+	SandHymn UMETA(DisplayName = "Sand Hymn"),
+	CapePlush UMETA(DisplayName = "Cape Plush"),
+	CherryLoom UMETA(DisplayName = "Cherry Loom"),
+	AuroraBorough UMETA(DisplayName = "Aurora Borough"),
+	TundraParish UMETA(DisplayName = "Tundra Parish"),
+	Desert UMETA(DisplayName = "Button Desert"),
+	Jungle UMETA(DisplayName = "Palm Stitch"),
+	Ocean UMETA(DisplayName = "Plush Sea"),
+	Ice UMETA(DisplayName = "Felt Ice"),
+	CarnivalBahia UMETA(DisplayName = "Carnival Bahia"),
+	AndesLoom UMETA(DisplayName = "Andes Loom"),
+	Clockhaven UMETA(DisplayName = "Clockhaven"),
+	VelvetSeine UMETA(DisplayName = "Velvet Seine"),
+	MarbleForum UMETA(DisplayName = "Marble Forum"),
+	SavannahBell UMETA(DisplayName = "Savannah Bell"),
+	SilkDelta UMETA(DisplayName = "Silk Delta"),
+	SpiceHarbor UMETA(DisplayName = "Spice Harbor"),
+	CoralChoir UMETA(DisplayName = "Coral Choir"),
+	FeltIceCamp UMETA(DisplayName = "Felt Ice Camp")
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawCity
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	EHolypawZone Zone = EHolypawZone::RibbonCity;
+
+	UPROPERTY()
+	FText DisplayName;
+
+	UPROPERTY()
+	FVector2D Pos = FVector2D::ZeroVector;
+
+	UPROPERTY()
+	FLinearColor Accent = FLinearColor(0.82f, 0.42f, 0.55f);
+
+	UPROPERTY()
+	int32 Cols = 2;
+
+	UPROPERTY()
+	int32 Rows = 2;
+
+	UPROPERTY()
+	bool bTallSpire = false;
+
+	UPROPERTY()
+	float Radius = 3200.f;
+
+	UPROPERTY()
+	float FlattenZ = 55.f;
+
+	UPROPERTY()
+	FText Continent;
+
+	UPROPERTY()
+	FText Flavor;
 };
 
 UENUM(BlueprintType)
@@ -135,6 +199,7 @@ enum class EHolypawMission : uint8
 	ConvertThree,
 	PolyCourt,
 	OutlandRoads,
+	GlobeTrek,
 	FourRites,
 	VelvetCrown,
 	Unmake,
@@ -340,9 +405,60 @@ namespace HolypawCatalog
 		case EHolypawZone::Mire: return TEXT("Crimson Hollow");
 		case EHolypawZone::Highlands: return TEXT("Velvet Peak");
 		case EHolypawZone::Snow: return TEXT("Alabaster Ridge");
+		case EHolypawZone::LanternAngeles: return TEXT("Lantern Angeles");
+		case EHolypawZone::Mossgate: return TEXT("Mossgate");
+		case EHolypawZone::Quiltland: return TEXT("Quiltland");
+		case EHolypawZone::DustMesa: return TEXT("Dust Mesa");
+		case EHolypawZone::PalmaDusk: return TEXT("Palma Dusk");
+		case EHolypawZone::IvorySpire: return TEXT("Ivory Spire");
+		case EHolypawZone::SandHymn: return TEXT("Sand Hymn");
+		case EHolypawZone::CapePlush: return TEXT("Cape Plush");
+		case EHolypawZone::CherryLoom: return TEXT("Cherry Loom");
+		case EHolypawZone::AuroraBorough: return TEXT("Aurora Borough");
+		case EHolypawZone::TundraParish: return TEXT("Tundra Parish");
+		case EHolypawZone::Desert: return TEXT("Button Desert");
+		case EHolypawZone::Jungle: return TEXT("Palm Stitch");
+		case EHolypawZone::Ocean: return TEXT("Plush Sea");
+		case EHolypawZone::Ice: return TEXT("Felt Ice");
+		case EHolypawZone::CarnivalBahia: return TEXT("Carnival Bahia");
+		case EHolypawZone::AndesLoom: return TEXT("Andes Loom");
+		case EHolypawZone::Clockhaven: return TEXT("Clockhaven");
+		case EHolypawZone::VelvetSeine: return TEXT("Velvet Seine");
+		case EHolypawZone::MarbleForum: return TEXT("Marble Forum");
+		case EHolypawZone::SavannahBell: return TEXT("Savannah Bell");
+		case EHolypawZone::SilkDelta: return TEXT("Silk Delta");
+		case EHolypawZone::SpiceHarbor: return TEXT("Spice Harbor");
+		case EHolypawZone::CoralChoir: return TEXT("Coral Choir");
+		case EHolypawZone::FeltIceCamp: return TEXT("Felt Ice Camp");
 		default: return TEXT("The Living World");
 		}
 	}
+
+	struct FHolypawRoadLink
+	{
+		EHolypawZone A = EHolypawZone::RibbonCity;
+		EHolypawZone B = EHolypawZone::Tidewell;
+		int32 Steps = 14;
+		int32 Salt = 0;
+	};
+
+	struct FHolypawLandmass
+	{
+		const TCHAR* Name = TEXT("");
+		FVector2D Center = FVector2D::ZeroVector;
+		float RadiusX = 10000.f;
+		float RadiusY = 10000.f;
+		float HeightBias = 80.f;
+	};
+
+	const TArray<FHolypawCity>& GetCities();
+	FHolypawCity GetCity(EHolypawZone Zone);
+	FLinearColor ZoneTerrainColor(EHolypawZone Zone);
+	const TArray<FHolypawRoadLink>& GetRoads();
+	const TArray<FHolypawLandmass>& GetLandmasses();
+	float LandHeightBias(const FVector2D& P);
+	EHolypawZone ResolveWilderness(const FVector2D& P);
+	bool IsCityZone(EHolypawZone Zone);
 
 	const TArray<FVillainDef>& GetVillains();
 	FVillainDef GetVillain(EHolypawVillain Id);

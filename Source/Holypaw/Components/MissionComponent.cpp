@@ -36,6 +36,19 @@ int32 UHolypawMissionComponent::RiteCount() const
 	return N;
 }
 
+int32 UHolypawMissionComponent::CityVisitCount() const
+{
+	int32 N = 0;
+	for (const FHolypawCity& C : HolypawCatalog::GetCities())
+	{
+		if (HasZone(C.Zone))
+		{
+			++N;
+		}
+	}
+	return N;
+}
+
 bool UHolypawMissionComponent::IsComplete(EHolypawMission Id) const
 {
 	switch (Id)
@@ -50,6 +63,9 @@ bool UHolypawMissionComponent::IsComplete(EHolypawMission Id) const
 	case EHolypawMission::OutlandRoads:
 		return HasZone(EHolypawZone::Tidewell) && HasZone(EHolypawZone::Hearthfold)
 			&& HasZone(EHolypawZone::Emberfen) && HasZone(EHolypawZone::Snowveil);
+	case EHolypawMission::GlobeTrek:
+		return HasZone(EHolypawZone::LanternAngeles) && HasZone(EHolypawZone::PalmaDusk)
+			&& HasZone(EHolypawZone::CherryLoom);
 	case EHolypawMission::FourRites: return RiteCount() >= 4;
 	case EHolypawMission::VelvetCrown: return HasBoss(EHolypawVillain::VelvetTyrant);
 	case EHolypawMission::Unmake: return HasBoss(EHolypawVillain::Unmaker);
@@ -163,8 +179,8 @@ TArray<FString> UHolypawMissionComponent::GetJournalLines() const
 	Lines.Add(TEXT(""));
 	Lines.Add(Cur.Brief.ToString());
 	Lines.Add(Cur.Hint.ToString());
-	Lines.Add(FString::Printf(TEXT("Recruits %d  Converts %d  Kills %d  Miracles %d  Rites %d/4"),
-		Recruits, Converts, Kills, Miracles, RiteCount()));
+	Lines.Add(FString::Printf(TEXT("Recruits %d  Converts %d  Kills %d  Miracles %d  Rites %d/4  Cities %d/%d"),
+		Recruits, Converts, Kills, Miracles, RiteCount(), CityVisitCount(), HolypawCatalog::GetCities().Num()));
 	if (bCampaignComplete)
 	{
 		Lines.Add(TEXT("The Bear Faith holds. The Poly Mill's cheap empire is stuffing on the floor."));

@@ -47,19 +47,23 @@ namespace HolypawCatalog
 			TEXT("Carry the Bear Faith to Tidewell, Hearthfold, Emberfen, and Snowveil."),
 			TEXT("Roads and camps heal. Faith stalls trade 10 AP for 8 FP."));
 
-		Add(EHolypawMission::FourRites, TEXT("9. Four Rites"),
+		Add(EHolypawMission::GlobeTrek, TEXT("9. Globe Trek"),
+			TEXT("This world is sewn like Earth. Visit Lantern Angeles (west), Palma Dusk (south), and Cherry Loom (far east island)."),
+			TEXT("N map lists nearest cities by continent. West coast, tropics, then Cherry Isle across the Plush Sea."));
+
+		Add(EHolypawMission::FourRites, TEXT("10. Four Rites"),
 			TEXT("Unstuff the four regional Poly officers: Brine Warden, Harvest Overseer, Bog King, Aurora Warden."),
 			TEXT("Each town has a warning sign. Bosses respawn slowly."));
 
-		Add(EHolypawMission::VelvetCrown, TEXT("10. Velvet Crown"),
+		Add(EHolypawMission::VelvetCrown, TEXT("11. Velvet Crown"),
 			TEXT("Climb Velvet Peak and unstuff the Velvet Tyrant, who wears stolen handmade capes."),
 			TEXT("Snowveil first, then the shrine. World boss. Do not flee."));
 
-		Add(EHolypawMission::Unmake, TEXT("11. Unmake the Unmaker"),
+		Add(EHolypawMission::Unmake, TEXT("12. Unmake the Unmaker"),
 			TEXT("The Poly Mill's last argument: The Unmaker, who would un-sew the world."),
 			TEXT("North of the peak. Faith Burn. Bring Hymn, Guard, and a full party."));
 
-		Add(EHolypawMission::BearFaith, TEXT("12. The Bear Faith"),
+		Add(EHolypawMission::BearFaith, TEXT("13. The Bear Faith"),
 			TEXT("Miracle at Velvet Peak after the Unmaker falls. People keep handmade fluff and drop the Poly Mill."),
 			TEXT("Press M on the peak. Believers kneel. The cheap polyester empire unravels."));
 

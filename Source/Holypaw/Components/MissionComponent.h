@@ -61,4 +61,5 @@ private:
 	bool HasZone(EHolypawZone Zone) const;
 	bool HasBoss(EHolypawVillain Id) const;
 	int32 RiteCount() const;
+	int32 CityVisitCount() const;
 };
