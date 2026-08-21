@@ -70,6 +70,7 @@ namespace HolypawSaveCodec
 		Out.DefeatedVillains = Pawn->GetDefeatedVillains();
 		Out.CityHearts = Pawn->GetHeartRecords();
 		Out.UnlockedTravel = Pawn->GetUnlockedTravel();
+		Out.Inventory = Pawn->GetInventory();
 
 		Out.Humans.Reset();
 		if (UWorld* World = Pawn->GetWorld())
@@ -149,6 +150,7 @@ namespace HolypawSaveCodec
 		Pawn->SetCodex(In.SeenVillains, In.DefeatedVillains);
 		Pawn->SetHeartRecords(In.CityHearts);
 		Pawn->SetUnlockedTravel(In.UnlockedTravel);
+		Pawn->SetInventory(In.Inventory);
 
 		FVector Loc = In.Location;
 		if (Loc.IsNearlyZero())

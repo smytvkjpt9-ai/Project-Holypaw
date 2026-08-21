@@ -28,7 +28,7 @@ This cloud repo is source + a runtime world builder, not a double-click `.exe`.
    ```
 
    That places `AHolypawWorldBuilder` in the current level. Play still generates cottage, path, city, and biomes at BeginPlay even if you skip this.
-5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage or a camp also saves. Gold **lanterns** open map travel (Tab to pick, E to hop).
+5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage or a camp also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **talk**. Stalls sell snacks (**I** for pockets). Miracles at **dusk** grant extra Faith. F6 mutes the temp stingers.
 6. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). Epic’s stock plugin is a server framework; add tools or Python locally if you want the Editor to place actors from Cursor.
 
 Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**, **ModelContextProtocol** (optional).
@@ -102,6 +102,7 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 | F5 | Quick save |
 | F6 | Mute (settings stub) |
 | F8 | Return to title (saves first) |
+| I | Pockets (use snacks) |
 | Esc | Pause / close menus |
 | K | Skill trees (Tab cycles) |
 | J | Journal |
@@ -111,4 +112,6 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 | V | Villain Codex |
 | 1–6 in battle | Slap / Beam / Party / Flee / Guard / Hymn |
 
-Faith stalls: **10 AP → 8 FP**.
+Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
+
+Converted humans **talk** (testimony) instead of being hugged again. 1 keeps listening, 2 asks the way.

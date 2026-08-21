@@ -248,6 +248,31 @@ if 'ActionName="TitleConfirm"' not in INPUT:
 if "UHolypawTitleWidget" not in HUD:
     errors.append("HUD missing title overlay")
 
+if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
+    errors.append("missing procedural audio")
+if not (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").exists():
+    errors.append("missing dialogue catalog")
+if not (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").exists():
+    errors.append("missing item catalog")
+if "StartTalk" not in CHAR:
+    errors.append("character missing StartTalk")
+if "OpenShop" not in CHAR:
+    errors.append("character missing OpenShop")
+if "TickProcAnim" not in CHAR:
+    errors.append("character missing teddy proc anim")
+if "stuffingBun" not in (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text():
+    errors.append("item catalog missing stuffingBun")
+if "Park Ranger" not in (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text():
+    errors.append("dialogue missing Park Ranger")
+if "KeepWave" not in (ROOT / "Source/Holypaw/HolypawGameInstance.cpp").read_text():
+    errors.append("game instance missing audio KeepWave")
+if 'ActionName="Inventory"' not in INPUT:
+    errors.append("DefaultInput missing Inventory")
+if "OpenShop" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text():
+    errors.append("stall missing shop panel")
+if "StartTalk" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("believers should talk, not re-hug")
+
 if errors:
     print("FAIL")
     for e in errors:

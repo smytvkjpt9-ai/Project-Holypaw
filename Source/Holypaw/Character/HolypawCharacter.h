@@ -138,6 +138,27 @@ public:
 	void UnlockTravel(EHolypawZone Zone);
 	int32 GetCityHearts(EHolypawZone Zone) const;
 	void AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	const TArray<FHolypawItemStack>& GetInventory() const { return Inventory; }
+	void SetInventory(const TArray<FHolypawItemStack>& Stacks);
+	int32 GetItemCount(FName Id) const;
+	void AddItem(FName Id, int32 Amount = 1);
+	bool UseItem(FName Id);
+	void OpenShop();
+	void BuyShopSlot(int32 Index);
+	bool StartTalk(AHugHuman* Human);
+	void AdvanceTalk();
+	void AskTalkHint();
+	void ToggleInventory();
+	bool IsTalkOpen() const { return bTalkOpen; }
+	bool IsShopOpen() const { return bShopOpen; }
+	bool IsInventoryOpen() const { return bInventoryOpen; }
+	TArray<FString> GetTalkLines() const;
+	TArray<FString> GetShopLines() const;
+	TArray<FString> GetInventoryLines() const;
+	int32 GetLastDamageDealt() const { return LastDamageDealt; }
+	float GetDamagePopupTime() const { return DamagePopupTime; }
+	FString GetClockLine() const;
+	int32 ShopPrice(int32 BaseCost) const;
 	void OpenFastTravel(EHolypawZone FromZone);
 	void FastTravelToSelected();
 	void CycleTravel(int32 Delta);
@@ -215,6 +236,8 @@ public:
 	void MutePressed();
 	UFUNCTION()
 	void TitleMenuPressed();
+	UFUNCTION()
+	void InventoryPressed();
 
 protected:
 	void MoveForward(float Value);
@@ -268,6 +291,38 @@ protected:
 
 	int32 TravelCursor = 0;
 	bool bWantsFastTravel = false;
+	bool bTalkOpen = false;
+	bool bShopOpen = false;
+	bool bInventoryOpen = false;
+	FString TalkSpeaker;
+	FString TalkBody;
+	FString TalkHint;
+	bool bTalkSecond = false;
+	int32 LastDamageDealt = 0;
+	int32 LastDamageTaken = 0;
+	float DamagePopupTime = 0.f;
+	float AnimT = 0.f;
+	float BlinkT = 2.4f;
+	float HurtPulse = 0.f;
+	float HugAnim = 0.f;
+	FVector BodyBase = FVector::ZeroVector;
+	FVector HeadBase = FVector::ZeroVector;
+	FVector EarLBase = FVector::ZeroVector;
+	FVector EarRBase = FVector::ZeroVector;
+	FVector PawLBase = FVector::ZeroVector;
+	FVector PawRBase = FVector::ZeroVector;
+	FVector EyeLScale = FVector::OneVector;
+	FVector EyeRScale = FVector::OneVector;
+	FRotator EarLRot = FRotator::ZeroRotator;
+	FRotator EarRRot = FRotator::ZeroRotator;
+	FRotator PawLRot = FRotator::ZeroRotator;
+	FRotator PawRRot = FRotator::ZeroRotator;
+
+	UPROPERTY()
+	TArray<FHolypawItemStack> Inventory;
+
+	void TickProcAnim(float DeltaSeconds);
+	void PlayCue(FName Cue);
 
 	UMaterialInterface* ShapeMat = nullptr;
 

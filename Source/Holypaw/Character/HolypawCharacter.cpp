@@ -10,6 +10,7 @@
 #include "HolypawWorldBuilder.h"
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveCodec.h"
+#include "Audio/HolypawAudio.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -179,11 +180,20 @@ void AHolypawCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	UnlockTravel(EHolypawZone::ForestCottage);
 	Mode = EHolypawPawnMode::Title;
+	if (BodyMesh) { BodyBase = BodyMesh->GetRelativeLocation(); }
+	if (HeadMesh) { HeadBase = HeadMesh->GetRelativeLocation(); }
+	if (EarL) { EarLBase = EarL->GetRelativeLocation(); EarLRot = EarL->GetRelativeRotation(); }
+	if (EarR) { EarRBase = EarR->GetRelativeLocation(); EarRRot = EarR->GetRelativeRotation(); }
+	if (PawL) { PawLBase = PawL->GetRelativeLocation(); PawLRot = PawL->GetRelativeRotation(); }
+	if (PawR) { PawRBase = PawR->GetRelativeLocation(); PawRRot = PawR->GetRelativeRotation(); }
+	if (EyeL) { EyeLScale = EyeL->GetRelativeScale3D(); }
+	if (EyeR) { EyeRScale = EyeR->GetRelativeScale3D(); }
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = false;
 		PC->SetInputMode(FInputModeGameOnly());
 	}
+	PlayCue(TEXT("Title"));
 	Toast(TEXT("The Fluffy Ascendancy — pick a slot. The porch is already under you."));
 }
 
@@ -230,6 +240,7 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction(TEXT("QuickSave"), IE_Pressed, this, &AHolypawCharacter::QuickSavePressed);
 	PlayerInputComponent->BindAction(TEXT("Settings"), IE_Pressed, this, &AHolypawCharacter::MutePressed);
 	PlayerInputComponent->BindAction(TEXT("TitleMenu"), IE_Pressed, this, &AHolypawCharacter::TitleMenuPressed);
+	PlayerInputComponent->BindAction(TEXT("Inventory"), IE_Pressed, this, &AHolypawCharacter::InventoryPressed);
 }
 
 void AHolypawCharacter::MoveForward(float Value)
@@ -284,6 +295,19 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	{
 		ToastTime -= DeltaSeconds;
 	}
+	if (DamagePopupTime > 0.f)
+	{
+		DamagePopupTime -= DeltaSeconds;
+	}
+	if (HurtPulse > 0.f)
+	{
+		HurtPulse = FMath::Max(0.f, HurtPulse - DeltaSeconds * 3.f);
+	}
+	if (HugAnim > 0.f)
+	{
+		HugAnim = FMath::Max(0.f, HugAnim - DeltaSeconds * 2.2f);
+	}
+	TickProcAnim(DeltaSeconds);
 	if (SpringArm)
 	{
 		const float Want = Mode == EHolypawPawnMode::Battle ? BattleArm : ExploreArm;
@@ -471,6 +495,11 @@ void AHolypawCharacter::Interact()
 		TogglePauseMenu();
 		return;
 	}
+	if (Mode == EHolypawPawnMode::UI && bTalkOpen)
+	{
+		AdvanceTalk();
+		return;
+	}
 	if (Mode == EHolypawPawnMode::UI && bMapOpen && bWantsFastTravel)
 	{
 		FastTravelToSelected();
@@ -521,6 +550,7 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 		Story->NotifyRecruit();
 	}
 	Toast(FString::Printf(TEXT("%s joined! Tiny hench-fluff acquired."), *Fluffy->Type.DisplayName.ToString()));
+	PlayCue(TEXT("Talk"));
 	return true;
 }
 
@@ -535,7 +565,9 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 		return true;
 	}
 	HugLock = 0.28f;
+	HugAnim = 1.f;
 	Human->ReceiveHug();
+	PlayCue(TEXT("Hug"));
 
 	if (Human->bBeliever)
 	{
@@ -575,6 +607,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 		}
 		Toast(FString::Printf(TEXT("%s's last serious thought fell out. %s"),
 			*Human->PersonName.ToString(), *Human->GetBelieverLine()));
+		PlayCue(TEXT("Convert"));
 	}
 	else
 	{
@@ -737,6 +770,9 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	}
 
 	E->HP -= Dmg;
+	LastDamageDealt = Dmg;
+	DamagePopupTime = 0.9f;
+	PlayCue(TEXT("BattleHit"));
 	if (E->HP <= 0)
 	{
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.35f, false);
@@ -761,6 +797,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 			? TEXT("The hostile pet is unstuffed!")
 			: Def.DefeatLine;
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
+		PlayCue(TEXT("BattleWin"));
 		return;
 	}
 
@@ -841,6 +878,9 @@ void AHolypawCharacter::EnemyBattleSwing()
 		Extra += TEXT("  Guarded.");
 	}
 	HP -= Dmg;
+	LastDamageTaken = Dmg;
+	HurtPulse = 1.f;
+	PlayCue(TEXT("Hurt"));
 	BattleLog = En->DisplayName.ToString() + TEXT(" ") + Verb + FString::Printf(TEXT(" for %d!"), Dmg) + Extra;
 	if (HP <= 0)
 	{
@@ -927,7 +967,15 @@ void AHolypawCharacter::GrantKillRewards(AHostilePet* Fallen)
 		Story->NotifyKill(Fallen->VillainId, Fallen->Rank);
 	}
 	const FString Name = Fallen ? Fallen->DisplayName.ToString() : TEXT("Pet");
-	Toast(FString::Printf(TEXT("%s unstuffed! +%d AP · +%d FP"), *Name, ApGain, FpGain));
+	if (Fallen && Fallen->GetDef().Faction == EHolypawFaction::PolyMill)
+	{
+		AddItem(TEXT("millScrap"), 1);
+		Toast(FString::Printf(TEXT("%s unstuffed! +%d AP · +%d FP · mill scrap"), *Name, ApGain, FpGain));
+	}
+	else
+	{
+		Toast(FString::Printf(TEXT("%s unstuffed! +%d AP · +%d FP"), *Name, ApGain, FpGain));
+	}
 }
 
 void AHolypawCharacter::RestFully()
@@ -966,9 +1014,17 @@ void AHolypawCharacter::TryMiracle()
 	{
 		FpGain = FMath::FloorToInt(FpGain * 1.5f);
 	}
+	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		if (GI->IsDusk())
+		{
+			FpGain += 18;
+		}
+	}
 	Affection->ResetMiracleCharge();
 	Affection->AddFP(FpGain);
 	HaloMesh->SetHiddenInGame(false);
+	PlayCue(TEXT("Miracle"));
 	int32 Heal = Skills->HasSkill(TEXT("peakLiturgy")) ? 30 : 15;
 	HP = FMath::Min(HPMax, HP + Heal);
 	int32 NewlyConvinced = 0;
@@ -1015,8 +1071,16 @@ void AHolypawCharacter::TryMiracle()
 			}
 		}
 	}
-	Toast(FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
-		FpGain, NewlyConvinced));
+	FString MiracleToast = FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
+		FpGain, NewlyConvinced);
+	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		if (GI->IsDusk())
+		{
+			MiracleToast += TEXT("  Dusk bonus — the sky clapped.");
+		}
+	}
+	Toast(MiracleToast);
 	if (Story)
 	{
 		Story->NotifyMiracle(CurrentZone);
@@ -1030,6 +1094,9 @@ void AHolypawCharacter::ClosePanels()
 	bMapOpen = false;
 	bCodexOpen = false;
 	bJournalOpen = false;
+	bTalkOpen = false;
+	bShopOpen = false;
+	bInventoryOpen = false;
 	if (Mode == EHolypawPawnMode::UI)
 	{
 		Mode = EHolypawPawnMode::Play;
@@ -1254,6 +1321,26 @@ void AHolypawCharacter::ApplySkillEffects(FName Id)
 
 void AHolypawCharacter::TryBuyTreeSlot(int32 Index)
 {
+	if (Mode == EHolypawPawnMode::UI && (bTalkOpen || bShopOpen || bInventoryOpen))
+	{
+		if (bTalkOpen)
+		{
+			if (Index == 0) { AdvanceTalk(); }
+			else if (Index == 1) { AskTalkHint(); }
+		}
+		else if (bShopOpen)
+		{
+			BuyShopSlot(Index);
+		}
+		else if (bInventoryOpen)
+		{
+			if (Inventory.IsValidIndex(Index))
+			{
+				UseItem(Inventory[Index].Id);
+			}
+		}
+		return;
+	}
 	if (!Skills)
 	{
 		return;
@@ -1272,7 +1359,7 @@ void AHolypawCharacter::BattleSlap()
 		TitleSelectSlot(0);
 		return;
 	}
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(0);
 		return;
@@ -1287,7 +1374,7 @@ void AHolypawCharacter::BattleBeam()
 		TitleSelectSlot(1);
 		return;
 	}
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(1);
 		return;
@@ -1302,7 +1389,7 @@ void AHolypawCharacter::BattlePartyAtk()
 		TitleSelectSlot(2);
 		return;
 	}
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(2);
 		return;
@@ -1312,7 +1399,7 @@ void AHolypawCharacter::BattlePartyAtk()
 
 void AHolypawCharacter::BattleFlee()
 {
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(3);
 		return;
@@ -1322,7 +1409,7 @@ void AHolypawCharacter::BattleFlee()
 
 void AHolypawCharacter::Skill5()
 {
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(4);
 		return;
@@ -1332,7 +1419,7 @@ void AHolypawCharacter::Skill5()
 
 void AHolypawCharacter::Skill6()
 {
-	if (bSkillsOpen)
+	if (bSkillsOpen || bTalkOpen || bShopOpen || bInventoryOpen)
 	{
 		TryBuyTreeSlot(5);
 		return;
@@ -1393,6 +1480,8 @@ void AHolypawCharacter::ResetForNewGame()
 	CityHearts.Reset();
 	UnlockedTravel.Reset();
 	UnlockTravel(EHolypawZone::ForestCottage);
+	Inventory.Reset();
+	AddItem(TEXT("stuffingBun"), 1);
 	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
 		SetActorLocation(It->GetCottageSpawn() + FVector(420.f, 0.f, 40.f));
@@ -1534,6 +1623,7 @@ void AHolypawCharacter::FastTravelToSelected()
 		Story->NotifyZone(Dest);
 	}
 	QuickSave();
+	PlayCue(TEXT("Travel"));
 	Toast(FString::Printf(TEXT("Lantern hop: %s. The coup commutes."), HolypawCatalog::ZoneDisplayName(Dest)));
 }
 
@@ -1613,9 +1703,13 @@ void AHolypawCharacter::QuickSave(bool bAnnounce)
 	{
 		GI->bSessionStarted = true;
 	}
-	if (GI->SavePawnToSlot(this, GI->ActiveSlot) && bAnnounce)
+	if (GI->SavePawnToSlot(this, GI->ActiveSlot))
 	{
-		Toast(FString::Printf(TEXT("Saved slot %d. The mill cannot un-save a hug."), GI->ActiveSlot + 1));
+		PlayCue(TEXT("Save"));
+		if (bAnnounce)
+		{
+			Toast(FString::Printf(TEXT("Saved slot %d. The mill cannot un-save a hug."), GI->ActiveSlot + 1));
+		}
 	}
 }
 
@@ -1695,4 +1789,318 @@ void AHolypawCharacter::TitleMenuPressed()
 		TogglePauseMenu();
 		ReturnToTitle();
 	}
+}
+
+void AHolypawCharacter::InventoryPressed()
+{
+	ToggleInventory();
+}
+
+void AHolypawCharacter::PlayCue(FName Cue)
+{
+	HolypawAudio::PlayCue(this, Cue);
+}
+
+void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
+{
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
+	AnimT += DeltaSeconds;
+	BlinkT -= DeltaSeconds;
+	const float Speed = GetVelocity().Size();
+	const float Walk = FMath::Clamp(Speed / 700.f, 0.f, 1.2f);
+	const float Bob = FMath::Sin(AnimT * (7.f + Walk * 5.f)) * 6.f * FMath::Max(0.15f, Walk);
+	const float Squash = HurtPulse * 0.16f;
+	if (BodyMesh)
+	{
+		BodyMesh->SetRelativeLocation(BodyBase + FVector(0.f, 0.f, Bob - Squash * 8.f));
+		BodyMesh->SetRelativeScale3D(FVector(0.85f + Squash, 0.7f + Squash, 0.75f - Squash));
+	}
+	if (HeadMesh)
+	{
+		HeadMesh->SetRelativeLocation(HeadBase + FVector(0.f, 0.f, Bob * 0.6f));
+	}
+	const float Ear = FMath::Sin(AnimT * 5.5f) * (8.f + Walk * 10.f);
+	if (EarL)
+	{
+		EarL->SetRelativeRotation(EarLRot + FRotator(Ear, 0.f, HugAnim * -12.f));
+	}
+	if (EarR)
+	{
+		EarR->SetRelativeRotation(EarRRot + FRotator(-Ear, 0.f, HugAnim * 12.f));
+	}
+	if (PawL)
+	{
+		PawL->SetRelativeRotation(PawLRot + FRotator(HugAnim * 28.f, 0.f, HugAnim * 18.f));
+	}
+	if (PawR)
+	{
+		PawR->SetRelativeRotation(PawRRot + FRotator(HugAnim * 28.f, 0.f, HugAnim * -18.f));
+	}
+	float EyeY = 1.f;
+	if (BlinkT < 0.12f)
+	{
+		EyeY = 0.12f;
+	}
+	if (BlinkT < 0.f)
+	{
+		BlinkT = 2.2f + FMath::FRandRange(0.f, 2.5f);
+	}
+	if (EyeL)
+	{
+		EyeL->SetRelativeScale3D(FVector(EyeLScale.X, EyeLScale.Y, EyeLScale.Z * EyeY));
+	}
+	if (EyeR)
+	{
+		EyeR->SetRelativeScale3D(FVector(EyeRScale.X, EyeRScale.Y, EyeRScale.Z * EyeY));
+	}
+}
+
+FString AHolypawCharacter::GetClockLine() const
+{
+	if (const UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		return GI->GetClockLabel();
+	}
+	return TEXT("");
+}
+
+int32 AHolypawCharacter::ShopPrice(int32 BaseCost) const
+{
+	if (GetCityHearts(CurrentZone) >= 1)
+	{
+		return FMath::Max(1, FMath::FloorToInt(BaseCost * 0.8f));
+	}
+	return BaseCost;
+}
+
+void AHolypawCharacter::SetInventory(const TArray<FHolypawItemStack>& Stacks)
+{
+	Inventory = Stacks;
+}
+
+int32 AHolypawCharacter::GetItemCount(FName Id) const
+{
+	for (const FHolypawItemStack& S : Inventory)
+	{
+		if (S.Id == Id)
+		{
+			return S.Count;
+		}
+	}
+	return 0;
+}
+
+void AHolypawCharacter::AddItem(FName Id, int32 Amount)
+{
+	if (Amount <= 0 || Id.IsNone())
+	{
+		return;
+	}
+	for (FHolypawItemStack& S : Inventory)
+	{
+		if (S.Id == Id)
+		{
+			S.Count += Amount;
+			return;
+		}
+	}
+	FHolypawItemStack S;
+	S.Id = Id;
+	S.Count = Amount;
+	Inventory.Add(S);
+}
+
+bool AHolypawCharacter::UseItem(FName Id)
+{
+	const FHolypawItemDef* Def = HolypawCatalog::FindItem(Id);
+	if (!Def)
+	{
+		Toast(TEXT("That is decorative mill trash. Keep it as proof."));
+		return false;
+	}
+	bool bFound = false;
+	for (int32 I = 0; I < Inventory.Num(); ++I)
+	{
+		if (Inventory[I].Id != Id || Inventory[I].Count <= 0)
+		{
+			continue;
+		}
+		bFound = true;
+		if (Def->Heal <= 0 && Def->Faith <= 0)
+		{
+			Toast(Def->Description.ToString());
+			return false;
+		}
+		--Inventory[I].Count;
+		if (Inventory[I].Count <= 0)
+		{
+			Inventory.RemoveAt(I);
+		}
+		HP = FMath::Min(HPMax, HP + Def->Heal);
+		if (Affection && Def->Faith > 0)
+		{
+			Affection->AddFP(Def->Faith);
+		}
+		PlayCue(TEXT("Shop"));
+		Toast(FString::Printf(TEXT("Used %s."), *Def->DisplayName.ToString()));
+		return true;
+	}
+	if (!bFound)
+	{
+		Toast(TEXT("Pockets empty of that."));
+	}
+	return false;
+}
+
+void AHolypawCharacter::ToggleInventory()
+{
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause || Mode == EHolypawPawnMode::Battle)
+	{
+		return;
+	}
+	SetPanel(bInventoryOpen);
+}
+
+void AHolypawCharacter::OpenShop()
+{
+	if (Mode != EHolypawPawnMode::Play)
+	{
+		return;
+	}
+	SetPanel(bShopOpen);
+	PlayCue(TEXT("Shop"));
+	Toast(GetCityHearts(CurrentZone) >= 1
+		? TEXT("Hearts discount. The stall likes you.")
+		: TEXT("Faith stall. Convert locals for cheaper buns."));
+}
+
+void AHolypawCharacter::BuyShopSlot(int32 Index)
+{
+	if (!Affection)
+	{
+		return;
+	}
+	if (Index == 0)
+	{
+		BuyFaith(ShopPrice(10), 8);
+		PlayCue(TEXT("Shop"));
+		return;
+	}
+	FName Id = NAME_None;
+	if (Index == 1) { Id = TEXT("stuffingBun"); }
+	else if (Index == 2) { Id = TEXT("hymnRibbon"); }
+	else if (Index == 3) { Id = TEXT("cocoaButton"); }
+	const FHolypawItemDef* Def = HolypawCatalog::FindItem(Id);
+	if (!Def)
+	{
+		return;
+	}
+	const int32 Cost = ShopPrice(Def->ShopCostAP);
+	if (!Affection->SpendAP(Cost))
+	{
+		Toast(TEXT("Not enough AP. Hug someone unfinished."));
+		return;
+	}
+	AddItem(Id, 1);
+	PlayCue(TEXT("Shop"));
+	Toast(FString::Printf(TEXT("Bought %s for %d AP."), *Def->DisplayName.ToString(), Cost));
+}
+
+bool AHolypawCharacter::StartTalk(AHugHuman* Human)
+{
+	if (!Human)
+	{
+		return false;
+	}
+	const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(Human->PersonName.ToString());
+	TalkSpeaker = Human->PersonName.ToString();
+	TalkBody = Talk ? Talk->Line : Human->GetBelieverLine();
+	TalkHint = Talk ? Talk->Hint : TEXT("Find a gold lantern.");
+	bTalkSecond = false;
+	SetPanel(bTalkOpen);
+	PlayCue(TEXT("Talk"));
+	return true;
+}
+
+void AHolypawCharacter::AdvanceTalk()
+{
+	if (!bTalkOpen)
+	{
+		return;
+	}
+	if (!bTalkSecond)
+	{
+		if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(TalkSpeaker))
+		{
+			TalkBody = Talk->LineB;
+		}
+		bTalkSecond = true;
+		PlayCue(TEXT("Talk"));
+		return;
+	}
+	ClosePanels();
+}
+
+void AHolypawCharacter::AskTalkHint()
+{
+	Toast(TalkHint.IsEmpty() ? TEXT("Lanterns. Tab. E. The globe shrinks.") : TalkHint);
+	PlayCue(TEXT("Talk"));
+}
+
+TArray<FString> AHolypawCharacter::GetTalkLines() const
+{
+	TArray<FString> Lines;
+	Lines.Add(TalkSpeaker);
+	Lines.Add(TalkBody);
+	Lines.Add(TEXT("1  keep listening    2  ask the way    E/Esc done"));
+	return Lines;
+}
+
+TArray<FString> AHolypawCharacter::GetShopLines() const
+{
+	TArray<FString> Lines;
+	Lines.Add(GetCityHearts(CurrentZone) >= 1 ? TEXT("Faith stall  (Hearts discount)") : TEXT("Faith stall"));
+	Lines.Add(FString::Printf(TEXT("1  Faith jar     %d AP -> 8 FP"), ShopPrice(10)));
+	if (const FHolypawItemDef* Bun = HolypawCatalog::FindItem(TEXT("stuffingBun")))
+	{
+		Lines.Add(FString::Printf(TEXT("2  %s     %d AP"), *Bun->DisplayName.ToString(), ShopPrice(Bun->ShopCostAP)));
+	}
+	if (const FHolypawItemDef* Rib = HolypawCatalog::FindItem(TEXT("hymnRibbon")))
+	{
+		Lines.Add(FString::Printf(TEXT("3  %s     %d AP"), *Rib->DisplayName.ToString(), ShopPrice(Rib->ShopCostAP)));
+	}
+	if (const FHolypawItemDef* Cocoa = HolypawCatalog::FindItem(TEXT("cocoaButton")))
+	{
+		Lines.Add(FString::Printf(TEXT("4  %s     %d AP"), *Cocoa->DisplayName.ToString(), ShopPrice(Cocoa->ShopCostAP)));
+	}
+	Lines.Add(TEXT("Esc closes. I opens your pockets."));
+	return Lines;
+}
+
+TArray<FString> AHolypawCharacter::GetInventoryLines() const
+{
+	TArray<FString> Lines;
+	Lines.Add(TEXT("Pockets"));
+	if (Inventory.Num() == 0)
+	{
+		Lines.Add(TEXT("Empty. Stalls sell buns. Mills drop scrap."));
+	}
+	else
+	{
+		for (int32 I = 0; I < Inventory.Num(); ++I)
+		{
+			const FHolypawItemDef* Def = HolypawCatalog::FindItem(Inventory[I].Id);
+			const FString Name = Def ? Def->DisplayName.ToString() : Inventory[I].Id.ToString();
+			Lines.Add(FString::Printf(TEXT("%d  %s x%d"), I + 1, *Name, Inventory[I].Count));
+			if (Def)
+			{
+				Lines.Add(TEXT("    ") + Def->Description.ToString());
+			}
+		}
+		Lines.Add(TEXT("1-6 use    I close"));
+	}
+	return Lines;
 }

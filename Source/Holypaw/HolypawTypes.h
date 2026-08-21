@@ -371,6 +371,60 @@ struct HOLYPAW_API FHolypawHeartRecord
 	int32 Hearts = 0;
 };
 
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawItemStack
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Id;
+
+	UPROPERTY()
+	int32 Count = 0;
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawItemDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Id;
+
+	UPROPERTY()
+	FText DisplayName;
+
+	UPROPERTY()
+	FText Description;
+
+	UPROPERTY()
+	int32 ShopCostAP = 0;
+
+	UPROPERTY()
+	int32 Heal = 0;
+
+	UPROPERTY()
+	int32 Faith = 0;
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawTalkDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString Speaker;
+
+	UPROPERTY()
+	FString Line;
+
+	UPROPERTY()
+	FString LineB;
+
+	UPROPERTY()
+	FString Hint;
+};
+
 namespace HolypawCatalog
 {
 	inline TArray<FFluffyTypeDef> MakeFluffyTypes()
@@ -476,4 +530,8 @@ namespace HolypawCatalog
 	FVillainDef GetVillain(EHolypawVillain Id);
 	FString SpecialLabel(EVillainSpecial Special);
 	FString RankLabel(EVillainRank Rank);
+
+	const TArray<FHolypawItemDef>& GetItems();
+	const FHolypawItemDef* FindItem(FName Id);
+	const FHolypawTalkDef* FindTalk(const FString& Speaker);
 }

@@ -86,7 +86,7 @@ FText AHugHuman::GetPrompt() const
 {
 	if (bBeliever)
 	{
-		return FText::Format(NSLOCTEXT("Holypaw", "Believer", "E  {0} is yours forever"), PersonName);
+		return FText::Format(NSLOCTEXT("Holypaw", "BelieverTalk", "E  Hear {0}'s testimony"), PersonName);
 	}
 	return FText::Format(NSLOCTEXT("Holypaw", "Hug", "E  Hug {0} until they agree  ({1}%)"),
 		PersonName,
@@ -98,6 +98,10 @@ bool AHugHuman::Interact(AHolypawCharacter* InstigatorPawn)
 	if (!InstigatorPawn)
 	{
 		return false;
+	}
+	if (InstigatorPawn && bBeliever)
+	{
+		return InstigatorPawn->StartTalk(this);
 	}
 	return InstigatorPawn->HugPerson(this);
 }

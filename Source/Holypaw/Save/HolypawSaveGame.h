@@ -143,6 +143,9 @@ public:
 	UPROPERTY()
 	TArray<FHolypawHumanRecord> Humans;
 
+	UPROPERTY()
+	TArray<FHolypawItemStack> Inventory;
+
 	FString MakeSummaryLine() const;
 };
 

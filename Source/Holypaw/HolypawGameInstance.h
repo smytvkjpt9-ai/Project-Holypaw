@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "HolypawTypes.h"
+#include "Sound/SoundWaveProcedural.h"
 #include "HolypawGameInstance.generated.h"
 
 class UHolypawSaveGame;
@@ -47,6 +48,11 @@ public:
 	void StartNewGame(AHolypawCharacter* Pawn, int32 Index);
 	void SaveSettings();
 	void CycleMute();
+	void KeepWave(class USoundWaveProcedural* Wave);
+	float GetWorldHour() const;
+	FString GetClockLabel() const;
+	bool IsDusk() const;
+	bool IsNight() const;
 
 protected:
 	void LoadOrCreateSettings();
@@ -54,4 +60,7 @@ protected:
 
 	mutable bool bSlotCacheReady = false;
 	mutable TArray<FString> SlotCache;
+
+	UPROPERTY()
+	TArray<TObjectPtr<USoundWaveProcedural>> LiveWaves;
 };

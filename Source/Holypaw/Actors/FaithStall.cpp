@@ -15,8 +15,7 @@ void AFaithStall::BeginPlay()
 
 FText AFaithStall::GetPrompt() const
 {
-	return FText::Format(NSLOCTEXT("Holypaw", "Stall", "E  Faith stall  ({0} AP -> {1} FP)"),
-		FText::AsNumber(ApCost), FText::AsNumber(FpGain));
+	return FText::FromString(TEXT("E  Faith stall (buns, ribbons, jars)"));
 }
 
 bool AFaithStall::Interact(AHolypawCharacter* InstigatorPawn)
@@ -25,5 +24,6 @@ bool AFaithStall::Interact(AHolypawCharacter* InstigatorPawn)
 	{
 		return false;
 	}
-	return InstigatorPawn->BuyFaith(ApCost, FpGain);
+	InstigatorPawn->OpenShop();
+	return true;
 }

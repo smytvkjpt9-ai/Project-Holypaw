@@ -57,6 +57,11 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 40.f, Size.Y * 0.16f), TEXT("VS"), FLinearColor(1.f, 0.9f, 0.5f), 1.4f);
 		const FString EnemyName = P->GetBattleEnemy() ? P->GetBattleEnemy()->DisplayName.ToString() : TEXT("Hostile");
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX + 80.f, Size.Y * 0.16f), EnemyName, FLinearColor(1.f, 0.55f, 0.62f), 1.2f);
+		if (P->GetDamagePopupTime() > 0.f)
+		{
+			PaintText(OutDrawElements, Layer + 3, AllottedGeometry, FVector2D(CX + 80.f, Size.Y * 0.12f),
+				FString::Printf(TEXT("-%d"), P->GetLastDamageDealt()), FLinearColor(1.f, 0.88f, 0.4f), 1.35f);
+		}
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 280.f, Size.Y * 0.20f),
 			FString::Printf(TEXT("HP %d/%d"), P->HP, P->HPMax), FLinearColor(0.9f, 0.95f, 1.f), 1.0f);
 		if (const AHostilePet* E = P->GetBattleEnemy())
@@ -121,6 +126,30 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 			}
 		}
 		PaintText(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 80.f, 470.f), TEXT("P to close"), FLinearColor(0.8f, 0.75f, 0.9f), 0.95f);
+	}
+
+	auto PaintLines = [&](const FString& Title, const TArray<FString>& Lines)
+	{
+		PaintPanel(OutDrawElements, Layer, AllottedGeometry, FVector2D(CX - 340.f, 180.f), FVector2D(680.f, 360.f), FLinearColor(0.08f, 0.05f, 0.12f, 0.9f));
+		PaintText(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 200.f, 196.f), Title, FLinearColor(1.f, 0.82f, 0.9f), 1.3f);
+		int32 I = 0;
+		for (const FString& Line : Lines)
+		{
+			PaintText(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 300.f, 240.f + I * 28.f), Line, FLinearColor(0.95f, 0.9f, 1.f), 0.95f);
+			++I;
+		}
+	};
+	if (P->IsTalkOpen())
+	{
+		PaintLines(TEXT("Testimony"), P->GetTalkLines());
+	}
+	if (P->IsShopOpen())
+	{
+		PaintLines(TEXT("Faith stall"), P->GetShopLines());
+	}
+	if (P->IsInventoryOpen())
+	{
+		PaintLines(TEXT("Pockets"), P->GetInventoryLines());
 	}
 
 	return Layer + 3;

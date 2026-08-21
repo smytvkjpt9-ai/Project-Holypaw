@@ -58,6 +58,10 @@ void AHolypawHUD::DrawHUD()
 	const float W = Canvas->SizeX;
 	DrawLabel(32.f, 24.f, HolypawCatalog::ZoneDisplayName(P->CurrentZone), FLinearColor(0.82f, 0.75f, 1.f), 1.05f);
 	DrawLabel(32.f, 52.f, TEXT("Fluffy Ascendancy"), FLinearColor(1.f, 0.78f, 0.88f), 1.45f);
+	if (!P->GetClockLine().IsEmpty())
+	{
+		DrawLabel(W - 280.f, 24.f, P->GetClockLine(), FLinearColor(1.f, 0.86f, 0.62f), 1.05f);
+	}
 
 	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d    Hearts %d    City %d"),
 		P->Affection->AP, P->Affection->FP, P->Affection->Level, P->HP, P->HPMax,
@@ -95,7 +99,7 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 220.f, 190.f, P->GetToast(), FLinearColor(1.f, 0.95f, 0.75f), 1.25f);
 	}
 
-	DrawLabel(W - 620.f, Canvas->SizeY - 48.f, TEXT("WASD  E  K trees  J journal  P party  M miracle  N map  V villains  F5 save  Esc pause"), FLinearColor(0.75f, 0.7f, 0.9f), 0.78f);
+	DrawLabel(W - 680.f, Canvas->SizeY - 48.f, TEXT("WASD  E  I pockets  K trees  J journal  P party  M miracle  N map  V  F5 save  Esc pause"), FLinearColor(0.75f, 0.7f, 0.9f), 0.72f);
 
 	const bool bUmgOverlay = OverlayWidget != nullptr;
 	if (!bUmgOverlay && P->Mode == EHolypawPawnMode::Battle)
@@ -107,7 +111,10 @@ void AHolypawHUD::DrawHUD()
 		Canvas->DrawItem(Dim);
 		DrawLabel(CX - 280.f, CY, TEXT("YOU"), FLinearColor(1.f, 0.85f, 0.92f), 1.2f);
 		DrawLabel(CX + 80.f, CY, P->GetBattleEnemy() ? P->GetBattleEnemy()->DisplayName.ToString() : TEXT("Hostile"), FLinearColor(1.f, 0.55f, 0.62f), 1.35f);
-		DrawLabel(CX - 40.f, CY + 8.f, TEXT("VS"), FLinearColor(1.f, 0.9f, 0.5f), 1.6f);
+	if (P->GetDamagePopupTime() > 0.f && P->Mode == EHolypawPawnMode::Battle)
+	{
+		DrawLabel(CX + 80.f, CY - 28.f, FString::Printf(TEXT("-%d"), P->GetLastDamageDealt()), FLinearColor(1.f, 0.85f, 0.4f), 1.4f);
+	}
 		DrawLabel(CX - 280.f, CY + 36.f, FString::Printf(TEXT("HP %d/%d"), P->HP, P->HPMax), FLinearColor(0.9f, 0.95f, 1.f), 1.05f);
 		if (P->GetBattleEnemy())
 		{
@@ -212,5 +219,28 @@ void AHolypawHUD::DrawHUD()
 			++I;
 		}
 		DrawLabel(W * 0.5f - 90.f, Canvas->SizeY - 80.f, TEXT("J or Esc to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
+	}
+
+	auto DrawLines = [&](const FString& Title, const TArray<FString>& Lines)
+	{
+		DrawLabel(W * 0.5f - 280.f, 210.f, Title, FLinearColor(1.f, 0.85f, 0.75f), 1.4f);
+		int32 I = 0;
+		for (const FString& Line : Lines)
+		{
+			DrawLabel(W * 0.5f - 280.f, 250.f + I * 26.f, Line, FLinearColor(0.95f, 0.9f, 1.f), 1.0f);
+			++I;
+		}
+	};
+	if (P->IsTalkOpen())
+	{
+		DrawLines(TEXT("Testimony"), P->GetTalkLines());
+	}
+	if (P->IsShopOpen())
+	{
+		DrawLines(TEXT("Stall"), P->GetShopLines());
+	}
+	if (P->IsInventoryOpen())
+	{
+		DrawLines(TEXT("Pockets"), P->GetInventoryLines());
 	}
 }
