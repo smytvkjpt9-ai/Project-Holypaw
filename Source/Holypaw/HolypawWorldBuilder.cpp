@@ -801,6 +801,7 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 		}
 	};
 	SpawnHuman(TEXT("Park Ranger"), FVector2D(CottageSpawn.X + 900.f, CottageSpawn.Y + 200.f), FLinearColor(0.45f, 0.75f, 0.55f));
+	SpawnHuman(TEXT("Skeptic"), FVector2D(CottageSpawn.X + 1100.f, CottageSpawn.Y - 280.f), FLinearColor(0.62f, 0.58f, 0.7f));
 	SpawnHuman(TEXT("Child"), FVector2D(-16000.f, 400.f), FLinearColor(0.55f, 0.78f, 0.95f));
 	SpawnHuman(TEXT("Baker"), FVector2D(RibbonCity.X + 400.f, RibbonCity.Y - 500.f), FLinearColor(0.95f, 0.75f, 0.4f));
 	SpawnHuman(TEXT("Acolyte"), FVector2D(RibbonCity.X - 300.f, RibbonCity.Y + 600.f), FLinearColor(0.72f, 0.62f, 0.9f));

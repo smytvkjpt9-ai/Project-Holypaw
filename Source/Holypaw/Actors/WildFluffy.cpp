@@ -68,7 +68,7 @@ FText AWildFluffy::GetPrompt() const
 	{
 		return FText::GetEmpty();
 	}
-	return FText::Format(NSLOCTEXT("Holypaw", "Recruit", "E  Recruit {0}"), Type.DisplayName);
+	return FText::Format(NSLOCTEXT("Holypaw", "Recruit", "E  Recruit {0} (tiny hench-fluff)"), Type.DisplayName);
 }
 
 bool AWildFluffy::Interact(AHolypawCharacter* InstigatorPawn)

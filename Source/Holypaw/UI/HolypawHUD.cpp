@@ -49,8 +49,9 @@ void AHolypawHUD::DrawHUD()
 	DrawLabel(32.f, 24.f, HolypawCatalog::ZoneDisplayName(P->CurrentZone), FLinearColor(0.82f, 0.75f, 1.f), 1.05f);
 	DrawLabel(32.f, 52.f, TEXT("Fluffy Ascendancy"), FLinearColor(1.f, 0.78f, 0.88f), 1.45f);
 
-	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d"),
-		P->Affection->AP, P->Affection->FP, P->Affection->Level, P->HP, P->HPMax);
+	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d    Hearts %d"),
+		P->Affection->AP, P->Affection->FP, P->Affection->Level, P->HP, P->HPMax,
+		P->Story ? P->Story->Converts : 0);
 	DrawLabel(32.f, 92.f, Stats, FLinearColor(0.95f, 0.93f, 1.f), 1.15f);
 
 	const float Pct = P->Affection->MiracleMax > 0.f ? P->Affection->MiracleCharge / P->Affection->MiracleMax : 0.f;

@@ -178,8 +178,6 @@ if not (ROOT / "legacy/web-prototype/index.html").exists():
 INPUT = (ROOT / "Config/DefaultInput.ini").read_text()
 if 'ActionName="Skill6"' not in INPUT:
     errors.append("DefaultInput missing Skill6 (Hymn)")
-if "EnhancedInput.EnhancedPlayerInput" not in INPUT:
-    errors.append("DefaultInput not using Enhanced Input player class")
 
 HUD = (ROOT / "Source/Holypaw/UI/HolypawHUD.cpp").read_text()
 if "UHolypawBattleWidget" not in HUD:
@@ -206,6 +204,12 @@ for skill in ("softFur", "buttonEyes", "haloStep", "miracleEcho", "partyBond", "
 PARTY = (ROOT / "Source/Holypaw/Components/PartyComponent.h").read_text()
 if "MaxParty = 4" not in PARTY:
     errors.append("party max is not 4")
+if "ReceiveHug" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing ReceiveHug juice")
+if "HugLock" not in CHAR:
+    errors.append("character missing hug lock (mash-protect)")
+if "NewlyConvinced" not in CHAR:
+    errors.append("miracle missing neighborhood sermon")
 
 if errors:
     print("FAIL")

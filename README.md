@@ -8,6 +8,8 @@ You are a **handmade teddy**. The **Poly Mill** mass-produces cheap polyester co
 
 The world is also a **plush Earth**: continents, oceans, deserts, ice caps, and **26 cities** generated at Play from `HolypawAtlas.cpp` (no binary `.umap`).
 
+**The joke:** you hug humans until their last serious thought falls out. The HUD **Hearts** counter is how many people now believe a teddy should run things. Miracles sermon the neighborhood. It is cute. It is also a coup.
+
 The old browser toy is archived at [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
 ## Open in Unreal 5.8 (required)

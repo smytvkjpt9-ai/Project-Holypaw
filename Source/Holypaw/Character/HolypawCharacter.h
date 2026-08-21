@@ -96,7 +96,7 @@ public:
 	int32 Attack = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
-	float WalkSpeed = 640.f;
+	float WalkSpeed = 700.f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
 	EHolypawPawnMode Mode = EHolypawPawnMode::Play;
@@ -199,11 +199,12 @@ protected:
 	int32 BattleTurn = 0;
 	bool bPartyCut = false;
 	bool bGuarding = false;
-	float ExploreArm = 480.f;
-	float BattleArm = 290.f;
+	float ExploreArm = 540.f;
+	float BattleArm = 300.f;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;
+	float HugLock = 0.f;
 	FString ToastMsg;
 	float ToastTime = 0.f;
 	FText Prompt;

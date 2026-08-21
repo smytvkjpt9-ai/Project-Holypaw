@@ -14,7 +14,7 @@ void ACottageRest::BeginPlay()
 
 FText ACottageRest::GetPrompt() const
 {
-	return NSLOCTEXT("Holypaw", "Rest", "E  Rest at the cottage (heal)");
+	return NSLOCTEXT("Holypaw", "Rest", "E  Rest (heal). The humans will wait. They always wait.");
 }
 
 bool ACottageRest::Interact(AHolypawCharacter* InstigatorPawn)

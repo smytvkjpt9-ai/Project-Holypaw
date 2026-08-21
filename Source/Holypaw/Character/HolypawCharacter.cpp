@@ -65,20 +65,30 @@ AHolypawCharacter::AHolypawCharacter()
 	HaloMesh->SetRelativeScale3D(FVector(0.45f, 0.45f, 0.08f));
 	HaloMesh->SetHiddenInGame(true);
 
-	auto MakePart = [this](TObjectPtr<UStaticMeshComponent>& Out, const TCHAR* Name, USceneComponent* Parent)
-	{
-		Out = CreateDefaultSubobject<UStaticMeshComponent>(Name);
-		Out->SetupAttachment(Parent);
-		Out->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	};
-	MakePart(EarL, TEXT("EarL"), HeadMesh);
-	MakePart(EarR, TEXT("EarR"), HeadMesh);
-	MakePart(Snout, TEXT("Snout"), HeadMesh);
-	MakePart(PawL, TEXT("PawL"), BodyMesh);
-	MakePart(PawR, TEXT("PawR"), BodyMesh);
-	MakePart(Belly, TEXT("Belly"), BodyMesh);
-	MakePart(EyeL, TEXT("EyeL"), HeadMesh);
-	MakePart(EyeR, TEXT("EyeR"), HeadMesh);
+	EarL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarL"));
+	EarL->SetupAttachment(HeadMesh);
+	EarL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EarR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarR"));
+	EarR->SetupAttachment(HeadMesh);
+	EarR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Snout = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Snout"));
+	Snout->SetupAttachment(HeadMesh);
+	Snout->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
+	PawL->SetupAttachment(BodyMesh);
+	PawL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
+	PawR->SetupAttachment(BodyMesh);
+	PawR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Belly = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Belly"));
+	Belly->SetupAttachment(BodyMesh);
+	Belly->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
+	EyeL->SetupAttachment(HeadMesh);
+	EyeL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
+	EyeR->SetupAttachment(HeadMesh);
+	EyeR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EarL->SetRelativeLocation(FVector(-8.f, 18.f, 28.f));
 	EarL->SetRelativeRotation(FRotator(12.f, 0.f, -18.f));
 	EarL->SetRelativeScale3D(FVector(0.18f, 0.12f, 0.32f));
@@ -167,8 +177,13 @@ void AHolypawCharacter::BeginPlay()
 	if (Story)
 	{
 		Story->TryAdvance(this);
+		const FMissionDef Cur = Story->GetCurrent();
+		Toast(FString::Printf(TEXT("Paws on the porch, world on the menu. %s — J for the plan."), *Cur.Title.ToString()));
 	}
-	Toast(TEXT("Wake in Stuffed Park. J journal. K three skill trees. The Poly Mill sells cheap polyester — not handmade."));
+	else
+	{
+		Toast(TEXT("Paws on the porch. Hug the silly humans. J journal."));
+	}
 }
 
 void AHolypawCharacter::Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color)
@@ -244,6 +259,10 @@ void AHolypawCharacter::LookUpAtRate(float Value)
 void AHolypawCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (HugLock > 0.f)
+	{
+		HugLock -= DeltaSeconds;
+	}
 	if (Invuln > 0.f)
 	{
 		Invuln -= DeltaSeconds;
@@ -260,7 +279,7 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	if (Mode == EHolypawPawnMode::Play)
 	{
 		UpdateZone();
-		if (AActor* Near = FindNearestInteractable(220.f))
+		if (AActor* Near = FindNearestInteractable(420.f))
 		{
 			if (AHolypawInteractable* I = Cast<AHolypawInteractable>(Near))
 			{
@@ -350,7 +369,19 @@ void AHolypawCharacter::UpdateZone()
 	if (Z != CurrentZone)
 	{
 		CurrentZone = Z;
-		Toast(FString::Printf(TEXT("Entered %s"), HolypawCatalog::ZoneDisplayName(Z)));
+		FString Entered = HolypawCatalog::ZoneDisplayName(Z);
+		if (Z == EHolypawZone::Ocean)
+		{
+			Toast(TEXT("Plush Sea. Your paws are soggy. Humans cannot swim thoughts."));
+		}
+		else if (Z == EHolypawZone::RibbonCity)
+		{
+			Toast(TEXT("Ribbon City — a buffet of unfinished opinions."));
+		}
+		else
+		{
+			Toast(FString::Printf(TEXT("Entered %s"), *Entered));
+		}
 		if (Story)
 		{
 			Story->NotifyZone(Z);
@@ -416,13 +447,13 @@ void AHolypawCharacter::Interact()
 		}
 		return;
 	}
-	if (AHolypawInteractable* I = Cast<AHolypawInteractable>(FindNearestInteractable(220.f)))
+	if (AHolypawInteractable* I = Cast<AHolypawInteractable>(FindNearestInteractable(420.f)))
 	{
 		I->Interact(this);
 	}
 	else
 	{
-		Toast(TEXT("Nothing nearby. Follow the lanterns toward the city."));
+		Toast(TEXT("Nobody in hugging range. Lanterns east, humans are famously huggable."));
 	}
 }
 
@@ -434,7 +465,7 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	}
 	if (Party->IsFull())
 	{
-		Toast(TEXT("Party full (4). Open Party with P."));
+		Toast(TEXT("Party full (4). Four fluffies is already a cult. P to admire them."));
 		return false;
 	}
 	FPartyMember M;
@@ -452,7 +483,7 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	{
 		Story->NotifyRecruit();
 	}
-	Toast(FString::Printf(TEXT("%s joined your party!"), *Fluffy->Type.DisplayName.ToString()));
+	Toast(FString::Printf(TEXT("%s joined! Tiny hench-fluff acquired."), *Fluffy->Type.DisplayName.ToString()));
 	return true;
 }
 
@@ -462,7 +493,20 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		return false;
 	}
-	int32 Gain = 12 + FMath::RandRange(0, 7);
+	if (HugLock > 0.f)
+	{
+		return true;
+	}
+	HugLock = 0.28f;
+	Human->ReceiveHug();
+
+	if (Human->bBeliever)
+	{
+		Toast(Human->GetBelieverLine());
+		return true;
+	}
+
+	int32 Gain = 14 + FMath::RandRange(0, 8);
 	if (Skills->HasSkill(TEXT("buttonEyes")))
 	{
 		Gain = FMath::FloorToInt(Gain * 1.2f);
@@ -472,8 +516,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 		Gain = FMath::FloorToInt(Gain * 1.5f);
 	}
 	Affection->AddAP(Gain);
-	const bool bWasOpen = Human->ConvertProgress < 100.f;
-	float Progress = Gain;
+	float Progress = static_cast<float>(Gain);
 	if (Skills->HasSkill(TEXT("deepHug")))
 	{
 		Progress += 15.f;
@@ -483,23 +526,22 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		HP = FMath::Min(HPMax, HP + 8);
 	}
-	if (bWasOpen && Human->ConvertProgress >= 100.f)
+	const int32 Pct = FMath::FloorToInt(Human->ConvertProgress);
+	if (Human->ConvertProgress >= 100.f)
 	{
 		Human->BecomeBeliever();
-		Affection->AddMiracle(20.f);
+		Affection->AddMiracle(22.f);
 		if (Story)
 		{
 			Story->NotifyConvert();
 		}
-		Toast(FString::Printf(TEXT("%s believes! Miracle Charge surges."), *Human->PersonName.ToString()));
-	}
-	else if (Human->ConvertProgress < 100.f)
-	{
-		Toast(FString::Printf(TEXT("+%d AP from a hug."), Gain));
+		Toast(FString::Printf(TEXT("%s's last serious thought fell out. %s"),
+			*Human->PersonName.ToString(), *Human->GetBelieverLine()));
 	}
 	else
 	{
-		Toast(FString::Printf(TEXT("%s already keeps the Bear Faith."), *Human->PersonName.ToString()));
+		Toast(FString::Printf(TEXT("%s is %d%% stuffed with Bear Faith. %s  (+%d AP)"),
+			*Human->PersonName.ToString(), Pct, *Human->GetSkepticLine(Pct), Gain));
 	}
 	return true;
 }
@@ -532,12 +574,7 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	if (!SeenVillains.Contains(Enemy->VillainId))
 	{
 		SeenVillains.Add(Enemy->VillainId);
-		Toast(FString::Printf(TEXT("Codex: %s logged."), *Enemy->DisplayName.ToString()));
-	}
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		PC->bShowMouseCursor = true;
-		PC->SetInputMode(FInputModeGameAndUI());
+		Toast(FString::Printf(TEXT("Codex: %s logged. Cute, but so rude."), *Enemy->DisplayName.ToString()));
 	}
 }
 
@@ -662,6 +699,11 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	}
 
 	E->HP -= Dmg;
+	if (E->HP <= 0)
+	{
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.35f, false);
+		return;
+	}
 	GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 }
 
@@ -765,7 +807,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	if (HP <= 0)
 	{
 		HP = 0;
-		BattleLog = TEXT("Unstuffed… waking at the cottage.");
+		BattleLog = TEXT("Unstuffed… the cottage bed still smells like you. Waking up.");
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::FailAndWakeAtCottage, 1.0f, false);
 		return;
 	}
@@ -792,6 +834,7 @@ void AHolypawCharacter::FailAndWakeAtCottage()
 	{
 		SetActorLocation(B->GetCottageSpawn());
 	}
+	Toast(TEXT("Back on the porch. The humans will forget you died. They forget everything."));
 }
 
 void AHolypawCharacter::EndBattle()
@@ -852,18 +895,18 @@ void AHolypawCharacter::GrantKillRewards(AHostilePet* Fallen)
 void AHolypawCharacter::RestFully()
 {
 	HP = HPMax;
-	Toast(TEXT("Your stuffing is mended."));
+	Toast(TEXT("Stuffing fluffed. You are an extremely round problem for civilization."));
 }
 
 bool AHolypawCharacter::BuyFaith(int32 ApCost, int32 FpGain)
 {
 	if (!Affection->SpendAP(ApCost))
 	{
-		Toast(TEXT("Not enough AP for the faith stall."));
+		Toast(TEXT("Not enough AP. Hug a human until they stop having opinions."));
 		return false;
 	}
 	Affection->AddFP(FpGain);
-	Toast(FString::Printf(TEXT("Traded %d AP for %d FP."), ApCost, FpGain));
+	Toast(FString::Printf(TEXT("Traded %d AP for %d FP. Faith is just leftover hugs in a jar."), ApCost, FpGain));
 	return true;
 }
 
@@ -875,7 +918,8 @@ void AHolypawCharacter::TryMiracle()
 	}
 	if (!Affection->IsMiracleReady())
 	{
-		Toast(TEXT("Miracle not ready — hug and recruit to charge."));
+		Toast(FString::Printf(TEXT("Miracle %d/%d — more hugs. Their brains are still tragically un-stuffed."),
+			FMath::FloorToInt(Affection->MiracleCharge), FMath::FloorToInt(Affection->MiracleMax)));
 		return;
 	}
 	int32 FpGain = 40 + Party->Members.Num() * 8;
@@ -888,24 +932,30 @@ void AHolypawCharacter::TryMiracle()
 	HaloMesh->SetHiddenInGame(false);
 	int32 Heal = Skills->HasSkill(TEXT("peakLiturgy")) ? 30 : 15;
 	HP = FMath::Min(HPMax, HP + Heal);
-	if (Skills->HasSkill(TEXT("bearCreed")))
+	int32 NewlyConvinced = 0;
+	const float Sermon = Skills->HasSkill(TEXT("bearCreed")) ? 40.f : 14.f;
+	const float SermonRange = Skills->HasSkill(TEXT("bearCreed")) ? 2800.f : 1600.f;
+	for (TActorIterator<AHugHuman> It(GetWorld()); It; ++It)
 	{
-		for (TActorIterator<AHugHuman> It(GetWorld()); It; ++It)
+		AHugHuman* H = *It;
+		if (!H || H->bBeliever)
 		{
-			AHugHuman* H = *It;
-			if (!H || FVector::Dist(GetActorLocation(), H->GetActorLocation()) > 2200.f)
+			continue;
+		}
+		if (FVector::Dist(GetActorLocation(), H->GetActorLocation()) > SermonRange)
+		{
+			continue;
+		}
+		const bool bWasOpen = H->ConvertProgress < 100.f;
+		H->ConvertProgress = FMath::Min(100.f, H->ConvertProgress + Sermon);
+		H->ReceiveHug();
+		if (bWasOpen && H->ConvertProgress >= 100.f)
+		{
+			H->BecomeBeliever();
+			++NewlyConvinced;
+			if (Story)
 			{
-				continue;
-			}
-			const bool bWasOpen = H->ConvertProgress < 100.f;
-			H->ConvertProgress = FMath::Min(100.f, H->ConvertProgress + 40.f);
-			if (bWasOpen && H->ConvertProgress >= 100.f)
-			{
-				H->BecomeBeliever();
-				if (Story)
-				{
-					Story->NotifyConvert();
-				}
+				Story->NotifyConvert();
 			}
 		}
 	}
@@ -925,7 +975,8 @@ void AHolypawCharacter::TryMiracle()
 			}
 		}
 	}
-	Toast(FString::Printf(TEXT("Miracle! Faith floods the land (+%d FP)."), FpGain));
+	Toast(FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
+		FpGain, NewlyConvinced));
 	if (Story)
 	{
 		Story->NotifyMiracle(CurrentZone);
@@ -1026,7 +1077,7 @@ void AHolypawCharacter::CompleteBearFaith()
 		}
 	}
 	HaloMesh->SetHiddenInGame(false);
-	Toast(TEXT("The Bear Faith holds. People keep handmade fluff. The Poly Mill's cheap empire unravels."));
+	Toast(TEXT("Every human kneels. They were so easy. The Poly Mill can keep the polyester — you kept the people."));
 }
 
 void AHolypawCharacter::CloseOrJump()
@@ -1077,7 +1128,7 @@ void AHolypawCharacter::TryBuySkill(FName Id)
 	Affection->AP = Ap;
 	Affection->AddAP(0, false);
 	ApplySkillEffects(Id);
-	Toast(TEXT("Skill unlocked!"));
+	Toast(TEXT("New fluff power. You are getting dangerously huggable."));
 }
 
 void AHolypawCharacter::ApplySkillEffects(FName Id)

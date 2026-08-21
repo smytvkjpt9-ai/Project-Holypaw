@@ -31,9 +31,19 @@ public:
 	TObjectPtr<UStaticMeshComponent> ArmR;
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual FText GetPrompt() const override;
 	virtual bool Interact(class AHolypawCharacter* InstigatorPawn) override;
 
 	void BecomeBeliever();
 	void KneelInWorship();
+	void ReceiveHug();
+	FString GetSkepticLine(int32 Pct) const;
+	FString GetBelieverLine() const;
+
+protected:
+	bool bKnelt = false;
+	float BounceT = 0.f;
+	float HugPulse = 0.f;
+	FVector BaseScale = FVector::OneVector;
 };
