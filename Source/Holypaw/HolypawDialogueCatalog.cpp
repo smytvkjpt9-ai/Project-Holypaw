@@ -118,24 +118,60 @@ namespace HolypawCatalog
 				TEXT("Outer Dock. Inn the warm cube. Brine Warden further out."));
 			Add(TEXT("Farmer"),
 				TEXT("Grain grew better after I stopped yelling at clouds. I yell at the mill now. Clouds approved."),
-				TEXT("Harvest Overseer north of the mill. Bring a party."),
-				TEXT("Hearthfold lantern. Hymns in the wheat."));
+				TEXT("Wheat Choir dropped an ear. Key 4 takes the job. Key 3 when it's lumpy in your paw."),
+				TEXT("Hearthfold lantern. Loaf Inn. Harvest Overseer north of the mill."));
 			Add(TEXT("Miller"),
 				TEXT("I ground identical flour for identical bread. You are lumpy. I am converted."),
-				TEXT("Buy a bun. Be lumpy with me."),
+				TEXT("Buy a bun. Be lumpy with me. The barn chapel fills Miracle Charge."),
 				TEXT("Fields north. Scarecrows that forgot their job."));
+			Add(TEXT("Thresh Singer"),
+				TEXT("I sing to wheat until it agrees. You hug people until they agree. Union pending."),
+				TEXT("Wheat Font wishes. Grain crate sometimes hides scrap. Don't mill this field."),
+				TEXT("Wheat Choir south of the square. Farmer wants an ear."));
+			Add(TEXT("Grain Widow"),
+				TEXT("The mill offered identical condolences. I took a hymn instead."),
+				TEXT("Hymn Barn is west. Rest at Loaf Inn. The overseer is a rude scarecrow with a clipboard."),
+				TEXT("Barn Chapel. Then north if you like bosses."));
+			Add(TEXT("Scarecrow Mender"),
+				TEXT("I mend scarecrows so they can quit. Unemployment never looked so stuffed."),
+				TEXT("Scarecrow Hounds still work. Unstuff them kindly."),
+				TEXT("Scarecrow Row east. Hats gold, jobs cancelled."));
 			Add(TEXT("Fen Guide"),
 				TEXT("The peat remembers every boot. It will remember your paws as an improvement."),
 				TEXT("Bog King sits south in the deepest jam. Don't go alone unless you like drowning cutely."),
-				TEXT("Emberfen lantern. Frogs the color of cooling jam."));
+				TEXT("Emberfen lantern. Peat Inn. Jam font. Frogs the color of cooling jam."));
 			Add(TEXT("Mud Sculptor"),
 				TEXT("I sculpted a bear before I met you. It was a sign. Or mud. Same thing."),
-				TEXT("Fen witch-pets hiss in F-sharp. Hymn in G."),
-				TEXT("South into the peat. Bring Faith."));
+				TEXT("Witch Stoop hid a peat bead. Key 4. Key 3 when the jam has cooled."),
+				TEXT("Stoop east. Chapel there. Fen witch-pets hiss in F-sharp."));
+			Add(TEXT("Frog Bell"),
+				TEXT("I ring a bell that sounds like a frog admitting it was serious. Improvement."),
+				TEXT("Jam Pool is west. Toss a thought. Faith comes back sticky."),
+				TEXT("Jam Font. Then south if the king is in a mood."));
+			Add(TEXT("Peat Baker"),
+				TEXT("I bake buns that remember the bog. The mill asked for beige. I threw peat."),
+				TEXT("Peat Inn tucks you in. Crate on the leech board. Handmade, damp, correct."),
+				TEXT("Peat Walk. Inn the warm cube. Bog King further south."));
+			Add(TEXT("Jam Priest"),
+				TEXT("I baptize nothing. I dunk hymns in jam. The mill cannot franchise that sentence."),
+				TEXT("Hollow Choir claps wetly. Miracle at dusk still works in peat."),
+				TEXT("South of the lantern. Wet clap. Then the king."));
 			Add(TEXT("Snow Warden"),
 				TEXT("I kept the ridge boring on purpose. You showed up glowing. My job is cancelled."),
-				TEXT("Aurora Warden, then Velvet Tyrant, then The Unmaker. In that order, like a recipe."),
-				TEXT("Snowveil lantern. Peak is up. Dress warm. You are already fur."));
+				TEXT("Scarf Walk dropped aurora thread. Key 4. The mill cannot copy it. Key 3 when it glows."),
+				TEXT("Snowveil lantern. Ridge Inn. Peak is up. Dress warm. You are already fur."));
+			Add(TEXT("Scarf Knitter"),
+				TEXT("I knit lights into wool. The mill knits nothing into beige. Rude."),
+				TEXT("Thread on the walk. Warden files it as weather. Aurora Font wishes."),
+				TEXT("Scarf Walk west. Poles, blue scarves, one round pickup."));
+			Add(TEXT("Drift Priest"),
+				TEXT("Ice Choir freezes clap mid-air. I call that punctuation."),
+				TEXT("Ice Chapel fills Miracle Charge. Then Aurora Warden, Tyrant, Unmaker. Recipe."),
+				TEXT("North of the gate. Chapel gold-on-white. Peak after."));
+			Add(TEXT("Ridge Child"),
+				TEXT("The lights copy you if you glow. I glowed. They copied. We are a choir now."),
+				TEXT("Aurora Font is the stoop. Toss a thought. Then up."),
+				TEXT("Stoop east. Lamp Notch south is the last warm cube."));
 			Add(TEXT("Peak Acolyte"),
 				TEXT("The shrine was empty because we were waiting for someone round."),
 				TEXT("Miracle on the peak after the Unmaker. That's the last serious thought on Earth."),

@@ -276,7 +276,7 @@ Do not dress Felt Ice Camp before save exists. Do not write 220 quests before th
 | W5 | Ribbon City full | 8,000 | 24 NPCs, 8 interiors, 4 shops — **started:** districts, shrines; Tidewell second dressed city |
 | W6 | Audio + proc anim | 6,000 | cue table, teddy bounce/hug/kneel |
 | W7 | Items + shops | 8,000 | inventory, 120 items, Ribbon shops live |
-| W8 | Remaining 25 cities | 44,000 | each city module lands playable, streamed |
+| W8 | Remaining 25 cities | 44,000 | each city module lands playable, streamed — **started:** Ribbon, Tidewell, Hearthfold, Emberfen, Snowveil dressed |
 | W9 | 220 side quests + banks | 34,000 | globe has errands, not empty roads |
 | W10 | Poly Mill raid + remaining bosses | 12,000 | endgame dungeon
 | W11 | UI suite + photo + loc keys | 14,000 | store-page pause menu

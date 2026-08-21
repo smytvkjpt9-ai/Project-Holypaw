@@ -309,6 +309,16 @@ for needle, blob, label in (
     ("Ferry Clerk", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Salt Priest", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Lullaby", CHAR, "character"),
+    ("BuildHearthfoldDistricts", WORLD, "world"),
+    ("BuildEmberfenDistricts", WORLD, "world"),
+    ("BuildSnowveilDistricts", WORLD, "world"),
+    ("wheatEar", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("peatBead", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("auroraThread", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("Thresh Singer", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Frog Bell", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Scarf Knitter", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("wheatHymn", (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists() else "", "quests"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

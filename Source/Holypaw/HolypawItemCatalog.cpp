@@ -26,6 +26,9 @@ namespace HolypawCatalog
 			Add(TEXT("stuffedPostcard"), TEXT("Stuffed Postcard"), TEXT("The porch wrote home. Decorative. Proof you woke up. Ranger wants it (talk 3)."), 0, 0, 0);
 			Add(TEXT("saltPearl"), TEXT("Salt Pearl"), TEXT("Tidewell net-walk treasure. Net Weaver will knot it into a hymn (talk 3)."), 0, 0, 0);
 			Add(TEXT("brineTaffy"), TEXT("Brine Taffy"), TEXT("Chewy salt. Mends 8 HP and tastes like an argument."), 9, 8, 0);
+			Add(TEXT("wheatEar"), TEXT("Wheat Ear"), TEXT("Lumpy grain from Hearthfold's choir. The Farmer wants it (talk 3)."), 0, 0, 0);
+			Add(TEXT("peatBead"), TEXT("Peat Bead"), TEXT("Cooled jam from Emberfen. Mud Sculptor will make a wet bear (talk 3)."), 0, 0, 0);
+			Add(TEXT("auroraThread"), TEXT("Aurora Thread"), TEXT("Snowveil scarf-walk yarn. The mill cannot copy it. Warden wants it (talk 3)."), 0, 0, 0);
 			return Out;
 		}();
 		return All;

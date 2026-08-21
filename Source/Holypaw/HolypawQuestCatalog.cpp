@@ -55,6 +55,21 @@ namespace HolypawCatalog
 				TEXT("Salt Priest"), TEXT("Salt Priest"), TEXT("hymnRibbon"), 1, 14, 8, 12.f,
 				TEXT("Ribbon from the Cloth Loft or a stall. I will baptize it in brine."),
 				TEXT("Salt Priest dunks the ribbon. The harbor sings off-key on purpose."));
+			Add(TEXT("wheatHymn"), TEXT("Wheat ear"),
+				TEXT("Pocket a wheat ear in Hearthfold's Wheat Choir and give it to the Farmer."),
+				TEXT("Farmer"), TEXT("Farmer"), TEXT("wheatEar"), 1, 14, 8, 6.f,
+				TEXT("The choir dropped an ear. Fetch it. Grain should be lumpy."),
+				TEXT("Farmer plants the ear. The field hums a round hymn."));
+			Add(TEXT("peatKeepsake"), TEXT("Peat bead"),
+				TEXT("Take the peat bead from Emberfen's Witch Stoop to the Mud Sculptor."),
+				TEXT("Mud Sculptor"), TEXT("Mud Sculptor"), TEXT("peatBead"), 1, 14, 8, 8.f,
+				TEXT("A bead of cooled jam. I will sculpt a bear that stays wet on purpose."),
+				TEXT("Mud Sculptor presses the bead into a snout. The fen claps."));
+			Add(TEXT("ridgeThread"), TEXT("Aurora thread"),
+				TEXT("Pick aurora thread on Snowveil's Scarf Walk and give it to the Snow Warden."),
+				TEXT("Snow Warden"), TEXT("Snow Warden"), TEXT("auroraThread"), 1, 16, 8, 10.f,
+				TEXT("The scarves dropped a thread the mill cannot copy. Bring it."),
+				TEXT("Warden knits the ridge shut against beige. Peak is next."));
 			return Out;
 		}();
 		return All;

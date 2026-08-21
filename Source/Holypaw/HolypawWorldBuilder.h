@@ -99,6 +99,9 @@ protected:
 	void BuildCottage();
 	void BuildRibbonDistricts();
 	void BuildTidewellDistricts();
+	void BuildHearthfoldDistricts();
+	void BuildEmberfenDistricts();
+	void BuildSnowveilDistricts();
 	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();

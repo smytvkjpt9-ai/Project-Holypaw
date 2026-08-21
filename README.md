@@ -114,6 +114,6 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 
 Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
-Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Six errands (journal J): cellar hymn, mill scrap, porch postcard, child's bun, Tidewell pearl, brine ribbon.
+Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Journal (**J**) lists errands: cellar hymn, mill scrap, postcard, child's bun, Tidewell pearl, brine ribbon, Hearthfold wheat, Emberfen peat bead, Snowveil aurora thread.
 
-Tidewell has districts (Outer Dock, Net Walk, Brine Stair, Ferry Slip, Salt Choir), an inn, brine font, and a salt pearl pickup. Fog tints by biome (salt, snow, fen jam, desert gold, mill beige).
+Dressed cities so far: **Ribbon City**, **Tidewell**, **Hearthfold** (Grain Square, Hymn Barn, Scarecrow Row), **Emberfen** (Peat Walk, Jam Pool, Witch Stoop), **Snowveil** (Ridge Gate, Scarf Walk, Ice Choir). Each has an inn, a font or chapel, and a pickup. Fog tints by biome.

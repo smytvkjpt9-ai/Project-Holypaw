@@ -14,9 +14,17 @@ void AHolypawPickup::BeginPlay()
 	{
 		SetSolidColor(FLinearColor(0.95f, 0.86f, 0.55f));
 	}
-	else if (ItemId == TEXT("saltPearl"))
+	else if (ItemId == TEXT("wheatEar"))
 	{
-		SetSolidColor(FLinearColor(0.72f, 0.9f, 0.95f));
+		SetSolidColor(FLinearColor(0.88f, 0.74f, 0.32f));
+	}
+	else if (ItemId == TEXT("peatBead"))
+	{
+		SetSolidColor(FLinearColor(0.55f, 0.28f, 0.3f));
+	}
+	else if (ItemId == TEXT("auroraThread"))
+	{
+		SetSolidColor(FLinearColor(0.55f, 0.78f, 1.f));
 	}
 	else
 	{

@@ -1386,7 +1386,7 @@ TArray<FString> AHolypawCharacter::GetJournalLines() const
 	}
 	if (Shown == 0)
 	{
-		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Choir Bear, Child, Ranger, mill, Tidewell."));
+		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Park, Ribbon, Tidewell, Hearthfold, Emberfen, Snowveil."));
 	}
 	return Lines;
 }
@@ -2315,7 +2315,7 @@ void AHolypawCharacter::AcceptQuest()
 	const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(TalkSpeaker);
 	if (!Q)
 	{
-		Toast(TEXT("No job on this person. Try Choir Bear, Child, Ranger, mill, Net Weaver, Salt Priest."));
+		Toast(TEXT("No job on this person. Try Ranger, Child, Choir Bear, mill, Net Weaver, Salt Priest, Farmer, Mud Sculptor, Snow Warden."));
 		return;
 	}
 	if (QuestDone.Contains(Q->Id))
