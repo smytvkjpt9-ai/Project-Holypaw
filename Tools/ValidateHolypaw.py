@@ -211,6 +211,43 @@ if "HugLock" not in CHAR:
 if "NewlyConvinced" not in CHAR:
     errors.append("miracle missing neighborhood sermon")
 
+ENGINE = (ROOT / "Config/DefaultEngine.ini").read_text()
+if "HolypawGameInstance" not in ENGINE:
+    errors.append("DefaultEngine missing HolypawGameInstance")
+
+for path in (
+    "Source/Holypaw/Save/HolypawSaveGame.h",
+    "Source/Holypaw/Save/HolypawSaveCodec.cpp",
+    "Source/Holypaw/HolypawGameInstance.cpp",
+    "Source/Holypaw/UI/HolypawTitleWidget.cpp",
+    "Source/Holypaw/Actors/TravelLantern.cpp",
+):
+    if not (ROOT / path).exists():
+        errors.append(f"missing {path}")
+
+if "FHolypawHeartRecord" not in TYPES:
+    errors.append("types missing FHolypawHeartRecord")
+if "AddCityHeart" not in CHAR:
+    errors.append("character missing city Hearts")
+if "OpenFastTravel" not in CHAR:
+    errors.append("character missing lantern fast travel")
+if "ResetForNewGame" not in CHAR:
+    errors.append("character missing new-game reset")
+if "PlaceLantern" not in WORLD:
+    errors.append("world missing PlaceLantern")
+if "GetTravelLocation" not in WORLD:
+    errors.append("world missing GetTravelLocation")
+if "ResetFaith" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing ResetFaith for save/load")
+if "bBeliever && !bKnelt" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing believer parade")
+if 'ActionName="QuickSave"' not in INPUT:
+    errors.append("DefaultInput missing QuickSave (F5)")
+if 'ActionName="TitleConfirm"' not in INPUT:
+    errors.append("DefaultInput missing TitleConfirm")
+if "UHolypawTitleWidget" not in HUD:
+    errors.append("HUD missing title overlay")
+
 if errors:
     print("FAIL")
     for e in errors:

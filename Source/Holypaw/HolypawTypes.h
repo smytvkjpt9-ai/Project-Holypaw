@@ -359,6 +359,18 @@ struct HOLYPAW_API FMissionDef
 	FText Hint;
 };
 
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawHeartRecord
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	EHolypawZone Zone = EHolypawZone::RibbonCity;
+
+	UPROPERTY()
+	int32 Hearts = 0;
+};
+
 namespace HolypawCatalog
 {
 	inline TArray<FFluffyTypeDef> MakeFluffyTypes()

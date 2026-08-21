@@ -7,6 +7,7 @@
 #include "Actors/CampRest.h"
 #include "Actors/FaithStall.h"
 #include "Actors/Signpost.h"
+#include "Actors/TravelLantern.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -504,7 +505,7 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y + 40.f, Z + 95.f), FVector(0.7f, 1.1f, 0.28f), FLinearColor(0.95f, 0.88f, 0.92f), MakeName(TEXT("CottagePillow")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 85.f), FVector(1.1f, 1.1f, 0.9f), FLinearColor(0.55f, 0.38f, 0.28f), MakeName(TEXT("CottageTable")));
 	PlaceCube(FVector(CottageSpawn.X + 310.f, CottageSpawn.Y, Z + 150.f), FVector(0.18f, 1.5f, 2.4f), FLinearColor(0.38f, 0.24f, 0.18f), MakeName(TEXT("CottageDoor")));
-	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree"));
+	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree")));
 
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
@@ -513,8 +514,9 @@ void AHolypawWorldBuilder::BuildCottage()
 	{
 		C->SetActorScale3D(FVector(1.4f, 1.4f, 0.15f));
 	}
+	PlaceLantern(FVector2D(CottageSpawn.X + 520.f, CottageSpawn.Y + 160.f), EHolypawZone::ForestCottage);
 	PlaceSign(FVector2D(CottageSpawn.X + 900.f, CottageSpawn.Y + 80.f),
-		NSLOCTEXT("Holypaw", "CottageSign", "Lantern road east -> Ribbon City. N for map."));
+		NSLOCTEXT("Holypaw", "CottageSign", "Lantern road east -> Ribbon City. N for map. Rest saves."));
 }
 
 void AHolypawWorldBuilder::BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt)
@@ -585,6 +587,7 @@ void AHolypawWorldBuilder::BuildAllSettlements()
 	{
 		BuildTown(C);
 		PlaceStall(C.Pos + FVector2D(280.f, -180.f));
+		PlaceLantern(C.Pos + FVector2D(420.f, 360.f), C.Zone);
 		PlaceSign(C.Pos + FVector2D(-700.f, 80.f),
 			FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %s"),
 				*C.DisplayName.ToString(), *C.Continent.ToString(), *C.Flavor.ToString())));
@@ -732,6 +735,31 @@ void AHolypawWorldBuilder::PlaceCamp(const FVector2D& XY, const FText& Name)
 	}
 }
 
+void AHolypawWorldBuilder::PlaceLantern(const FVector2D& XY, EHolypawZone Zone)
+{
+	const float Z = SampleHeight(XY.X, XY.Y);
+	PlaceCube(FVector(XY.X, XY.Y, Z + 90.f), FVector(0.18f, 0.18f, 1.7f), FLinearColor(0.35f, 0.28f, 0.22f), MakeName(TEXT("TravelPole")));
+	PlaceCube(FVector(XY.X, XY.Y, Z + 180.f), FVector(0.45f, 0.45f, 0.45f), FLinearColor(1.f, 0.86f, 0.42f), MakeName(TEXT("TravelGlow")));
+	FActorSpawnParameters Sp;
+	Sp.Owner = this;
+	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	if (ATravelLantern* L = GetWorld()->SpawnActor<ATravelLantern>(FVector(XY.X, XY.Y, Z + 40.f), FRotator::ZeroRotator, Sp))
+	{
+		L->AnchorZone = Zone;
+	}
+}
+
+FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
+{
+	if (Zone == EHolypawZone::ForestCottage)
+	{
+		return CottageSpawn + FVector(420.f, 0.f, 40.f);
+	}
+	const FHolypawCity City = HolypawCatalog::GetCity(Zone);
+	const FVector2D XY = City.Pos.IsNearlyZero() ? CityXY(Zone) : City.Pos;
+	return FVector(XY.X + 420.f, XY.Y + 360.f, SampleHeight(XY.X, XY.Y) + 80.f);
+}
+
 void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
@@ -797,6 +825,7 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 		if (AHugHuman* H = GetWorld()->SpawnActor<AHugHuman>(FVector(XY.X, XY.Y, Z), FRotator::ZeroRotator, Sp))
 		{
 			H->PersonName = FText::FromString(Name);
+			H->ShirtColor = Shirt;
 			H->SetSolidColor(Shirt);
 		}
 	};

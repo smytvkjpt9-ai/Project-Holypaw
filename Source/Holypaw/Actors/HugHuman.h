@@ -21,6 +21,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
 	bool bBeliever = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
+	FLinearColor ShirtColor = FLinearColor(0.55f, 0.5f, 0.62f);
+
+	FVector HomeLocation = FVector::ZeroVector;
+
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
 
@@ -38,6 +43,9 @@ public:
 	void BecomeBeliever();
 	void KneelInWorship();
 	void ReceiveHug();
+	void ResetFaith();
+	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
+	bool IsKnelt() const { return bKnelt; }
 	FString GetSkepticLine(int32 Pct) const;
 	FString GetBelieverLine() const;
 

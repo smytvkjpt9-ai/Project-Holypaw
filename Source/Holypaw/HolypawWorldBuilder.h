@@ -39,6 +39,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	FVector GetCottageSpawn() const { return CottageSpawn; }
+	FVector GetTravelLocation(EHolypawZone Zone) const;
 
 	FString GetCompassLine(const FVector& From) const;
 	TArray<FString> GetMapLines(const FVector& From) const;
@@ -107,6 +108,7 @@ protected:
 	void BuildTown(const FHolypawCity& City);
 	void BuildRoad(const FVector2D& A, const FVector2D& B, int32 Steps, int32 Salt);
 	void PlaceCamp(const FVector2D& XY, const FText& Name);
+	void PlaceLantern(const FVector2D& XY, EHolypawZone Zone);
 	void PlaceStall(const FVector2D& XY);
 	void PlaceSign(const FVector2D& XY, const FText& Message);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;

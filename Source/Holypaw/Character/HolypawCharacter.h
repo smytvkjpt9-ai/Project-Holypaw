@@ -18,9 +18,11 @@ class AHostilePet;
 UENUM()
 enum class EHolypawPawnMode : uint8
 {
+	Title,
 	Play,
 	Battle,
-	UI
+	UI,
+	Pause
 };
 
 UCLASS()
@@ -99,7 +101,7 @@ public:
 	float WalkSpeed = 700.f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
-	EHolypawPawnMode Mode = EHolypawPawnMode::Play;
+	EHolypawPawnMode Mode = EHolypawPawnMode::Title;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Holypaw")
 	EHolypawZone CurrentZone = EHolypawZone::ForestCottage;
@@ -124,6 +126,33 @@ public:
 	FString GetToast() const { return ToastMsg; }
 	float GetToastAlpha() const { return ToastTime > 0.f ? 1.f : 0.f; }
 	FText GetPrompt() const { return Prompt; }
+
+	void ResetForNewGame();
+	const TArray<EHolypawVillain>& GetSeenVillains() const { return SeenVillains; }
+	const TArray<EHolypawVillain>& GetDefeatedVillains() const { return DefeatedVillains; }
+	void SetCodex(const TArray<EHolypawVillain>& Seen, const TArray<EHolypawVillain>& Defeated);
+	const TArray<FHolypawHeartRecord>& GetHeartRecords() const { return CityHearts; }
+	void SetHeartRecords(const TArray<FHolypawHeartRecord>& Records);
+	const TArray<EHolypawZone>& GetUnlockedTravel() const { return UnlockedTravel; }
+	void SetUnlockedTravel(const TArray<EHolypawZone>& Zones);
+	void UnlockTravel(EHolypawZone Zone);
+	int32 GetCityHearts(EHolypawZone Zone) const;
+	void AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	void OpenFastTravel(EHolypawZone FromZone);
+	void FastTravelToSelected();
+	void CycleTravel(int32 Delta);
+	EHolypawZone GetSelectedTravel() const;
+	TArray<FString> GetTravelLines() const;
+
+	void TitleSelectSlot(int32 Index);
+	void TitleConfirm();
+	void TitleNewGame();
+	void TitleLoad();
+	void QuickSave(bool bAnnounce = true);
+	void TogglePauseMenu();
+	void ReturnToTitle();
+	void CycleMute();
+	virtual void Jump() override;
 
 	void PlayerBattleAttack(FName Kind);
 	UFUNCTION()
@@ -176,6 +205,16 @@ public:
 	void CloseOrJump();
 	UFUNCTION()
 	void CycleSkillTree();
+	UFUNCTION()
+	void TitleConfirmPressed();
+	UFUNCTION()
+	void TitleLoadPressed();
+	UFUNCTION()
+	void QuickSavePressed();
+	UFUNCTION()
+	void MutePressed();
+	UFUNCTION()
+	void TitleMenuPressed();
 
 protected:
 	void MoveForward(float Value);
@@ -220,6 +259,15 @@ protected:
 
 	UPROPERTY()
 	TArray<EHolypawVillain> DefeatedVillains;
+
+	UPROPERTY()
+	TArray<FHolypawHeartRecord> CityHearts;
+
+	UPROPERTY()
+	TArray<EHolypawZone> UnlockedTravel;
+
+	int32 TravelCursor = 0;
+	bool bWantsFastTravel = false;
 
 	UMaterialInterface* ShapeMat = nullptr;
 

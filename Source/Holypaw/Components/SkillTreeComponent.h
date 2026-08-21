@@ -38,6 +38,9 @@ public:
 
 	const FSkillDef* FindDef(FName Id) const;
 
+	TArray<FName> GetOwnedIds() const;
+	void ReplaceOwned(const TArray<FName>& Ids);
+
 private:
 	TArray<FSkillDef> Catalog;
 };

@@ -1,12 +1,15 @@
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"
 #include "Components/SkillTreeComponent.h"
+#include "Components/PartyComponent.h"
 #include "Components/MissionComponent.h"
 #include "Actors/WildFluffy.h"
 #include "Actors/HugHuman.h"
 #include "Actors/HostilePet.h"
 #include "Actors/HolypawInteractable.h"
 #include "HolypawWorldBuilder.h"
+#include "HolypawGameInstance.h"
+#include "Save/HolypawSaveCodec.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -174,16 +177,14 @@ void AHolypawCharacter::BeginPlay()
 	Colorize(EyeL, FLinearColor(0.12f, 0.1f, 0.12f));
 	Colorize(EyeR, FLinearColor(0.12f, 0.1f, 0.12f));
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	if (Story)
+	UnlockTravel(EHolypawZone::ForestCottage);
+	Mode = EHolypawPawnMode::Title;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
-		Story->TryAdvance(this);
-		const FMissionDef Cur = Story->GetCurrent();
-		Toast(FString::Printf(TEXT("Paws on the porch, world on the menu. %s — J for the plan."), *Cur.Title.ToString()));
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
 	}
-	else
-	{
-		Toast(TEXT("Paws on the porch. Hug the silly humans. J journal."));
-	}
+	Toast(TEXT("The Fluffy Ascendancy — pick a slot. The porch is already under you."));
 }
 
 void AHolypawCharacter::Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color)
@@ -207,7 +208,7 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AHolypawCharacter::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis(TEXT("TurnRate"), this, &AHolypawCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis(TEXT("LookUpRate"), this, &AHolypawCharacter::LookUpAtRate);
-	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AHolypawCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AHolypawCharacter::Interact);
 	PlayerInputComponent->BindAction(TEXT("Miracle"), IE_Pressed, this, &AHolypawCharacter::TryMiracle);
@@ -224,6 +225,11 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction(TEXT("BattleFlee"), IE_Pressed, this, &AHolypawCharacter::BattleFlee);
 	PlayerInputComponent->BindAction(TEXT("Skill5"), IE_Pressed, this, &AHolypawCharacter::Skill5);
 	PlayerInputComponent->BindAction(TEXT("Skill6"), IE_Pressed, this, &AHolypawCharacter::Skill6);
+	PlayerInputComponent->BindAction(TEXT("TitleConfirm"), IE_Pressed, this, &AHolypawCharacter::TitleConfirmPressed);
+	PlayerInputComponent->BindAction(TEXT("TitleLoad"), IE_Pressed, this, &AHolypawCharacter::TitleLoadPressed);
+	PlayerInputComponent->BindAction(TEXT("QuickSave"), IE_Pressed, this, &AHolypawCharacter::QuickSavePressed);
+	PlayerInputComponent->BindAction(TEXT("Settings"), IE_Pressed, this, &AHolypawCharacter::MutePressed);
+	PlayerInputComponent->BindAction(TEXT("TitleMenu"), IE_Pressed, this, &AHolypawCharacter::TitleMenuPressed);
 }
 
 void AHolypawCharacter::MoveForward(float Value)
@@ -259,6 +265,13 @@ void AHolypawCharacter::LookUpAtRate(float Value)
 void AHolypawCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		if (Mode == EHolypawPawnMode::Play)
+		{
+			GI->PlaySeconds += DeltaSeconds;
+		}
+	}
 	if (HugLock > 0.f)
 	{
 		HugLock -= DeltaSeconds;
@@ -386,6 +399,10 @@ void AHolypawCharacter::UpdateZone()
 		{
 			Story->NotifyZone(Z);
 		}
+		if (HolypawCatalog::IsCityZone(Z))
+		{
+			UnlockTravel(Z);
+		}
 	}
 }
 
@@ -399,6 +416,11 @@ TArray<FString> AHolypawCharacter::GetMapLines() const
 	}
 	Lines.Add(FString::Printf(TEXT("Villain Codex  %d seen  %d fell  / %d  (V)"),
 		SeenVillains.Num(), DefeatedVillains.Num(), GetCodexTotal()));
+	Lines.Add(FString::Printf(TEXT("City Hearts here  %d    Tab cycle lanterns  E travel"), GetCityHearts(CurrentZone)));
+	for (const FString& Line : GetTravelLines())
+	{
+		Lines.Add(Line);
+	}
 	return Lines;
 }
 
@@ -439,6 +461,21 @@ AActor* AHolypawCharacter::FindNearestInteractable(float Range) const
 
 void AHolypawCharacter::Interact()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleConfirm();
+		return;
+	}
+	if (Mode == EHolypawPawnMode::Pause)
+	{
+		TogglePauseMenu();
+		return;
+	}
+	if (Mode == EHolypawPawnMode::UI && bMapOpen && bWantsFastTravel)
+	{
+		FastTravelToSelected();
+		return;
+	}
 	if (Mode != EHolypawPawnMode::Play)
 	{
 		if (Mode == EHolypawPawnMode::UI)
@@ -531,6 +568,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		Human->BecomeBeliever();
 		Affection->AddMiracle(22.f);
+		AddCityHeart(CurrentZone);
 		if (Story)
 		{
 			Story->NotifyConvert();
@@ -895,7 +933,8 @@ void AHolypawCharacter::GrantKillRewards(AHostilePet* Fallen)
 void AHolypawCharacter::RestFully()
 {
 	HP = HPMax;
-	Toast(TEXT("Stuffing fluffed. You are an extremely round problem for civilization."));
+	QuickSave(false);
+	Toast(TEXT("Stuffing fluffed. Progress tucked into a slot. The humans will wait."));
 }
 
 bool AHolypawCharacter::BuyFaith(int32 ApCost, int32 FpGain)
@@ -953,6 +992,7 @@ void AHolypawCharacter::TryMiracle()
 		{
 			H->BecomeBeliever();
 			++NewlyConvinced;
+			AddCityHeart(CurrentZone);
 			if (Story)
 			{
 				Story->NotifyConvert();
@@ -1003,7 +1043,7 @@ void AHolypawCharacter::ClosePanels()
 
 void AHolypawCharacter::SetPanel(bool& Flag)
 {
-	if (Mode == EHolypawPawnMode::Battle)
+	if (Mode == EHolypawPawnMode::Battle || Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
 	{
 		return;
 	}
@@ -1023,31 +1063,70 @@ void AHolypawCharacter::SetPanel(bool& Flag)
 
 void AHolypawCharacter::ToggleSkills()
 {
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
 	SetPanel(bSkillsOpen);
 }
 
 void AHolypawCharacter::ToggleParty()
 {
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
 	SetPanel(bPartyOpen);
 }
 
 void AHolypawCharacter::ToggleMap()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleNewGame();
+		return;
+	}
+	if (Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
+	bWantsFastTravel = false;
 	SetPanel(bMapOpen);
+	if (bMapOpen)
+	{
+		bWantsFastTravel = true;
+	}
 }
 
 void AHolypawCharacter::ToggleCodex()
 {
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
 	SetPanel(bCodexOpen);
 }
 
 void AHolypawCharacter::ToggleJournal()
 {
+	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
 	SetPanel(bJournalOpen);
 }
 
 void AHolypawCharacter::CycleSkillTree()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		return;
+	}
+	if (bMapOpen)
+	{
+		CycleTravel(1);
+		return;
+	}
 	if (!bSkillsOpen || !Skills)
 	{
 		return;
@@ -1082,10 +1161,33 @@ void AHolypawCharacter::CompleteBearFaith()
 
 void AHolypawCharacter::CloseOrJump()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		return;
+	}
+	if (Mode == EHolypawPawnMode::Pause)
+	{
+		TogglePauseMenu();
+		return;
+	}
 	if (Mode == EHolypawPawnMode::UI)
 	{
 		ClosePanels();
+		return;
 	}
+	if (Mode == EHolypawPawnMode::Play)
+	{
+		TogglePauseMenu();
+	}
+}
+
+void AHolypawCharacter::Jump()
+{
+	if (Mode != EHolypawPawnMode::Play)
+	{
+		return;
+	}
+	Super::Jump();
 }
 
 int32 AHolypawCharacter::GetCodexTotal() const
@@ -1165,6 +1267,11 @@ void AHolypawCharacter::TryBuyTreeSlot(int32 Index)
 
 void AHolypawCharacter::BattleSlap()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleSelectSlot(0);
+		return;
+	}
 	if (bSkillsOpen)
 	{
 		TryBuyTreeSlot(0);
@@ -1175,6 +1282,11 @@ void AHolypawCharacter::BattleSlap()
 
 void AHolypawCharacter::BattleBeam()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleSelectSlot(1);
+		return;
+	}
 	if (bSkillsOpen)
 	{
 		TryBuyTreeSlot(1);
@@ -1185,6 +1297,11 @@ void AHolypawCharacter::BattleBeam()
 
 void AHolypawCharacter::BattlePartyAtk()
 {
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleSelectSlot(2);
+		return;
+	}
 	if (bSkillsOpen)
 	{
 		TryBuyTreeSlot(2);
@@ -1228,4 +1345,354 @@ void AHolypawCharacter::Toast(const FString& Msg)
 	ToastMsg = Msg;
 	ToastTime = 3.2f;
 	UE_LOG(LogTemp, Log, TEXT("[Holypaw] %s"), *Msg);
+}
+
+void AHolypawCharacter::ResetForNewGame()
+{
+	HP = 50;
+	HPMax = 50;
+	Attack = 8;
+	WalkSpeed = 700.f;
+	if (UCharacterMovementComponent* Move = GetCharacterMovement())
+	{
+		Move->MaxWalkSpeed = WalkSpeed;
+	}
+	if (HaloMesh)
+	{
+		HaloMesh->SetHiddenInGame(true);
+	}
+	if (Affection)
+	{
+		Affection->AP = 0;
+		Affection->FP = 0;
+		Affection->MiracleCharge = 0.f;
+		Affection->Level = 1;
+	}
+	if (Party)
+	{
+		Party->Members.Reset();
+	}
+	if (Skills)
+	{
+		Skills->ReplaceOwned({});
+		Skills->ActiveTree = EHolypawSkillTree::Hug;
+	}
+	if (Story)
+	{
+		Story->CurrentIndex = 0;
+		Story->Recruits = 0;
+		Story->Kills = 0;
+		Story->Converts = 0;
+		Story->Miracles = 0;
+		Story->bCampaignComplete = false;
+		Story->ZonesVisited.Reset();
+		Story->BossesFell.Reset();
+	}
+	SeenVillains.Reset();
+	DefeatedVillains.Reset();
+	CityHearts.Reset();
+	UnlockedTravel.Reset();
+	UnlockTravel(EHolypawZone::ForestCottage);
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		SetActorLocation(It->GetCottageSpawn() + FVector(420.f, 0.f, 40.f));
+		break;
+	}
+	CurrentZone = EHolypawZone::ForestCottage;
+}
+
+void AHolypawCharacter::SetCodex(const TArray<EHolypawVillain>& Seen, const TArray<EHolypawVillain>& Defeated)
+{
+	SeenVillains = Seen;
+	DefeatedVillains = Defeated;
+}
+
+void AHolypawCharacter::SetHeartRecords(const TArray<FHolypawHeartRecord>& Records)
+{
+	CityHearts = Records;
+}
+
+void AHolypawCharacter::SetUnlockedTravel(const TArray<EHolypawZone>& Zones)
+{
+	UnlockedTravel = Zones;
+	if (!UnlockedTravel.Contains(EHolypawZone::ForestCottage))
+	{
+		UnlockedTravel.Insert(EHolypawZone::ForestCottage, 0);
+	}
+}
+
+void AHolypawCharacter::UnlockTravel(EHolypawZone Zone)
+{
+	UnlockedTravel.AddUnique(Zone);
+}
+
+int32 AHolypawCharacter::GetCityHearts(EHolypawZone Zone) const
+{
+	for (const FHolypawHeartRecord& Rec : CityHearts)
+	{
+		if (Rec.Zone == Zone)
+		{
+			return Rec.Hearts;
+		}
+	}
+	return 0;
+}
+
+void AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
+{
+	if (!HolypawCatalog::IsCityZone(Zone) && Zone != EHolypawZone::ForestCottage)
+	{
+		Zone = CurrentZone;
+	}
+	for (FHolypawHeartRecord& Rec : CityHearts)
+	{
+		if (Rec.Zone == Zone)
+		{
+			Rec.Hearts += Amount;
+			UnlockTravel(Zone);
+			return;
+		}
+	}
+	FHolypawHeartRecord Rec;
+	Rec.Zone = Zone;
+	Rec.Hearts = Amount;
+	CityHearts.Add(Rec);
+	UnlockTravel(Zone);
+}
+
+void AHolypawCharacter::OpenFastTravel(EHolypawZone FromZone)
+{
+	UnlockTravel(FromZone);
+	if (!bMapOpen)
+	{
+		SetPanel(bMapOpen);
+	}
+	bWantsFastTravel = true;
+	for (int32 I = 0; I < UnlockedTravel.Num(); ++I)
+	{
+		if (UnlockedTravel[I] == FromZone)
+		{
+			TravelCursor = I;
+			break;
+		}
+	}
+	Toast(TEXT("Lantern map. Tab picks a city. E hops. Hearts make the hop feel earned."));
+}
+
+void AHolypawCharacter::CycleTravel(int32 Delta)
+{
+	if (UnlockedTravel.Num() == 0)
+	{
+		UnlockTravel(EHolypawZone::ForestCottage);
+	}
+	TravelCursor = (TravelCursor + Delta + UnlockedTravel.Num()) % UnlockedTravel.Num();
+	Toast(FString::Printf(TEXT("Lantern → %s"), HolypawCatalog::ZoneDisplayName(GetSelectedTravel())));
+}
+
+EHolypawZone AHolypawCharacter::GetSelectedTravel() const
+{
+	if (UnlockedTravel.IsValidIndex(TravelCursor))
+	{
+		return UnlockedTravel[TravelCursor];
+	}
+	return EHolypawZone::ForestCottage;
+}
+
+TArray<FString> AHolypawCharacter::GetTravelLines() const
+{
+	TArray<FString> Lines;
+	Lines.Add(TEXT("Lanterns (visited + cottage):"));
+	for (int32 I = 0; I < UnlockedTravel.Num(); ++I)
+	{
+		const EHolypawZone Z = UnlockedTravel[I];
+		const TCHAR* Mark = (I == TravelCursor) ? TEXT(">") : TEXT(" ");
+		Lines.Add(FString::Printf(TEXT("%s  %s   Hearts %d"), Mark, HolypawCatalog::ZoneDisplayName(Z), GetCityHearts(Z)));
+	}
+	return Lines;
+}
+
+void AHolypawCharacter::FastTravelToSelected()
+{
+	const EHolypawZone Dest = GetSelectedTravel();
+	FVector Loc = FVector::ZeroVector;
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		Loc = It->GetTravelLocation(Dest);
+		break;
+	}
+	if (Loc.IsNearlyZero())
+	{
+		Toast(TEXT("That lantern is unlit."));
+		return;
+	}
+	ClosePanels();
+	bWantsFastTravel = false;
+	SetActorLocation(Loc);
+	CurrentZone = Dest;
+	if (Story)
+	{
+		Story->NotifyZone(Dest);
+	}
+	QuickSave();
+	Toast(FString::Printf(TEXT("Lantern hop: %s. The coup commutes."), HolypawCatalog::ZoneDisplayName(Dest)));
+}
+
+void AHolypawCharacter::TitleSelectSlot(int32 Index)
+{
+	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		GI->TitleCursor = FMath::Clamp(Index, 0, UHolypawGameInstance::SlotCount - 1);
+		Toast(FString::Printf(TEXT("Slot %d  %s"), GI->TitleCursor + 1, *GI->SlotSummary(GI->TitleCursor)));
+	}
+}
+
+void AHolypawCharacter::TitleConfirm()
+{
+	UHolypawGameInstance* GI = UHolypawGameInstance::Get(this);
+	if (!GI)
+	{
+		Mode = EHolypawPawnMode::Play;
+		return;
+	}
+	if (GI->SlotOccupied(GI->TitleCursor))
+	{
+		TitleLoad();
+	}
+	else
+	{
+		TitleNewGame();
+	}
+}
+
+void AHolypawCharacter::TitleNewGame()
+{
+	UHolypawGameInstance* GI = UHolypawGameInstance::Get(this);
+	if (GI)
+	{
+		GI->StartNewGame(this, GI->TitleCursor);
+	}
+	else
+	{
+		ResetForNewGame();
+	}
+	Mode = EHolypawPawnMode::Play;
+	if (Story)
+	{
+		Story->TryAdvance(this);
+		const FMissionDef Cur = Story->GetCurrent();
+		Toast(FString::Printf(TEXT("Paws on the porch, world on the menu. %s — J for the plan."), *Cur.Title.ToString()));
+	}
+}
+
+void AHolypawCharacter::TitleLoad()
+{
+	UHolypawGameInstance* GI = UHolypawGameInstance::Get(this);
+	if (!GI || !GI->SlotOccupied(GI->TitleCursor))
+	{
+		Toast(TEXT("That slot is an empty porch. Press N for a new coup."));
+		return;
+	}
+	if (!GI->LoadSlotOntoPawn(this, GI->TitleCursor))
+	{
+		Toast(TEXT("Load failed. The stuffing came out of the file."));
+		return;
+	}
+	Mode = EHolypawPawnMode::Play;
+	Toast(FString::Printf(TEXT("Loaded. %s still believes a teddy should run things."),
+		HolypawCatalog::ZoneDisplayName(CurrentZone)));
+}
+
+void AHolypawCharacter::QuickSave(bool bAnnounce)
+{
+	UHolypawGameInstance* GI = UHolypawGameInstance::Get(this);
+	if (!GI || Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Battle)
+	{
+		return;
+	}
+	if (!GI->bSessionStarted)
+	{
+		GI->bSessionStarted = true;
+	}
+	if (GI->SavePawnToSlot(this, GI->ActiveSlot) && bAnnounce)
+	{
+		Toast(FString::Printf(TEXT("Saved slot %d. The mill cannot un-save a hug."), GI->ActiveSlot + 1));
+	}
+}
+
+void AHolypawCharacter::TogglePauseMenu()
+{
+	if (Mode == EHolypawPawnMode::Battle || Mode == EHolypawPawnMode::Title)
+	{
+		return;
+	}
+	if (Mode == EHolypawPawnMode::Pause)
+	{
+		Mode = EHolypawPawnMode::Play;
+		return;
+	}
+	ClosePanels();
+	Mode = EHolypawPawnMode::Pause;
+}
+
+void AHolypawCharacter::ReturnToTitle()
+{
+	if (Mode != EHolypawPawnMode::Pause && Mode != EHolypawPawnMode::Play)
+	{
+		return;
+	}
+	QuickSave();
+	Mode = EHolypawPawnMode::Title;
+	Toast(TEXT("Title. Slots wait. The porch does not move."));
+}
+
+void AHolypawCharacter::CycleMute()
+{
+	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+	{
+		GI->CycleMute();
+		Toast(GI->Settings && GI->Settings->bMuted ? TEXT("Mute ON") : TEXT("Mute OFF"));
+	}
+}
+
+void AHolypawCharacter::TitleConfirmPressed()
+{
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleConfirm();
+	}
+	else if (Mode == EHolypawPawnMode::Pause)
+	{
+		TogglePauseMenu();
+	}
+}
+
+void AHolypawCharacter::TitleLoadPressed()
+{
+	if (Mode == EHolypawPawnMode::Title)
+	{
+		TitleLoad();
+	}
+}
+
+void AHolypawCharacter::QuickSavePressed()
+{
+	QuickSave();
+}
+
+void AHolypawCharacter::MutePressed()
+{
+	CycleMute();
+}
+
+void AHolypawCharacter::TitleMenuPressed()
+{
+	if (Mode == EHolypawPawnMode::Pause)
+	{
+		ReturnToTitle();
+	}
+	else if (Mode == EHolypawPawnMode::Play)
+	{
+		TogglePauseMenu();
+		ReturnToTitle();
+	}
 }

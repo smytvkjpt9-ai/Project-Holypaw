@@ -12,7 +12,7 @@ The world is also a **plush Earth**: continents, oceans, deserts, ice caps, and 
 
 The old browser toy is archived at [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
-**AAA production plan:** [`Docs/AAA_200K_PRODUCTION_PLAN.md`](Docs/AAA_200K_PRODUCTION_PLAN.md) — 200,000+ lines of real systems and city/dialogue/combat content, not padding. Track with `python3 Tools/CountHolypawLoc.py`. This cloud VM still cannot sculpt Nanite or ship an `.exe`; packaging stays on your PC.
+**AAA production plan:** [`Docs/AAA_200K_PRODUCTION_PLAN.md`](Docs/AAA_200K_PRODUCTION_PLAN.md) — 200,000+ lines of real systems and city/dialogue/combat content, not padding. Track with `python3 Tools/CountHolypawLoc.py`. **Wave 1–2 is in this branch:** title + 3 save slots (F5 / rest autosave), city Hearts, gold travel lanterns, believer parade. This cloud VM still cannot sculpt Nanite or ship an `.exe`; packaging stays on your PC.
 
 ## Open in Unreal 5.8 (required)
 
@@ -28,7 +28,7 @@ This cloud repo is source + a runtime world builder, not a double-click `.exe`.
    ```
 
    That places `AHolypawWorldBuilder` in the current level. Play still generates cottage, path, city, and biomes at BeginPlay even if you skip this.
-5. Press **Play**. Wake at the forest cottage, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City.
+5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage or a camp also saves. Gold **lanterns** open map travel (Tab to pick, E to hop).
 6. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). Epic’s stock plugin is a server framework; add tools or Python locally if you want the Editor to place actors from Cursor.
 
 Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**, **ModelContextProtocol** (optional).
@@ -94,14 +94,21 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 | --- | --- |
 | WASD / mouse | Move / look |
 | Space | Jump |
-| E | Interact (cottage rest, recruit, hug) |
+| E | Interact (cottage rest, recruit, hug, lantern travel, title confirm) |
+| Enter | Title continue / pause resume |
+| 1–3 on title | Select save slot |
+| N on title | New game on selected slot |
+| L on title | Load selected slot |
+| F5 | Quick save |
+| F6 | Mute (settings stub) |
+| F8 | Return to title (saves first) |
+| Esc | Pause / close menus |
 | K | Skill trees (Tab cycles) |
 | J | Journal |
 | P | Party |
 | M | Miracle |
-| N | Map |
+| N | Map (Tab cycles lanterns, E hops) |
 | V | Villain Codex |
-| Esc | Close menus |
 | 1–6 in battle | Slap / Beam / Party / Flee / Guard / Hymn |
 
 Faith stalls: **10 AP → 8 FP**.

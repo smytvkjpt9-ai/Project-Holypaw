@@ -69,3 +69,24 @@ void USkillTreeComponent::CycleTree()
 	const uint8 N = static_cast<uint8>(ActiveTree) + 1;
 	ActiveTree = static_cast<EHolypawSkillTree>(N % 3);
 }
+
+TArray<FName> USkillTreeComponent::GetOwnedIds() const
+{
+	TArray<FName> Ids;
+	for (const TPair<FName, bool>& Pair : Owned)
+	{
+		if (Pair.Value)
+		{
+			Ids.Add(Pair.Key);
+		}
+	}
+	return Ids;
+}
+
+void USkillTreeComponent::ReplaceOwned(const TArray<FName>& Ids)
+{
+	for (TPair<FName, bool>& Pair : Owned)
+	{
+		Pair.Value = Ids.Contains(Pair.Key);
+	}
+}

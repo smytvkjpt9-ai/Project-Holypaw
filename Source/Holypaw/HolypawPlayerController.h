@@ -15,6 +15,5 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
-	UFUNCTION()
 	void OnEscape();
 };

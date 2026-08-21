@@ -5,6 +5,7 @@
 #include "HolypawHUD.generated.h"
 
 class UHolypawBattleWidget;
+class UHolypawTitleWidget;
 
 UCLASS()
 class HOLYPAW_API AHolypawHUD : public AHUD
@@ -20,4 +21,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UHolypawBattleWidget> OverlayWidget;
+
+	UPROPERTY()
+	TObjectPtr<UHolypawTitleWidget> TitleWidget;
 };

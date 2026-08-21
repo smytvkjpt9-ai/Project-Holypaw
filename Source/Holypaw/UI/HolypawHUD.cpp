@@ -1,5 +1,6 @@
 #include "UI/HolypawHUD.h"
 #include "UI/HolypawBattleWidget.h"
+#include "UI/HolypawTitleWidget.h"
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"
 #include "Components/SkillTreeComponent.h"
@@ -19,6 +20,11 @@ void AHolypawHUD::BeginPlay()
 		if (OverlayWidget)
 		{
 			OverlayWidget->AddToViewport(20);
+		}
+		TitleWidget = CreateWidget<UHolypawTitleWidget>(PC);
+		if (TitleWidget)
+		{
+			TitleWidget->AddToViewport(40);
 		}
 	}
 }
@@ -44,14 +50,18 @@ void AHolypawHUD::DrawHUD()
 	{
 		return;
 	}
+	if (P->Mode == EHolypawPawnMode::Title || P->Mode == EHolypawPawnMode::Pause)
+	{
+		return;
+	}
 
 	const float W = Canvas->SizeX;
 	DrawLabel(32.f, 24.f, HolypawCatalog::ZoneDisplayName(P->CurrentZone), FLinearColor(0.82f, 0.75f, 1.f), 1.05f);
 	DrawLabel(32.f, 52.f, TEXT("Fluffy Ascendancy"), FLinearColor(1.f, 0.78f, 0.88f), 1.45f);
 
-	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d    Hearts %d"),
+	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d    Hearts %d    City %d"),
 		P->Affection->AP, P->Affection->FP, P->Affection->Level, P->HP, P->HPMax,
-		P->Story ? P->Story->Converts : 0);
+		P->Story ? P->Story->Converts : 0, P->GetCityHearts(P->CurrentZone));
 	DrawLabel(32.f, 92.f, Stats, FLinearColor(0.95f, 0.93f, 1.f), 1.15f);
 
 	const float Pct = P->Affection->MiracleMax > 0.f ? P->Affection->MiracleCharge / P->Affection->MiracleMax : 0.f;
@@ -85,7 +95,7 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 220.f, 190.f, P->GetToast(), FLinearColor(1.f, 0.95f, 0.75f), 1.25f);
 	}
 
-	DrawLabel(W - 560.f, Canvas->SizeY - 48.f, TEXT("WASD  E  K trees  J journal  P party  M miracle  N map  V villains"), FLinearColor(0.75f, 0.7f, 0.9f), 0.82f);
+	DrawLabel(W - 620.f, Canvas->SizeY - 48.f, TEXT("WASD  E  K trees  J journal  P party  M miracle  N map  V villains  F5 save  Esc pause"), FLinearColor(0.75f, 0.7f, 0.9f), 0.78f);
 
 	const bool bUmgOverlay = OverlayWidget != nullptr;
 	if (!bUmgOverlay && P->Mode == EHolypawPawnMode::Battle)

@@ -36,6 +36,7 @@ void AHugHuman::BeginPlay()
 	Super::BeginPlay();
 	Mesh->SetWorldScale3D(FVector(0.45f, 0.35f, 1.05f));
 	BaseScale = GetActorScale3D();
+	HomeLocation = GetActorLocation();
 	if (ShapeMat)
 	{
 		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
@@ -70,6 +71,14 @@ void AHugHuman::Tick(float DeltaSeconds)
 		const float Wrap = (HugPulse > 0.f) ? 28.f : (bBeliever ? 8.f : 0.f);
 		ArmL->SetRelativeRotation(FRotator(0.f, 0.f, Wrap));
 		ArmR->SetRelativeRotation(FRotator(0.f, 0.f, -Wrap));
+	}
+
+	if (bBeliever && !bKnelt)
+	{
+		const float Orbit = 160.f;
+		const float Ang = BounceT * 0.55f;
+		const FVector Parade = HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
+		SetActorLocation(FMath::VInterpTo(GetActorLocation(), Parade, DeltaSeconds, 1.6f));
 	}
 }
 
@@ -148,4 +157,40 @@ void AHugHuman::KneelInWorship()
 	AddActorWorldRotation(FRotator(35.f, 0.f, 0.f));
 	BaseScale = FVector(1.f, 1.f, 0.72f);
 	SetActorScale3D(BaseScale);
+}
+
+void AHugHuman::ResetFaith()
+{
+	bBeliever = false;
+	ConvertProgress = 0.f;
+	if (bKnelt)
+	{
+		SetActorRotation(FRotator::ZeroRotator);
+	}
+	bKnelt = false;
+	BaseScale = FVector::OneVector;
+	SetActorScale3D(BaseScale);
+	SetActorLocation(HomeLocation);
+	SetSolidColor(ShirtColor);
+	if (ShapeMat && HeadMesh)
+	{
+		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
+		{
+			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.96f, 0.8f, 0.74f));
+		}
+	}
+}
+
+void AHugHuman::RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt)
+{
+	ResetFaith();
+	ConvertProgress = FMath::Clamp(Progress, 0.f, 100.f);
+	if (bNowBeliever || ConvertProgress >= 100.f)
+	{
+		BecomeBeliever();
+	}
+	if (bNowKnelt)
+	{
+		KneelInWorship();
+	}
 }
