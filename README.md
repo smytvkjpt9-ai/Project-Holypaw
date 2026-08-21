@@ -12,6 +12,8 @@ The world is also a **plush Earth**: continents, oceans, deserts, ice caps, and 
 
 The old browser toy is archived at [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
+**AAA production plan:** [`Docs/AAA_200K_PRODUCTION_PLAN.md`](Docs/AAA_200K_PRODUCTION_PLAN.md) — 200,000+ lines of real systems and city/dialogue/combat content, not padding. Track with `python3 Tools/CountHolypawLoc.py`. This cloud VM still cannot sculpt Nanite or ship an `.exe`; packaging stays on your PC.
+
 ## Open in Unreal 5.8 (required)
 
 This cloud repo is source + a runtime world builder, not a double-click `.exe`.
@@ -81,9 +83,10 @@ This cloud VM cannot sculpt Nanite characters or ship a production FBX pipeline.
 
 ```
 python3 Tools/ValidateHolypaw.py
+python3 Tools/CountHolypawLoc.py
 ```
 
-Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon districts, skill-tree counts, plugins, and campaign hooks. Playtesting still needs UE 5.8 on your machine.
+Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon districts, skill-tree counts, plugins, and campaign hooks. The loc counter tracks unique source lines against the 200k AAA floor. Playtesting still needs UE 5.8 on your machine.
 
 ## Controls
 
