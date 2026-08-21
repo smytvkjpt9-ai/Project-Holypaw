@@ -90,6 +90,8 @@ protected:
 	void BuildTerrain();
 	void ScatterFlora();
 	void BuildCottage();
+	void BuildRibbonDistricts();
+	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();
 	void BuildMountain();

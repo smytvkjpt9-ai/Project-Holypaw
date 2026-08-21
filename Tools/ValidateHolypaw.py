@@ -167,6 +167,46 @@ if missing_new:
 if "CityVisitCount" not in (ROOT / "Source/Holypaw/Components/MissionComponent.cpp").read_text():
     errors.append("journal missing CityVisitCount")
 
+UPROJECT = (ROOT / "Holypaw.uproject").read_text()
+for plugin in ("PythonScriptPlugin", "ModelContextProtocol", "EnhancedInput"):
+    if plugin not in UPROJECT:
+        errors.append(f"uproject missing plugin {plugin}")
+
+if not (ROOT / "legacy/web-prototype/index.html").exists():
+    errors.append("missing archived web prototype")
+
+INPUT = (ROOT / "Config/DefaultInput.ini").read_text()
+if 'ActionName="Skill6"' not in INPUT:
+    errors.append("DefaultInput missing Skill6 (Hymn)")
+if "EnhancedInput.EnhancedPlayerInput" not in INPUT:
+    errors.append("DefaultInput not using Enhanced Input player class")
+
+HUD = (ROOT / "Source/Holypaw/UI/HolypawHUD.cpp").read_text()
+if "UHolypawBattleWidget" not in HUD:
+    errors.append("HUD missing UMG battle overlay")
+if not (ROOT / "Source/Holypaw/UI/HolypawBattleWidget.cpp").exists():
+    errors.append("missing HolypawBattleWidget.cpp")
+
+for needle in (
+    "BuildRibbonDistricts",
+    "BuildSkyRift",
+    "AVolumetricCloud",
+    "CottageBed",
+    "Cloth Quarter",
+    "Harbor Steps",
+    "Quiet Rows",
+):
+    if needle not in WORLD:
+        errors.append(f"world missing Phase 1 piece {needle}")
+
+for skill in ("softFur", "buttonEyes", "haloStep", "miracleEcho", "partyBond", "fluffShield"):
+    if skill not in SKILLS:
+        errors.append(f"skill catalog missing {skill}")
+
+PARTY = (ROOT / "Source/Holypaw/Components/PartyComponent.h").read_text()
+if "MaxParty = 4" not in PARTY:
+    errors.append("party max is not 4")
+
 if errors:
     print("FAIL")
     for e in errors:

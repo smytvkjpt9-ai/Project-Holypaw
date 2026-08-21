@@ -17,6 +17,7 @@
 #include "Engine/SkyLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyAtmosphere.h"
+#include "Engine/VolumetricCloud.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/PostProcessVolume.h"
 #include "Engine/PlayerStart.h"
@@ -123,6 +124,8 @@ void AHolypawWorldBuilder::GenerateWorld()
 	BuildCottage();
 	BuildRoads();
 	BuildAllSettlements();
+	BuildRibbonDistricts();
+	BuildSkyRift();
 	SpawnGameplayActors();
 	SpawnPlayerStart();
 }
@@ -187,6 +190,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 		}
 	}
 	GetWorld()->SpawnActor<ASkyAtmosphere>(FVector::ZeroVector, FRotator::ZeroRotator, Sp);
+	GetWorld()->SpawnActor<AVolumetricCloud>(FVector::ZeroVector, FRotator::ZeroRotator, Sp);
 
 	if (APostProcessVolume* PP = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
 	{
@@ -200,6 +204,10 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 		PP->Settings.BloomIntensity = 0.35f;
 		PP->Settings.bOverride_VignetteIntensity = true;
 		PP->Settings.VignetteIntensity = 0.28f;
+		PP->Settings.bOverride_FilmGrainIntensity = true;
+		PP->Settings.FilmGrainIntensity = 0.04f;
+		PP->Settings.bOverride_ColorGain = true;
+		PP->Settings.ColorGain = FVector4(1.02f, 0.98f, 1.05f, 1.f);
 	}
 }
 
@@ -491,6 +499,12 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 90.f), FVector(3.2f, 3.8f, 0.25f), FLinearColor(0.62f, 0.5f, 0.38f), MakeName(TEXT("Porch")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), FLinearColor(0.55f, 0.82f, 0.95f), MakeName(TEXT("Window")));
 	PlaceCube(FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 220.f, Z + 70.f), FVector(1.2f, 1.2f, 1.4f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("Woodpile")));
+	PlaceCube(FVector(CottageSpawn.X - 80.f, CottageSpawn.Y, Z + 28.f), FVector(5.4f, 4.2f, 0.12f), FLinearColor(0.62f, 0.44f, 0.32f), MakeName(TEXT("CottageFloor")));
+	PlaceCube(FVector(CottageSpawn.X - 140.f, CottageSpawn.Y + 40.f, Z + 70.f), FVector(2.4f, 1.3f, 0.45f), FLinearColor(0.78f, 0.55f, 0.62f), MakeName(TEXT("CottageBed")));
+	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y + 40.f, Z + 95.f), FVector(0.7f, 1.1f, 0.28f), FLinearColor(0.95f, 0.88f, 0.92f), MakeName(TEXT("CottagePillow")));
+	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 85.f), FVector(1.1f, 1.1f, 0.9f), FLinearColor(0.55f, 0.38f, 0.28f), MakeName(TEXT("CottageTable")));
+	PlaceCube(FVector(CottageSpawn.X + 310.f, CottageSpawn.Y, Z + 150.f), FVector(0.18f, 1.5f, 2.4f), FLinearColor(0.38f, 0.24f, 0.18f), MakeName(TEXT("CottageDoor")));
+	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree"));
 
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
@@ -598,6 +612,60 @@ void AHolypawWorldBuilder::BuildAllSettlements()
 	PlaceCamp((CityXY(EHolypawZone::SpiceHarbor) + CityXY(EHolypawZone::SilkDelta)) * 0.5f, NSLOCTEXT("Holypaw", "CampSilk", "Silk Road Camp"));
 	PlaceCamp((CityXY(EHolypawZone::CapePlush) + CityXY(EHolypawZone::CoralChoir)) * 0.5f, NSLOCTEXT("Holypaw", "CampReef", "Reef Ferry Camp"));
 	PlaceCamp((CityXY(EHolypawZone::AndesLoom) + CityXY(EHolypawZone::CarnivalBahia)) * 0.5f, NSLOCTEXT("Holypaw", "CampAndes", "Andes Camp"));
+}
+
+void AHolypawWorldBuilder::BuildRibbonDistricts()
+{
+	const FVector2D Plaza = RibbonCity;
+	const FVector2D Market = RibbonCity + FVector2D(1800.f, -500.f);
+	const FVector2D Cloth = RibbonCity + FVector2D(-2400.f, 700.f);
+	const FVector2D Harbor = RibbonCity + FVector2D(4200.f, 1600.f);
+	const FVector2D Quiet = RibbonCity + FVector2D(200.f, -3400.f);
+
+	PlaceSign(Plaza + FVector2D(80.f, -80.f), NSLOCTEXT("Holypaw", "DistPlaza", "Ribbon Plaza  |  hug, rest, look up at the spire"));
+	PlaceSign(Market + FVector2D(-200.f, 0.f), NSLOCTEXT("Holypaw", "DistMarket", "Market  |  stalls, faith for AP, no factory smiles"));
+	PlaceSign(Cloth + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistCloth", "Cloth Quarter  |  handmade banners, not polyester"));
+	PlaceSign(Harbor + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistHarbor", "Harbor Steps  |  east to Tidewell and the Plush Sea"));
+	PlaceSign(Quiet + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistQuiet", "Quiet Rows  |  windows lit, few hostiles on the street"));
+
+	PlaceStall(Market);
+	PlaceStall(Market + FVector2D(260.f, 120.f));
+	PlaceStall(Market + FVector2D(-180.f, 200.f));
+
+	for (int32 I = 0; I < 5; ++I)
+	{
+		const float X = Cloth.X + I * 220.f;
+		const float Y = Cloth.Y - 80.f;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 140.f), FVector(0.12f, 0.12f, 2.4f), FLinearColor(0.35f, 0.22f, 0.18f), MakeName(TEXT("BannerPole")));
+		PlaceCube(FVector(X + 40.f, Y, Z + 200.f), FVector(0.9f, 0.08f, 1.1f), FLinearColor(0.85f, 0.42f, 0.58f), MakeName(TEXT("Banner"));
+	}
+
+	for (int32 I = 0; I < 6; ++I)
+	{
+		const float X = Harbor.X + I * 180.f;
+		const float Y = Harbor.Y;
+		const float Z = SampleHeight(X, Y);
+		PlaceCube(FVector(X, Y, Z + 8.f + I * 12.f), FVector(2.4f, 6.5f, 0.14f), FLinearColor(0.62f, 0.58f, 0.52f), MakeName(TEXT("HarborStep")));
+	}
+
+	for (int32 I = 0; I < 4; ++I)
+	{
+		const float X = Quiet.X + (I % 2) * 700.f - 200.f;
+		const float Y = Quiet.Y + (I / 2) * 600.f;
+		const float Z = SampleHeight(X, Y);
+		AddKit(WallRose, FVector(X, Y, Z + 140.f), FRotator::ZeroRotator, FVector(2.0f, 1.8f, 2.6f));
+		AddKit(Roofs, FVector(X, Y, Z + 280.f), FRotator::ZeroRotator, FVector(2.3f, 2.1f, 0.45f));
+	}
+}
+
+void AHolypawWorldBuilder::BuildSkyRift()
+{
+	const float Z = SampleHeight(PeakCenter.X, PeakCenter.Y);
+	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 3200.f), FVector(14.f, 14.f, 0.35f), FLinearColor(0.72f, 0.55f, 1.f), MakeName(TEXT("SkyRiftRing")));
+	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2800.f), FVector(1.1f, 1.1f, 12.f), FLinearColor(1.f, 0.88f, 0.55f), MakeName(TEXT("SkyRiftBeam")));
+	PlaceCube(FVector(PeakCenter.X + 900.f, PeakCenter.Y - 400.f, Z + 3400.f), FVector(3.5f, 0.8f, 0.5f), FLinearColor(0.95f, 0.7f, 0.45f), MakeName(TEXT("SkyRiftCloud")));
+	PlaceCube(FVector(PeakCenter.X - 800.f, PeakCenter.Y, Z + 3300.f), FVector(4.2f, 1.0f, 0.55f), FLinearColor(0.85f, 0.62f, 0.95f), MakeName(TEXT("SkyRiftCloudB")));
 }
 
 void AHolypawWorldBuilder::PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name)
@@ -737,6 +805,10 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Baker"), FVector2D(RibbonCity.X + 400.f, RibbonCity.Y - 500.f), FLinearColor(0.95f, 0.75f, 0.4f));
 	SpawnHuman(TEXT("Acolyte"), FVector2D(RibbonCity.X - 300.f, RibbonCity.Y + 600.f), FLinearColor(0.72f, 0.62f, 0.9f));
 	SpawnHuman(TEXT("Mayor"), FVector2D(RibbonCity.X + 200.f, RibbonCity.Y + 200.f), FLinearColor(0.85f, 0.55f, 0.7f));
+	SpawnHuman(TEXT("Market Hawker"), FVector2D(RibbonCity.X + 1700.f, RibbonCity.Y - 480.f), FLinearColor(0.92f, 0.62f, 0.4f));
+	SpawnHuman(TEXT("Cloth Dyer"), FVector2D(RibbonCity.X - 2300.f, RibbonCity.Y + 680.f), FLinearColor(0.78f, 0.45f, 0.62f));
+	SpawnHuman(TEXT("Harbor Kid"), FVector2D(RibbonCity.X + 4000.f, RibbonCity.Y + 1500.f), FLinearColor(0.5f, 0.72f, 0.85f));
+	SpawnHuman(TEXT("Quiet Neighbor"), FVector2D(RibbonCity.X + 180.f, RibbonCity.Y - 3300.f), FLinearColor(0.72f, 0.68f, 0.82f));
 	SpawnHuman(TEXT("Harbor Hand"), FVector2D(Tidewell.X + 400.f, Tidewell.Y + 200.f), FLinearColor(0.45f, 0.55f, 0.7f));
 	SpawnHuman(TEXT("Net Weaver"), FVector2D(Tidewell.X - 200.f, Tidewell.Y - 300.f), FLinearColor(0.4f, 0.7f, 0.75f));
 	SpawnHuman(TEXT("Farmer"), FVector2D(Hearthfold.X + 250.f, Hearthfold.Y - 200.f), FLinearColor(0.7f, 0.6f, 0.3f));

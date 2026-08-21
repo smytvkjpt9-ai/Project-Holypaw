@@ -1,4 +1,5 @@
 #include "UI/HolypawHUD.h"
+#include "UI/HolypawBattleWidget.h"
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"
 #include "Components/SkillTreeComponent.h"
@@ -7,6 +8,20 @@
 #include "HolypawTypes.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
+#include "Blueprint/UserWidget.h"
+
+void AHolypawHUD::BeginPlay()
+{
+	Super::BeginPlay();
+	if (APlayerController* PC = GetOwningPlayerController())
+	{
+		OverlayWidget = CreateWidget<UHolypawBattleWidget>(PC);
+		if (OverlayWidget)
+		{
+			OverlayWidget->AddToViewport(20);
+		}
+	}
+}
 
 void AHolypawHUD::DrawLabel(float X, float Y, const FString& Text, const FLinearColor& Color, float Scale)
 {
@@ -71,7 +86,8 @@ void AHolypawHUD::DrawHUD()
 
 	DrawLabel(W - 560.f, Canvas->SizeY - 48.f, TEXT("WASD  E  K trees  J journal  P party  M miracle  N map  V villains"), FLinearColor(0.75f, 0.7f, 0.9f), 0.82f);
 
-	if (P->Mode == EHolypawPawnMode::Battle)
+	const bool bUmgOverlay = OverlayWidget != nullptr;
+	if (!bUmgOverlay && P->Mode == EHolypawPawnMode::Battle)
 	{
 		const float CX = W * 0.5f;
 		const float CY = Canvas->SizeY * 0.22f;
@@ -102,7 +118,7 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(64.f, Canvas->SizeY - 100.f, TEXT("6  Hymn (8 FP)"), FLinearColor(1.f, 0.85f, 0.55f), 1.2f);
 	}
 
-	if (P->IsSkillsOpen() && P->Skills)
+	if (!bUmgOverlay && P->IsSkillsOpen() && P->Skills)
 	{
 		DrawLabel(W * 0.5f - 200.f, 210.f, HolypawCatalog::SkillTreeName(P->Skills->ActiveTree), FLinearColor(1.f, 0.8f, 0.9f), 1.5f);
 		DrawLabel(W * 0.5f - 200.f, 242.f, TEXT("Tab cycles Hug / Miracle / Party trees"), FLinearColor(0.8f, 0.75f, 0.9f), 0.95f);
@@ -124,7 +140,7 @@ void AHolypawHUD::DrawHUD()
 		DrawLabel(W * 0.5f - 180.f, 268.f + I * 30.f + 20.f, TEXT("Press 1-6 to buy   K to close"), FLinearColor(0.8f, 0.75f, 0.9f), 1.0f);
 	}
 
-	if (P->IsPartyOpen() && P->Party)
+	if (!bUmgOverlay && P->IsPartyOpen() && P->Party)
 	{
 		DrawLabel(W * 0.5f - 120.f, 240.f, TEXT("Fluffy Party"), FLinearColor(1.f, 0.8f, 0.9f), 1.5f);
 		if (P->Party->Members.Num() == 0)

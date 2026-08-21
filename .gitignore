@@ -1,5 +1,6 @@
 # Unreal Engine
 Binaries/
+Build/
 DerivedDataCache/
 Intermediate/
 Saved/
@@ -9,6 +10,9 @@ Saved/
 *.sdf
 *.sln
 *.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
 *.xcodeproj
 *.xcworkspace
 .vs/

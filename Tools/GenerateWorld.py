@@ -53,7 +53,7 @@ def run() -> None:
         ok = level_sub.save_current_level()
         unreal.log("Saved current level." if ok else "Could not save current level (save it manually).")
 
-    unreal.log("Holypaw generate helper finished. Play still builds the Earth-analog globe from HolypawAtlas at BeginPlay.")
+    unreal.log("Holypaw generate helper finished. Play still builds cottage, lantern road, Ribbon City districts, biomes, and the globe at BeginPlay.")
 
 
 if __name__ == "__main__":
