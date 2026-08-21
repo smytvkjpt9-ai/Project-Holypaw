@@ -13,7 +13,6 @@ class UPartyComponent;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
-class UHolypawHUDWidget;
 
 UENUM()
 enum class EHolypawPawnMode : uint8
@@ -154,4 +153,12 @@ protected:
 	bool bPartyOpen = false;
 
 	UMaterialInterface* ShapeMat = nullptr;
+
+	void SyncFollowers(float DeltaSeconds);
+
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> FollowerMeshes;
+
+	TArray<FVector> Trail;
+	UStaticMesh* SphereMesh = nullptr;
 };

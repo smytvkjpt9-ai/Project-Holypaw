@@ -15,7 +15,7 @@
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyAtmosphere.h"
 #include "Engine/StaticMeshActor.h"
-#include "Engine/PlayerStart.h"
+#include "Engine/PostProcessVolume.h"
 #include "EngineUtils.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -152,6 +152,25 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	}
 
 	GetWorld()->SpawnActor<ASkyAtmosphere>(FVector::ZeroVector, FRotator::ZeroRotator, Sp);
+
+	if (APostProcessVolume* PP = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+	{
+		PP->bUnbound = true;
+		PP->Priority = 1.f;
+		PP->BlendWeight = 1.f;
+		PP->Settings.bOverride_AutoExposureBias = true;
+		PP->Settings.AutoExposureBias = 0.35f;
+		PP->Settings.bOverride_ColorSaturation = true;
+		PP->Settings.ColorSaturation = FVector4(1.06f, 1.02f, 1.08f, 1.f);
+		PP->Settings.bOverride_ColorContrast = true;
+		PP->Settings.ColorContrast = FVector4(1.04f, 1.03f, 1.05f, 1.f);
+		PP->Settings.bOverride_ColorGamma = true;
+		PP->Settings.ColorGamma = FVector4(1.02f, 1.0f, 1.04f, 1.f);
+		PP->Settings.bOverride_BloomIntensity = true;
+		PP->Settings.BloomIntensity = 0.35f;
+		PP->Settings.bOverride_VignetteIntensity = true;
+		PP->Settings.VignetteIntensity = 0.28f;
+	}
 }
 
 float AHolypawWorldBuilder::HashRand(int32 X, int32 Y, int32 Salt) const

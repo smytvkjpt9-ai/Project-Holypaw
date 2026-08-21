@@ -70,6 +70,7 @@ AHolypawCharacter::AHolypawCharacter()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MatFinder(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 	if (SphereFinder.Succeeded())
 	{
+		SphereMesh = SphereFinder.Object;
 		BodyMesh->SetStaticMesh(SphereFinder.Object);
 		HeadMesh->SetStaticMesh(SphereFinder.Object);
 	}
@@ -194,6 +195,65 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 		{
 			Prompt = FText::GetEmpty();
 		}
+	}
+	SyncFollowers(DeltaSeconds);
+}
+
+void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
+{
+	Trail.Insert(GetActorLocation(), 0);
+	if (Trail.Num() > 80)
+	{
+		Trail.SetNum(80);
+	}
+
+	const int32 Wanted = Party ? Party->Members.Num() : 0;
+	while (FollowerMeshes.Num() < Wanted && SphereMesh)
+	{
+		UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
+		Comp->SetStaticMesh(SphereMesh);
+		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Comp->SetMobility(EComponentMobility::Movable);
+		Comp->CreationMethod = EComponentCreationMethod::Instance;
+		AddInstanceComponent(Comp);
+		Comp->RegisterComponent();
+		Comp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		if (ShapeMat)
+		{
+			Comp->SetMaterial(0, ShapeMat);
+		}
+		const int32 Idx = FollowerMeshes.Num();
+		if (Party->Members.IsValidIndex(Idx))
+		{
+			Colorize(Comp, Party->Members[Idx].Color);
+		}
+		Comp->SetWorldScale3D(FVector(0.35f));
+		FollowerMeshes.Add(Comp);
+	}
+	while (FollowerMeshes.Num() > Wanted)
+	{
+		UStaticMeshComponent* Comp = FollowerMeshes.Pop();
+		if (Comp)
+		{
+			Comp->DestroyComponent();
+		}
+	}
+
+	for (int32 I = 0; I < FollowerMeshes.Num(); ++I)
+	{
+		UStaticMeshComponent* Comp = FollowerMeshes[I];
+		if (!Comp)
+		{
+			continue;
+		}
+		const int32 Idx = FMath::Min(Trail.Num() - 1, (I + 1) * 10);
+		if (!Trail.IsValidIndex(Idx))
+		{
+			continue;
+		}
+		const FVector Target = Trail[Idx] + FVector(0.f, 0.f, 30.f);
+		const FVector NewLoc = FMath::VInterpTo(Comp->GetComponentLocation(), Target, DeltaSeconds, 8.f);
+		Comp->SetWorldLocation(NewLoc);
 	}
 }
 
