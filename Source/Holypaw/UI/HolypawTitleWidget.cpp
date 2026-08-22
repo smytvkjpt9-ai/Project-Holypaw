@@ -65,10 +65,10 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 	const float HeaderH = 64.f + TagH + 12.f;
 	const float SlotArea = Panel.Y - HeaderH - ActionH - 36.f;
 	const float SlotH = FMath::Clamp((SlotArea / 3.f) - 10.f, 56.f, 80.f);
-	const int32 Cursor = GI ? GI->TitleCursor : 0;
+	const int32 TitleCursor = GI ? GI->TitleCursor : 0;
 	for (int32 I = 0; I < UHolypawGameInstance::SlotCount; ++I)
 	{
-		const bool Sel = (I == Cursor);
+		const bool Sel = (I == TitleCursor);
 		const FVector2D Card = Origin + FVector2D(40.f, HeaderH + I * (SlotH + 8.f));
 		Q.SlotCard(Card, FVector2D(Panel.X - 80.f, SlotH), Sel,
 			HolypawUiCopy::SlotN(I + 1).ToString(),

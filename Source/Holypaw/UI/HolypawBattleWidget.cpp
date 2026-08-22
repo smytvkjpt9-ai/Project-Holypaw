@@ -112,13 +112,13 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		Q.ChipRow(TrayPos + FVector2D(16.f, 12.f), Tray.X - 32.f, Pages, 26.f);
 
 		const float CardW = (Tray.X - 32.f) / 6.f;
-		for (int32 Slot = 1; Slot <= 6; ++Slot)
+		for (int32 AbilitySlot = 1; AbilitySlot <= 6; ++AbilitySlot)
 		{
-			const FHolypawAbilityDef* Ability = HolypawCatalog::FindAbilityBySlot(Page, Slot);
-			const FVector2D Card(TrayPos.X + 16.f + (Slot - 1) * CardW, TrayPos.Y + 48.f);
+			const FHolypawAbilityDef* Ability = HolypawCatalog::FindAbilityBySlot(Page, AbilitySlot);
+			const FVector2D Card(TrayPos.X + 16.f + (AbilitySlot - 1) * CardW, TrayPos.Y + 48.f);
 			Q.Fill(Card, FVector2D(CardW - 8.f, 118.f), Pal.Idle);
 			Q.Frame(Card, FVector2D(CardW - 8.f, 118.f), Pal.Gold, 1.4f);
-			Q.Keycap(Card + FVector2D(6.f, 8.f), FString::FromInt(Slot));
+			Q.Keycap(Card + FVector2D(6.f, 8.f), FString::FromInt(AbilitySlot));
 			if (Ability)
 			{
 				const EHolypawUiIcon Icon = HolypawUi::IconForAbility(Ability->Id);
