@@ -782,6 +782,10 @@ if not (ROOT / "Tools/BuildHolypaw.bat").exists():
     errors.append("missing Tools/BuildHolypaw.bat")
 if not (ROOT / "GenerateHolypawSln.bat").exists():
     errors.append("missing GenerateHolypawSln.bat")
+if not (ROOT / "BuildHolypaw.bat").exists():
+    errors.append("missing BuildHolypaw.bat")
+if not (ROOT / "Docs/BUILD_ON_WINDOWS.md").exists():
+    errors.append("missing Docs/BUILD_ON_WINDOWS.md")
 
 if errors:
     print("FAIL")

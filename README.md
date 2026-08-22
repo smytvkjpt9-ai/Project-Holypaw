@@ -26,18 +26,13 @@ Do **not** keep clicking Yes. Compile from Visual Studio (or the script below) s
 
 1. Install **Unreal Engine 5.8** via the Epic Launcher (Windows recommended).
 2. Install **Visual Studio 2022** with the **Game Development with C++** workload, plus a Windows 10/11 SDK. Without that toolchain the editor rebuild fails with no message. On Mac, install Xcode.
-3. There is **no `Holypaw.sln` in the download**. Git ignores it. Create it on your PC:
-   - Double-click `GenerateHolypawSln.bat` in this folder, **or**
-   - Right-click `Holypaw.uproject` → **Generate Visual Studio project files**.
-   The `.sln` appears next to `Holypaw.uproject`. If the right-click item is missing, UE 5.8 is not installed or `.uproject` is not associated with Unreal Version Selector.
-4. Open `Holypaw.sln` → set configuration **Development Editor** / **Win64** → build **HolypawEditor**. Opening the `.uproject` first will only produce “Holypaw could not be found” until this build succeeds. Or from a Developer Command Prompt:
-
-   ```
-   Tools\BuildHolypaw.bat "C:\Program Files\Epic Games\UE_5.8"
-   ```
-
-   Mac / Linux: `Tools/BuildHolypaw.sh "/Users/Shared/Epic Games/UE_5.8"`
-5. When that build succeeds, open `Holypaw.uproject`. The missing-module dialog should be gone. If it is not, you are still on `main` without this PR — check out this branch first.
+3. There is **no `Holypaw.sln` in the download**. Git ignores it. After **Generate Visual Studio project files** you may get:
+   - **`Holypaw.sln`** next to `Holypaw.uproject` (classic), or
+   - a **Visual Studio workspace** (folder open — normal on VS 2022 17.12+ with Unreal tools; no `.sln` needed), or
+   - **`Holypaw.code-workspace`** (VS Code / Cursor — use `BuildHolypaw.bat`, not Visual Studio).
+   Also check `Intermediate\ProjectFiles\Holypaw.sln`. See [`Docs/BUILD_ON_WINDOWS.md`](Docs/BUILD_ON_WINDOWS.md).
+4. **Easiest:** double-click **`BuildHolypaw.bat`** in the project root (no `.sln` required). Wait for **BUILD OK**, then open `Holypaw.uproject`.
+5. **Or in Visual Studio:** open the **folder** that contains `Holypaw.uproject` (File → Open → Folder), set **Development Editor / Win64**, **Build → Build All**. Or open `Holypaw.sln` if you have one.
 6. Optional editor helper (after compile), from the Output Log:
 
    ```
