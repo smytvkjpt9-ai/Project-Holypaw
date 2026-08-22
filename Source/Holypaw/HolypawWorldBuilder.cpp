@@ -112,6 +112,18 @@ AHolypawWorldBuilder::AHolypawWorldBuilder()
 	Chimneys->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Chimneys->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
+	Doors = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Doors"));
+	Doors->SetupAttachment(RootComponent);
+	Doors->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	WindowWarm = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("WindowWarm"));
+	WindowWarm->SetupAttachment(RootComponent);
+	WindowWarm->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Foam = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Foam"));
+	Foam->SetupAttachment(RootComponent);
+	Foam->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeFinder(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
@@ -145,13 +157,14 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		return;
 	}
 	const float Hour = GI->GetWorldHour();
-	float SunInt = HolypawLook::HourSunIntensity(Hour);
-	FLinearColor SunCol = HolypawLook::HourSunColor(Hour);
-	float SkyInt = HolypawLook::HourSkyIntensity(Hour);
-	FLinearColor FogCol = HolypawLook::HourFogColor(Hour);
-	float FogDensity = HolypawLook::HourFogDensity(Hour);
-	const float Pitch = HolypawLook::HourSunPitch(Hour);
-	float MoonInt = HolypawLook::HourMoonIntensity(Hour);
+	const HolypawLook::FHourLook Look = HolypawLook::SampleHour(Hour);
+	float SunInt = Look.SunInt;
+	FLinearColor SunCol = Look.SunCol;
+	float SkyInt = Look.SkyInt;
+	FLinearColor FogCol = Look.FogCol;
+	float FogDensity = Look.FogDensity;
+	const float Pitch = Look.Pitch;
+	float MoonInt = Look.MoonInt;
 	bool bIndoors = false;
 	float MillW = 0.f;
 
@@ -266,7 +279,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		FillLight->SetActorRotation(FRotator(-28.f, 215.f, 0.f));
 		if (UDirectionalLightComponent* C = FillLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
-			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.45f : 1.35f, DeltaSeconds, 1.2f));
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.35f : 0.65f, DeltaSeconds, 1.2f));
 		}
 	}
 	if (MoonLight)
@@ -275,6 +288,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		if (UDirectionalLightComponent* C = MoonLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
 			C->SetIntensity(FMath::FInterpTo(C->Intensity, MoonInt, DeltaSeconds, 1.2f));
+			C->SetAtmosphereSunLight(MoonInt > 0.35f);
 		}
 	}
 	if (SkyLight)
@@ -592,7 +606,10 @@ void AHolypawWorldBuilder::BindKits()
 	Bind(Cacti, ConeMesh ? ConeMesh : CubeMesh, FLinearColor(0.42f, 0.62f, 0.32f));
 	Bind(Flowers, CubeMesh, HolypawLook::BloomPink);
 	Bind(Windows, CubeMesh, HolypawLook::Glass);
+	Bind(WindowWarm, CubeMesh, HolypawLook::GoldWarm);
+	Bind(Doors, CubeMesh, HolypawLook::Wood);
 	Bind(Chimneys, CubeMesh, FLinearColor(0.48f, 0.28f, 0.24f));
+	Bind(Foam, CubeMesh, HolypawLook::Foam);
 }
 
 void AHolypawWorldBuilder::AddKit(UInstancedStaticMeshComponent* ISM, const FVector& Loc, const FRotator& Rot, const FVector& Scale)
@@ -802,9 +819,14 @@ void AHolypawWorldBuilder::BuildTown(const FHolypawCity& City)
 			const float H = 2.8f + HashRand(Col, Row, 8) * (City.bTallSpire ? 7.f : 4.2f);
 			UInstancedStaticMeshComponent* Wall = Walls[(Col + Row + 16) % 3];
 			AddKit(Wall, FVector(X, Y, Z + H * 50.f), FRotator::ZeroRotator, FVector(W, D, H));
-			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 36.f), FRotator::ZeroRotator, FVector(W + 0.3f, D + 0.3f, 0.5f));
-			AddKit(Windows, FVector(X, Y - D * 48.f, Z + H * 42.f), FRotator::ZeroRotator, FVector(0.42f, 0.08f, 0.48f));
-			AddKit(Windows, FVector(X + W * 18.f, Y - D * 48.f, Z + H * 62.f), FRotator::ZeroRotator, FVector(0.32f, 0.08f, 0.38f));
+			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 40.f), FRotator::ZeroRotator, FVector(W + 0.55f, D + 0.55f, 0.42f));
+			const float FaceY = D * 50.f;
+			const float FaceX = W * 50.f;
+			AddKit(Windows, FVector(X - 22.f, Y - FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
+			AddKit(Windows, FVector(X + 22.f, Y - FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
+			AddKit(Windows, FVector(X + FaceX, Y, Z + H * 58.f), FRotator(0.f, 90.f, 0.f), FVector(0.36f, 0.07f, 0.40f));
+			AddKit(WindowWarm, FVector(X - 22.f, Y - FaceY - 4.f, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.22f, 0.04f, 0.28f));
+			AddKit(Doors, FVector(X, Y - FaceY, Z + 42.f), FRotator::ZeroRotator, FVector(0.28f, 0.08f, 0.72f));
 			AddKit(Chimneys, FVector(X + W * 28.f, Y + D * 16.f, Z + H * 100.f + 78.f), FRotator::ZeroRotator, FVector(0.32f, 0.32f, 0.72f));
 		}
 	}
@@ -1271,6 +1293,10 @@ void AHolypawWorldBuilder::PlaceWaterSheet(float OriginX, float OriginY, int32 N
 				continue;
 			}
 			AddKit(WaterTiles, FVector(X, Y, Z), FRotator::ZeroRotator, FVector(Step / 100.f, Step / 100.f, 0.18f));
+			if (I == 0 || J == 0 || I == NX - 1 || J == NY - 1)
+			{
+				AddKit(Foam, FVector(X, Y, Z + 8.f), FRotator::ZeroRotator, FVector(Step / 140.f, Step / 140.f, 0.06f));
+			}
 		}
 	}
 }
@@ -1295,8 +1321,6 @@ void AHolypawWorldBuilder::PlaceCamp(const FVector2D& XY, const FText& Name)
 void AHolypawWorldBuilder::PlaceLantern(const FVector2D& XY, EHolypawZone Zone)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	PlaceCube(FVector(XY.X, XY.Y, Z + 90.f), FVector(0.18f, 0.18f, 1.7f), FLinearColor(0.35f, 0.28f, 0.22f), MakeName(TEXT("TravelPole")));
-	PlaceCube(FVector(XY.X, XY.Y, Z + 180.f), FVector(0.45f, 0.45f, 0.45f), FLinearColor(1.f, 0.86f, 0.42f), MakeName(TEXT("TravelGlow")));
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

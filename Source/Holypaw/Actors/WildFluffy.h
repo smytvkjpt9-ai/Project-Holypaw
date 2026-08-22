@@ -45,6 +45,12 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> Snout;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> PawL;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> PawR;
+
 private:
 	float WanderT = 0.f;
 	FVector Vel = FVector::ZeroVector;

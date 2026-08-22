@@ -420,7 +420,7 @@ if not LOOK.exists():
     errors.append("missing HolypawLook.cpp presentation bible")
 else:
     look = LOOK.read_text()
-    for needle in ("GradeVolume", "DressSun", "DressClouds", "DressCamera", "Paint", "Lantern"):
+    for needle in ("GradeVolume", "DressSun", "DressClouds", "DressCamera", "Paint", "Lantern", "SampleHour", "AimCatchlight"):
         if needle not in look:
             errors.append(f"look missing {needle}")
 
@@ -434,6 +434,12 @@ if "EyeL" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
     errors.append("humans missing eyes")
 if "CanopyPuffs" not in WORLD:
     errors.append("world missing layered canopies")
+if "SampleHour" not in WORLD:
+    errors.append("world lighting missing SampleHour")
+if "WindowWarm" not in WORLD:
+    errors.append("world missing warm windows")
+if "TEXT(\"tail\")" not in CHAR and "tail" not in CHAR:
+    errors.append("teddy missing tail socket")
 
 if errors:
     print("FAIL")

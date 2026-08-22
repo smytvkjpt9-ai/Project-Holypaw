@@ -42,6 +42,26 @@ AHugHuman::AHugHuman()
 	ArmR->SetupAttachment(Root);
 	ArmR->SetRelativeLocation(FVector(0.f, -24.f, 18.f));
 	ArmR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.48f));
+
+	LegL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegL"));
+	LegL->SetupAttachment(Root);
+	LegL->SetRelativeLocation(FVector(0.f, 10.f, -28.f));
+	LegL->SetRelativeScale3D(FVector(0.13f, 0.13f, 0.42f));
+
+	LegR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegR"));
+	LegR->SetupAttachment(Root);
+	LegR->SetRelativeLocation(FVector(0.f, -10.f, -28.f));
+	LegR->SetRelativeScale3D(FVector(0.13f, 0.13f, 0.42f));
+
+	ShoeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShoeL"));
+	ShoeL->SetupAttachment(LegL);
+	ShoeL->SetRelativeLocation(FVector(6.f, 0.f, -18.f));
+	ShoeL->SetRelativeScale3D(FVector(0.85f, 0.70f, 0.28f));
+
+	ShoeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShoeR"));
+	ShoeR->SetupAttachment(LegR);
+	ShoeR->SetRelativeLocation(FVector(6.f, 0.f, -18.f));
+	ShoeR->SetRelativeScale3D(FVector(0.85f, 0.70f, 0.28f));
 }
 
 void AHugHuman::BeginPlay()
@@ -58,9 +78,13 @@ void AHugHuman::BeginPlay()
 	HolypawLook::PrepPart(Hat, SphereMesh);
 	HolypawLook::PrepPart(ArmL, CylMesh ? CylMesh : CubeMesh);
 	HolypawLook::PrepPart(ArmR, CylMesh ? CylMesh : CubeMesh);
+	HolypawLook::PrepPart(LegL, CylMesh ? CylMesh : CubeMesh);
+	HolypawLook::PrepPart(LegR, CylMesh ? CylMesh : CubeMesh);
+	HolypawLook::PrepPart(ShoeL, SphereMesh);
+	HolypawLook::PrepPart(ShoeR, SphereMesh);
 	if (ShapeMat)
 	{
-		for (UStaticMeshComponent* P : { HeadMesh, Hair, EyeL, EyeR, Hat, ArmL, ArmR })
+		for (UStaticMeshComponent* P : { HeadMesh, Hair, EyeL, EyeR, Hat, ArmL, ArmR, LegL, LegR, ShoeL, ShoeR })
 		{
 			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
@@ -76,6 +100,10 @@ void AHugHuman::BeginPlay()
 	HolypawLook::Paint(Hat, HolypawLook::GoldWarm);
 	HolypawLook::Paint(ArmL, HolypawLook::Skin);
 	HolypawLook::Paint(ArmR, HolypawLook::Skin);
+	HolypawLook::Paint(LegL, ShirtColor * 0.72f);
+	HolypawLook::Paint(LegR, ShirtColor * 0.72f);
+	HolypawLook::Paint(ShoeL, HolypawLook::Wood);
+	HolypawLook::Paint(ShoeR, HolypawLook::Wood);
 	HolypawLook::Paint(Mesh, ShirtColor);
 }
 

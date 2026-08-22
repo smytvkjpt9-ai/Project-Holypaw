@@ -69,8 +69,8 @@ AHolypawCharacter::AHolypawCharacter()
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Head"));
 	HeadMesh->SetupAttachment(RootComponent);
-	HeadMesh->SetRelativeLocation(FVector(2.f, 0.f, 48.f));
-	HeadMesh->SetRelativeScale3D(FVector(0.62f, 0.62f, 0.60f));
+	HeadMesh->SetRelativeLocation(FVector(2.f, 0.f, 50.f));
+	HeadMesh->SetRelativeScale3D(FVector(0.68f, 0.66f, 0.64f));
 
 	HaloMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Halo"));
 	HaloMesh->SetupAttachment(HeadMesh);
@@ -90,10 +90,6 @@ AHolypawCharacter::AHolypawCharacter()
 	Snout->SetupAttachment(HeadMesh);
 	Nose = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Nose"));
 	Nose->SetupAttachment(Snout);
-	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
-	PawL->SetupAttachment(BodyMesh);
-	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
-	PawR->SetupAttachment(BodyMesh);
 	Belly = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Belly"));
 	Belly->SetupAttachment(BodyMesh);
 	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
@@ -112,6 +108,10 @@ AHolypawCharacter::AHolypawCharacter()
 	ArmL->SetupAttachment(BodyMesh);
 	ArmR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArmR"));
 	ArmR->SetupAttachment(BodyMesh);
+	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
+	PawL->SetupAttachment(ArmL);
+	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
+	PawR->SetupAttachment(ArmR);
 	LegL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegL"));
 	LegL->SetupAttachment(BodyMesh);
 	LegR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegR"));
@@ -122,66 +122,78 @@ AHolypawCharacter::AHolypawCharacter()
 	FootR->SetupAttachment(LegR);
 	Ribbon = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ribbon"));
 	Ribbon->SetupAttachment(BodyMesh);
+	BowL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowL"));
+	BowL->SetupAttachment(Ribbon);
+	BowR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowR"));
+	BowR->SetupAttachment(Ribbon);
 	BrowL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BrowL"));
 	BrowL->SetupAttachment(HeadMesh);
 	BrowR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BrowR"));
 	BrowR->SetupAttachment(HeadMesh);
+	Tail = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tail"));
+	Tail->SetupAttachment(BodyMesh);
 	HaloLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("HaloLight"));
 	HaloLight->SetupAttachment(HaloMesh);
 	HaloLight->SetVisibility(false);
 
-	EarL->SetRelativeLocation(FVector(-6.f, 22.f, 32.f));
-	EarL->SetRelativeRotation(FRotator(16.f, 8.f, -22.f));
-	EarL->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.38f));
-	EarR->SetRelativeLocation(FVector(-6.f, -22.f, 32.f));
-	EarR->SetRelativeRotation(FRotator(16.f, -8.f, 22.f));
-	EarR->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.38f));
-	InnerEarL->SetRelativeLocation(FVector(6.f, 0.f, 8.f));
-	InnerEarL->SetRelativeScale3D(FVector(0.55f, 0.45f, 0.55f));
-	InnerEarR->SetRelativeLocation(FVector(6.f, 0.f, 8.f));
-	InnerEarR->SetRelativeScale3D(FVector(0.55f, 0.45f, 0.55f));
-	Snout->SetRelativeLocation(FVector(26.f, 0.f, -6.f));
-	Snout->SetRelativeScale3D(FVector(0.28f, 0.24f, 0.20f));
-	Nose->SetRelativeLocation(FVector(18.f, 0.f, 4.f));
-	Nose->SetRelativeScale3D(FVector(0.22f, 0.28f, 0.18f));
-	PawL->SetRelativeLocation(FVector(14.f, 28.f, 8.f));
-	PawL->SetRelativeScale3D(FVector(0.18f, 0.16f, 0.14f));
-	PawR->SetRelativeLocation(FVector(14.f, -28.f, 8.f));
-	PawR->SetRelativeScale3D(FVector(0.18f, 0.16f, 0.14f));
-	Belly->SetRelativeLocation(FVector(14.f, 0.f, -2.f));
-	Belly->SetRelativeScale3D(FVector(0.62f, 0.52f, 0.52f));
-	EyeL->SetRelativeLocation(FVector(22.f, 9.f, 8.f));
-	EyeL->SetRelativeScale3D(FVector(0.095f, 0.095f, 0.095f));
-	EyeR->SetRelativeLocation(FVector(22.f, -9.f, 8.f));
-	EyeR->SetRelativeScale3D(FVector(0.095f, 0.095f, 0.095f));
-	HighlightL->SetRelativeLocation(FVector(12.f, 8.f, 10.f));
-	HighlightL->SetRelativeScale3D(FVector(0.28f, 0.28f, 0.28f));
-	HighlightR->SetRelativeLocation(FVector(12.f, 8.f, 10.f));
-	HighlightR->SetRelativeScale3D(FVector(0.28f, 0.28f, 0.28f));
-	CheekL->SetRelativeLocation(FVector(18.f, 16.f, -4.f));
-	CheekL->SetRelativeScale3D(FVector(0.14f, 0.12f, 0.10f));
-	CheekR->SetRelativeLocation(FVector(18.f, -16.f, -4.f));
-	CheekR->SetRelativeScale3D(FVector(0.14f, 0.12f, 0.10f));
-	ArmL->SetRelativeLocation(FVector(4.f, 34.f, 6.f));
-	ArmL->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.32f));
-	ArmR->SetRelativeLocation(FVector(4.f, -34.f, 6.f));
-	ArmR->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.32f));
-	LegL->SetRelativeLocation(FVector(2.f, 16.f, -28.f));
-	LegL->SetRelativeScale3D(FVector(0.22f, 0.20f, 0.28f));
-	LegR->SetRelativeLocation(FVector(2.f, -16.f, -28.f));
-	LegR->SetRelativeScale3D(FVector(0.22f, 0.20f, 0.28f));
-	FootL->SetRelativeLocation(FVector(8.f, 0.f, -18.f));
-	FootL->SetRelativeScale3D(FVector(0.85f, 0.75f, 0.42f));
-	FootR->SetRelativeLocation(FVector(8.f, 0.f, -18.f));
-	FootR->SetRelativeScale3D(FVector(0.85f, 0.75f, 0.42f));
-	Ribbon->SetRelativeLocation(FVector(0.f, 0.f, 22.f));
-	Ribbon->SetRelativeScale3D(FVector(0.55f, 0.18f, 0.12f));
-	BrowL->SetRelativeLocation(FVector(20.f, 10.f, 16.f));
-	BrowL->SetRelativeRotation(FRotator(0.f, 0.f, -12.f));
-	BrowL->SetRelativeScale3D(FVector(0.10f, 0.04f, 0.03f));
-	BrowR->SetRelativeLocation(FVector(20.f, -10.f, 16.f));
-	BrowR->SetRelativeRotation(FRotator(0.f, 0.f, 12.f));
-	BrowR->SetRelativeScale3D(FVector(0.10f, 0.04f, 0.03f));
+	EarL->SetRelativeLocation(FVector(-4.f, 20.f, 36.f));
+	EarL->SetRelativeRotation(FRotator(18.f, 6.f, -20.f));
+	EarL->SetRelativeScale3D(FVector(0.15f, 0.12f, 0.36f));
+	EarR->SetRelativeLocation(FVector(-4.f, -20.f, 36.f));
+	EarR->SetRelativeRotation(FRotator(18.f, -6.f, 20.f));
+	EarR->SetRelativeScale3D(FVector(0.15f, 0.12f, 0.36f));
+	InnerEarL->SetRelativeLocation(FVector(8.f, 0.f, 6.f));
+	InnerEarL->SetRelativeScale3D(FVector(0.48f, 0.40f, 0.50f));
+	InnerEarR->SetRelativeLocation(FVector(8.f, 0.f, 6.f));
+	InnerEarR->SetRelativeScale3D(FVector(0.48f, 0.40f, 0.50f));
+	Snout->SetRelativeLocation(FVector(22.f, 0.f, -4.f));
+	Snout->SetRelativeScale3D(FVector(0.24f, 0.22f, 0.18f));
+	Nose->SetRelativeLocation(FVector(16.f, 0.f, 6.f));
+	Nose->SetRelativeScale3D(FVector(0.20f, 0.24f, 0.16f));
+	Belly->SetRelativeLocation(FVector(12.f, 0.f, -2.f));
+	Belly->SetRelativeScale3D(FVector(0.60f, 0.50f, 0.50f));
+	EyeL->SetRelativeLocation(FVector(24.f, 7.f, 7.f));
+	EyeL->SetRelativeScale3D(FVector(0.13f, 0.13f, 0.13f));
+	EyeR->SetRelativeLocation(FVector(24.f, -7.f, 7.f));
+	EyeR->SetRelativeScale3D(FVector(0.13f, 0.13f, 0.13f));
+	HighlightL->SetRelativeLocation(FVector(10.f, 6.f, 8.f));
+	HighlightL->SetRelativeScale3D(FVector(0.32f, 0.32f, 0.32f));
+	HighlightR->SetRelativeLocation(FVector(10.f, 6.f, 8.f));
+	HighlightR->SetRelativeScale3D(FVector(0.32f, 0.32f, 0.32f));
+	CheekL->SetRelativeLocation(FVector(16.f, 14.f, -2.f));
+	CheekL->SetRelativeScale3D(FVector(0.13f, 0.11f, 0.09f));
+	CheekR->SetRelativeLocation(FVector(16.f, -14.f, -2.f));
+	CheekR->SetRelativeScale3D(FVector(0.13f, 0.11f, 0.09f));
+	ArmL->SetRelativeLocation(FVector(2.f, 36.f, 4.f));
+	ArmL->SetRelativeScale3D(FVector(0.24f, 0.20f, 0.34f));
+	ArmR->SetRelativeLocation(FVector(2.f, -36.f, 4.f));
+	ArmR->SetRelativeScale3D(FVector(0.24f, 0.20f, 0.34f));
+	PawL->SetRelativeLocation(FVector(8.f, 6.f, -20.f));
+	PawL->SetRelativeScale3D(FVector(0.85f, 0.80f, 0.48f));
+	PawR->SetRelativeLocation(FVector(8.f, -6.f, -20.f));
+	PawR->SetRelativeScale3D(FVector(0.85f, 0.80f, 0.48f));
+	LegL->SetRelativeLocation(FVector(2.f, 14.f, -30.f));
+	LegL->SetRelativeScale3D(FVector(0.24f, 0.22f, 0.26f));
+	LegR->SetRelativeLocation(FVector(2.f, -14.f, -30.f));
+	LegR->SetRelativeScale3D(FVector(0.24f, 0.22f, 0.26f));
+	FootL->SetRelativeLocation(FVector(10.f, 0.f, -16.f));
+	FootL->SetRelativeScale3D(FVector(0.95f, 0.80f, 0.40f));
+	FootR->SetRelativeLocation(FVector(10.f, 0.f, -16.f));
+	FootR->SetRelativeScale3D(FVector(0.95f, 0.80f, 0.40f));
+	Ribbon->SetRelativeLocation(FVector(2.f, 0.f, 24.f));
+	Ribbon->SetRelativeScale3D(FVector(0.22f, 0.22f, 0.16f));
+	BowL->SetRelativeLocation(FVector(-2.f, 14.f, 0.f));
+	BowL->SetRelativeScale3D(FVector(0.55f, 0.95f, 0.45f));
+	BowR->SetRelativeLocation(FVector(-2.f, -14.f, 0.f));
+	BowR->SetRelativeScale3D(FVector(0.55f, 0.95f, 0.45f));
+	BrowL->SetRelativeLocation(FVector(22.f, 8.f, 16.f));
+	BrowL->SetRelativeRotation(FRotator(0.f, 0.f, -10.f));
+	BrowL->SetRelativeScale3D(FVector(0.09f, 0.035f, 0.028f));
+	BrowR->SetRelativeLocation(FVector(22.f, -8.f, 16.f));
+	BrowR->SetRelativeRotation(FRotator(0.f, 0.f, 10.f));
+	BrowR->SetRelativeScale3D(FVector(0.09f, 0.035f, 0.028f));
+	Tail->SetRelativeLocation(FVector(-24.f, 0.f, -6.f));
+	Tail->SetRelativeScale3D(FVector(0.22f, 0.20f, 0.18f));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> TorusFinder(TEXT("/Engine/BasicShapes/Torus.Torus"));
@@ -220,6 +232,9 @@ AHolypawCharacter::AHolypawCharacter()
 	HolypawLook::PrepPart(FootL, SphereMesh);
 	HolypawLook::PrepPart(FootR, SphereMesh);
 	HolypawLook::PrepPart(Ribbon, SphereMesh);
+	HolypawLook::PrepPart(BowL, SphereMesh);
+	HolypawLook::PrepPart(BowR, SphereMesh);
+	HolypawLook::PrepPart(Tail, SphereMesh);
 	HolypawLook::PrepPart(BrowL, SphereMesh);
 	HolypawLook::PrepPart(BrowR, SphereMesh);
 	HolypawLook::PrepPart(InnerEarL, SphereMesh);
@@ -232,7 +247,7 @@ AHolypawCharacter::AHolypawCharacter()
 		TArray<UStaticMeshComponent*> Parts = {
 			BodyMesh, HeadMesh, HaloMesh, EarL, EarR, InnerEarL, InnerEarR, Snout, Nose,
 			PawL, PawR, Belly, EyeL, EyeR, HighlightL, HighlightR, CheekL, CheekR,
-			ArmL, ArmR, LegL, LegR, FootL, FootR, Ribbon, BrowL, BrowR
+			ArmL, ArmR, LegL, LegR, FootL, FootR, Ribbon, BowL, BowR, Tail, BrowL, BrowR
 		};
 		for (UStaticMeshComponent* P : Parts)
 		{
@@ -253,6 +268,7 @@ AHolypawCharacter::AHolypawCharacter()
 	HolypawLook::TagSocket(Belly, TEXT("belly"));
 	HolypawLook::TagSocket(Nose, TEXT("nose"));
 	HolypawLook::TagSocket(Ribbon, TEXT("ribbon"));
+	HolypawLook::TagSocket(Tail, TEXT("tail"));
 	if (HaloLight)
 	{
 		HolypawLook::DressLanternLight(HaloLight, HolypawLook::GoldWarm);
@@ -294,6 +310,9 @@ void AHolypawCharacter::BeginPlay()
 	Colorize(FootL, HolypawLook::Pad);
 	Colorize(FootR, HolypawLook::Pad);
 	Colorize(Ribbon, HolypawLook::Rose);
+	Colorize(BowL, HolypawLook::Rose);
+	Colorize(BowR, HolypawLook::Rose);
+	Colorize(Tail, HolypawLook::Fur);
 	Colorize(BrowL, HolypawLook::Fur);
 	Colorize(BrowR, HolypawLook::Fur);
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
@@ -471,24 +490,29 @@ void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 		const int32 Idx = Followers.Num();
 		const FLinearColor Col = Party->Members.IsValidIndex(Idx) ? Party->Members[Idx].Color : HolypawLook::Mint;
 		V.Body = MakeFollowerPart(SphereMesh, Col);
-		V.EarL = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f);
-		V.EarR = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f);
-		V.Tail = MakeFollowerPart(SphereMesh, Col);
+		V.EarL = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f, V.Body);
+		V.EarR = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f, V.Body);
+		V.Tail = MakeFollowerPart(SphereMesh, Col, V.Body);
 		if (V.Body)
 		{
 			V.Body->SetWorldScale3D(FVector(0.38f, 0.30f, 0.30f));
 		}
 		if (V.EarL)
 		{
-			V.EarL->SetWorldScale3D(FVector(0.10f, 0.07f, 0.18f));
+			V.EarL->SetRelativeLocation(FVector(0.f, 36.f, 48.f));
+			V.EarL->SetRelativeRotation(FRotator(12.f, 0.f, -16.f));
+			V.EarL->SetRelativeScale3D(FVector(0.32f, 0.24f, 0.58f));
 		}
 		if (V.EarR)
 		{
-			V.EarR->SetWorldScale3D(FVector(0.10f, 0.07f, 0.18f));
+			V.EarR->SetRelativeLocation(FVector(0.f, -36.f, 48.f));
+			V.EarR->SetRelativeRotation(FRotator(12.f, 0.f, 16.f));
+			V.EarR->SetRelativeScale3D(FVector(0.32f, 0.24f, 0.58f));
 		}
 		if (V.Tail)
 		{
-			V.Tail->SetWorldScale3D(FVector(0.14f, 0.12f, 0.12f));
+			V.Tail->SetRelativeLocation(FVector(-38.f, 0.f, 4.f));
+			V.Tail->SetRelativeScale3D(FVector(0.38f, 0.32f, 0.32f));
 		}
 		Followers.Add(V);
 	}
@@ -519,22 +543,16 @@ void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 		V.Body->SetWorldLocation(NewLoc);
 		if (V.EarL)
 		{
-			V.EarL->SetWorldLocation(NewLoc + FVector(0.f, 12.f, 18.f));
-			V.EarL->SetWorldRotation(FRotator(12.f + FMath::Sin(AnimT * 6.f) * 10.f, 0.f, -18.f));
+			V.EarL->SetRelativeRotation(FRotator(12.f + FMath::Sin(AnimT * 6.f + I) * 10.f, 0.f, -16.f));
 		}
 		if (V.EarR)
 		{
-			V.EarR->SetWorldLocation(NewLoc + FVector(0.f, -12.f, 18.f));
-			V.EarR->SetWorldRotation(FRotator(12.f + FMath::Sin(AnimT * 6.f + 1.f) * 10.f, 0.f, 18.f));
-		}
-		if (V.Tail)
-		{
-			V.Tail->SetWorldLocation(NewLoc + FVector(-16.f, 0.f, 2.f));
+			V.EarR->SetRelativeRotation(FRotator(12.f + FMath::Sin(AnimT * 6.f + I + 1.f) * 10.f, 0.f, 16.f));
 		}
 	}
 }
 
-UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color)
+UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach)
 {
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
 	if (!Comp)
@@ -546,7 +564,8 @@ UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* Mesh, con
 	Comp->CreationMethod = EComponentCreationMethod::Instance;
 	AddInstanceComponent(Comp);
 	Comp->RegisterComponent();
-	Comp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	USceneComponent* Parent = Attach ? Attach : RootComponent;
+	Comp->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
 	if (ShapeMat)
 	{
 		Comp->SetMaterial(0, ShapeMat);
@@ -2318,6 +2337,16 @@ void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 	{
 		HighlightR->SetRelativeScale3D(HighlightRScale * EyeY);
 		HighlightR->SetHiddenInGame(EyeY < 0.4f);
+	}
+	if (Camera && EyeY >= 0.4f)
+	{
+		const FVector CamLoc = Camera->GetComponentLocation();
+		HolypawLook::AimCatchlight(HighlightL, EyeL, CamLoc);
+		HolypawLook::AimCatchlight(HighlightR, EyeR, CamLoc);
+	}
+	if (Tail)
+	{
+		Tail->SetRelativeRotation(FRotator(FMath::Sin(AnimT * 4.8f) * (8.f + Walk * 10.f), 0.f, 0.f));
 	}
 }
 

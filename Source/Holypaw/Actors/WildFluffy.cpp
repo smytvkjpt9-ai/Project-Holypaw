@@ -35,6 +35,16 @@ AWildFluffy::AWildFluffy()
 	Snout->SetupAttachment(Mesh);
 	Snout->SetRelativeLocation(FVector(22.f, 0.f, 2.f));
 	Snout->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.16f));
+
+	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
+	PawL->SetupAttachment(Mesh);
+	PawL->SetRelativeLocation(FVector(8.f, 16.f, -14.f));
+	PawL->SetRelativeScale3D(FVector(0.16f, 0.14f, 0.10f));
+
+	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
+	PawR->SetupAttachment(Mesh);
+	PawR->SetRelativeLocation(FVector(8.f, -16.f, -14.f));
+	PawR->SetRelativeScale3D(FVector(0.16f, 0.14f, 0.10f));
 }
 
 void AWildFluffy::BeginPlay()
@@ -51,9 +61,11 @@ void AWildFluffy::BeginPlay()
 	HolypawLook::PrepPart(EyeL, SphereMesh);
 	HolypawLook::PrepPart(EyeR, SphereMesh);
 	HolypawLook::PrepPart(Snout, SphereMesh);
+	HolypawLook::PrepPart(PawL, SphereMesh);
+	HolypawLook::PrepPart(PawR, SphereMesh);
 	if (ShapeMat)
 	{
-		for (UStaticMeshComponent* P : { EarL, EarR, Tail, EyeL, EyeR, Snout })
+		for (UStaticMeshComponent* P : { EarL, EarR, Tail, EyeL, EyeR, Snout, PawL, PawR })
 		{
 			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
@@ -67,6 +79,8 @@ void AWildFluffy::BeginPlay()
 	HolypawLook::Paint(EyeL, HolypawLook::Button);
 	HolypawLook::Paint(EyeR, HolypawLook::Button);
 	HolypawLook::Paint(Snout, HolypawLook::Cream);
+	HolypawLook::Paint(PawL, Type.Color * 0.82f);
+	HolypawLook::Paint(PawR, Type.Color * 0.82f);
 	switch (Type.Id)
 	{
 	case EFluffyId::Bunny:

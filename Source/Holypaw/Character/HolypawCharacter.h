@@ -12,6 +12,7 @@ class USkillTreeComponent;
 class UPartyComponent;
 class UHolypawMissionComponent;
 class UPointLightComponent;
+class USceneComponent;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
@@ -143,6 +144,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> BrowR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Tail;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BowL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BowR;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UPointLightComponent> HaloLight;
@@ -435,7 +445,7 @@ protected:
 	UMaterialInterface* ShapeMat = nullptr;
 
 	void SyncFollowers(float DeltaSeconds);
-	UStaticMeshComponent* MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color);
+	UStaticMeshComponent* MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach = nullptr);
 
 	UPROPERTY()
 	TArray<FHolypawFollowerVisual> Followers;
