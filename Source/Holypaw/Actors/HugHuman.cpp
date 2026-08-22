@@ -35,8 +35,21 @@ void AHugHuman::BeginPlay()
 {
 	Super::BeginPlay();
 	Mesh->SetWorldScale3D(FVector(0.45f, 0.35f, 1.05f));
-	BaseScale = GetActorScale3D();
 	HomeLocation = GetActorLocation();
+	HumanRest.Scale = GetActorScale3D();
+	HumanRest.ActorRot = GetActorRotation();
+	if (HeadMesh)
+	{
+		HumanRest.HeadLoc = HeadMesh->GetRelativeLocation();
+	}
+	if (ArmL)
+	{
+		HumanRest.ArmLLoc = ArmL->GetRelativeLocation();
+	}
+	if (ArmR)
+	{
+		HumanRest.ArmRLoc = ArmR->GetRelativeLocation();
+	}
 	if (ShapeMat)
 	{
 		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
@@ -57,26 +70,30 @@ void AHugHuman::BeginPlay()
 void AHugHuman::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	BounceT += DeltaSeconds;
-	if (HugPulse > 0.f)
+	HumanAnim.bBeliever = bBeliever;
+	HolypawAnim::TickHuman(HumanAnim, DeltaSeconds);
+	const HolypawAnim::FHumanPose Pose = HolypawAnim::EvaluateHuman(HumanAnim, HumanRest);
+	SetActorScale3D(Pose.Scale);
+	SetActorRotation(Pose.ActorRot);
+	if (HeadMesh)
 	{
-		HugPulse = FMath::Max(0.f, HugPulse - DeltaSeconds);
+		HeadMesh->SetRelativeLocation(Pose.HeadLoc);
 	}
-	const float Bounce = bBeliever ? 0.06f * FMath::Sin(BounceT * 6.f) : 0.02f * FMath::Sin(BounceT * 2.4f);
-	const float Squeeze = HugPulse > 0.f ? 0.12f * HugPulse : 0.f;
-	SetActorScale3D(BaseScale * FVector(1.f + Squeeze, 1.f + Squeeze, 1.f + Bounce - Squeeze * 0.4f));
-
-	if (ArmL && ArmR)
+	if (ArmL)
 	{
-		const float Wrap = (HugPulse > 0.f) ? 28.f : (bBeliever ? 8.f : 0.f);
-		ArmL->SetRelativeRotation(FRotator(0.f, 0.f, Wrap));
-		ArmR->SetRelativeRotation(FRotator(0.f, 0.f, -Wrap));
+		ArmL->SetRelativeRotation(Pose.ArmL);
+		ArmL->SetRelativeLocation(Pose.ArmLLoc);
+	}
+	if (ArmR)
+	{
+		ArmR->SetRelativeRotation(Pose.ArmR);
+		ArmR->SetRelativeLocation(Pose.ArmRLoc);
 	}
 
 	if (bBeliever && !bKnelt)
 	{
 		const float Orbit = 160.f;
-		const float Ang = BounceT * 0.55f;
+		const float Ang = HumanAnim.Clock * 0.55f;
 		const FVector Parade = HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
 		SetActorLocation(FMath::VInterpTo(GetActorLocation(), Parade, DeltaSeconds, 1.6f));
 	}
@@ -108,7 +125,7 @@ bool AHugHuman::Interact(AHolypawCharacter* InstigatorPawn)
 
 void AHugHuman::ReceiveHug()
 {
-	HugPulse = 1.f;
+	HolypawAnim::PlayHumanHug(HumanAnim);
 }
 
 FString AHugHuman::GetSkepticLine(int32 Pct) const
@@ -137,6 +154,7 @@ void AHugHuman::BecomeBeliever()
 {
 	bBeliever = true;
 	ConvertProgress = 100.f;
+	HumanAnim.bBeliever = true;
 	if (ShapeMat)
 	{
 		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
@@ -150,6 +168,12 @@ void AHugHuman::BecomeBeliever()
 	}
 }
 
+void AHugHuman::PlayConvertBow()
+{
+	BecomeBeliever();
+	HolypawAnim::PlayConvertBow(HumanAnim);
+}
+
 void AHugHuman::KneelInWorship()
 {
 	if (bKnelt)
@@ -158,22 +182,17 @@ void AHugHuman::KneelInWorship()
 	}
 	bKnelt = true;
 	BecomeBeliever();
-	AddActorWorldRotation(FRotator(35.f, 0.f, 0.f));
-	BaseScale = FVector(1.f, 1.f, 0.72f);
-	SetActorScale3D(BaseScale);
+	HolypawAnim::PlayWorshipKneel(HumanAnim);
 }
 
 void AHugHuman::ResetFaith()
 {
 	bBeliever = false;
 	ConvertProgress = 0.f;
-	if (bKnelt)
-	{
-		SetActorRotation(FRotator::ZeroRotator);
-	}
 	bKnelt = false;
-	BaseScale = FVector::OneVector;
-	SetActorScale3D(BaseScale);
+	HolypawAnim::ResetHumanMotion(HumanAnim);
+	SetActorRotation(HumanRest.ActorRot);
+	SetActorScale3D(HumanRest.Scale);
 	SetActorLocation(HomeLocation);
 	SetSolidColor(ShirtColor);
 	if (ShapeMat && HeadMesh)
@@ -196,5 +215,6 @@ void AHugHuman::RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt)
 	if (bNowKnelt)
 	{
 		KneelInWorship();
+		HumanAnim.KneelT = HolypawAnim::KneelSeconds;
 	}
 }

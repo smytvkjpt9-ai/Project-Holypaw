@@ -256,6 +256,34 @@ if "UHolypawTitleWidget" not in HUD:
 
 if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
     errors.append("missing procedural audio")
+if not (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.cpp").exists():
+    errors.append("missing procedural anim")
+ANIM = (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.cpp").read_text() if (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.cpp").exists() else ""
+ANIMH = (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.h").read_text() if (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.h").exists() else ""
+for needle in (
+    "WrapKeys",
+    "BlinkKeys",
+    "KneelKeys",
+    "VictorySpinKeys",
+    "PlayHug",
+    "PlayVictory",
+    "PlayConvertBow",
+    "EvaluateParty",
+    "EarStiffness",
+    "ClipName",
+):
+    if needle not in ANIM and needle not in ANIMH:
+        errors.append(f"proc anim missing {needle}")
+if "HolypawAnim::PlayHug" not in CHAR:
+    errors.append("character missing hug wrap clip")
+if "CelebrateConvert" not in CHAR:
+    errors.append("character missing convert victory")
+if "EvaluateParty" not in CHAR:
+    errors.append("character missing party trail motion")
+if "PlayConvertBow" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing convert bow")
+if "EvaluateFluffy" not in (ROOT / "Source/Holypaw/Actors/WildFluffy.cpp").read_text():
+    errors.append("fluffies missing ear flop")
 if not (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").exists():
     errors.append("missing dialogue catalog")
 if not (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").exists():

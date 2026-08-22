@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
 #include "HolypawTypes.h"
+#include "Anim/HolypawProcAnim.h"
 #include "WildFluffy.generated.h"
 
 UCLASS()
@@ -39,4 +40,7 @@ public:
 private:
 	float WanderT = 0.f;
 	FVector Vel = FVector::ZeroVector;
+	float AnimClock = 0.f;
+	FVector MeshBase = FVector::ZeroVector;
+	HolypawAnim::FFluffyRest FluffyRest;
 };

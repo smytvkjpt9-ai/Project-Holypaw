@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "HolypawTypes.h"
+#include "Anim/HolypawProcAnim.h"
 #include "HolypawCharacter.generated.h"
 
 class USpringArmComponent;
@@ -323,22 +324,9 @@ protected:
 	int32 LastDamageDealt = 0;
 	int32 LastDamageTaken = 0;
 	float DamagePopupTime = 0.f;
-	float AnimT = 0.f;
-	float BlinkT = 2.4f;
-	float HurtPulse = 0.f;
-	float HugAnim = 0.f;
-	FVector BodyBase = FVector::ZeroVector;
-	FVector HeadBase = FVector::ZeroVector;
-	FVector EarLBase = FVector::ZeroVector;
-	FVector EarRBase = FVector::ZeroVector;
-	FVector PawLBase = FVector::ZeroVector;
-	FVector PawRBase = FVector::ZeroVector;
-	FVector EyeLScale = FVector::OneVector;
-	FVector EyeRScale = FVector::OneVector;
-	FRotator EarLRot = FRotator::ZeroRotator;
-	FRotator EarRRot = FRotator::ZeroRotator;
-	FRotator PawLRot = FRotator::ZeroRotator;
-	FRotator PawRRot = FRotator::ZeroRotator;
+	HolypawAnim::FTeddyState TeddyAnim;
+	HolypawAnim::FTeddyRest TeddyRest;
+	HolypawAnim::FPartyState PartyAnim;
 
 	UPROPERTY()
 	TArray<FHolypawItemStack> Inventory;
@@ -351,6 +339,8 @@ protected:
 
 	void TickProcAnim(float DeltaSeconds);
 	void PlayCue(FName Cue);
+	HolypawAnim::FTeddyParts TeddyParts();
+	void CelebrateConvert();
 
 	UMaterialInterface* ShapeMat = nullptr;
 
