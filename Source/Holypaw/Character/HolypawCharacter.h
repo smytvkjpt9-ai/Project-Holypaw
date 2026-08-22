@@ -196,6 +196,8 @@ public:
 	AHostilePet* GetBattleEnemy() const { return BattleEnemy.Get(); }
 	FString GetBattleLog() const { return BattleLog; }
 	bool IsBattleBusy() const { return bBattleBusy; }
+	int32 GetBattlePage() const { return BattlePage; }
+	FName BattleCommandId(int32 Slot) const;
 
 	void ToggleSkills();
 	void ToggleParty();
@@ -276,6 +278,10 @@ protected:
 	int32 FrostTurns = 0;
 	int32 HymnShield = 0;
 	bool bEnemyStaggered = false;
+	int32 BattlePage = 0;
+	int32 EnemyRipTurns = 0;
+	int32 MillTurns = 0;
+	bool bSeamBrace = false;
 	float ExploreArm = 540.f;
 	float BattleArm = 300.f;
 	FTimerHandle BattleTimer;

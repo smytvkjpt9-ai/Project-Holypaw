@@ -35,11 +35,11 @@ FText AHolypawShrine::GetPrompt() const
 	switch (Kind)
 	{
 	case EHolypawShrineKind::Inn:
-		return FText::Format(NSLOCTEXT("Holypaw", "Inn", "E  Rest at {0} (heal + save)"), PlaceName);
+		return FText::Format(NSLOCTEXT("Holypaw", "Inn", "E  Walk in · rest at {0} (heal + save)"), PlaceName);
 	case EHolypawShrineKind::Chapel:
-		return FText::Format(NSLOCTEXT("Holypaw", "Chapel", "E  Hymn at {0} (Miracle Charge)"), PlaceName);
+		return FText::Format(NSLOCTEXT("Holypaw", "Chapel", "E  Walk in · hymn at {0} (Miracle Charge)"), PlaceName);
 	case EHolypawShrineKind::Workshop:
-		return NSLOCTEXT("Holypaw", "Workshop", "E  Cloth loft — cheap hymn ribbon (8 AP)");
+		return NSLOCTEXT("Holypaw", "Workshop", "E  Walk in · cloth loft (hymn ribbon, 8 AP)");
 	case EHolypawShrineKind::Wish:
 		return NSLOCTEXT("Holypaw", "Wish", "E  Plaza fountain — toss a thought (+FP)");
 	default:

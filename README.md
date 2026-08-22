@@ -28,7 +28,7 @@ This cloud repo is source + a runtime world builder, not a double-click `.exe`.
    ```
 
    That places `AHolypawWorldBuilder` in the current level. Play still generates cottage, path, city, and biomes at BeginPlay even if you skip this.
-5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or the **Spire Inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **talk**. Stalls sell snacks (**I** for pockets). **Chapel** fills Miracle Charge. **Fountain** wishes grant FP. Miracles at **dusk** grant extra Faith; the sun, fog, and mill smog follow the clock. F6 mutes the temp stingers.
+5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, walk inside for bed and kitchen, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or a walk-in **inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **talk**. Stalls sell snacks (**I** for pockets). Walk into a **chapel** to fill Miracle Charge. **Fountain** wishes grant FP. Miracles at **dusk** grant extra Faith; the sun, fog, mill smog, and a TEMP city-theme pad follow the clock. F6 mutes the temp stingers. In battle, **Tab** flips the overflow command page.
 6. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). Epic’s stock plugin is a server framework; add tools or Python locally if you want the Editor to place actors from Cursor.
 
 Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**, **ModelContextProtocol** (optional).
@@ -69,7 +69,7 @@ Wild biomes fill the land between cities: Stuffed Park, Nursery Hills, Cozy Home
 
 ## Combat (UMG)
 
-Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands: **1** Soft Slap **2** Cuddle Beam **3** Party Assault **4** Flee **5** Guard (stitches 4 HP) **6** Hymn (shield, chance to **lullaby** skip their turn). Slap builds a combo; crits **stagger** and hit-stop. Elites and bosses enter **phase two** under half stuffing. Beam slips armor plates. Frost / poison / hymn shield show on the overlay.
+Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands **1–6** on the current page. **Tab in battle** cycles the basic page (Slap / Beam / Party / Flee / Guard / Hymn) and the overflow page (Unstuff / Button Beam / Deep Stitch / Poly Rip / Lullaby / Seam Guard). Slap builds a combo; crits **stagger** and hit-stop. Elites and bosses enter **phase two** under half stuffing; campaign bosses run an authored extra in `HolypawBossScript`. Beam and Button Beam slip armor plates. Frost / poison / hymn shield / rip DoT / mill polyester show on the overlay.
 
 ## Three skill trees (K, Tab to cycle)
 
@@ -110,10 +110,10 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 | M | Miracle |
 | N | Map (Tab cycles lanterns, E hops) |
 | V | Villain Codex |
-| 1–6 in battle | Slap / Beam / Party / Flee / Guard / Hymn |
+| 1–6 in battle | Current page (Tab cycles basic / overflow) |
 
 Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
 Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Some believers have a **third quiet line** if your Faith is high enough. Journal (**J**) lists errands across Home Sewn, Globe Trek, Old World, and the Sand Belt.
 
-Dressed cities: **all 26**. Each has districts, an inn, a font or chapel, a pickup, and an errand. Talk runs through `HolypawDialogueVM`. Combat incoming specials, lullaby, hit-stop, and ability costs run through `HolypawBattleDirector`. Still not interiors, schedules, Nanite, or a Shipping `.exe`.
+Dressed cities: **all 26**. Each has districts, an inn, a font or chapel, a pickup, and an errand. Inns, chapels, and workshops are **walk-in rooms** (floor, walls, doorway, furniture) with the old E-pad inside; the forest cottage opens the same way. Far cities **stream in** when you walk or lantern-hop within ~1.5× city radius (Ribbon dresses at Play so the opening road still lands in a finished town). Talk runs through `HolypawDialogueVM`. Combat incoming specials, lullaby, hit-stop, ability pages, and boss kits run through `HolypawBattleDirector` + `HolypawBossScript`. City theme pads are procedural sines (TEMP — swap for WAV on your PC). Still not schedules, Nanite, or a Shipping `.exe`.

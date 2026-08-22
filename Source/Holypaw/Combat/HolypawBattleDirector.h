@@ -37,6 +37,7 @@ namespace HolypawBattleDirector
 		bool bFluffShield = false;
 		int32 PlayerFP = 0;
 		float MiracleCharge = 0.f;
+		EHolypawVillain VillainId = EHolypawVillain::ScrapDog;
 	};
 
 	struct FIncomingResult
@@ -51,6 +52,7 @@ namespace HolypawBattleDirector
 		int32 FpDrain = 0;
 		float MiracleStolen = 0.f;
 		bool bClearStagger = false;
+		int32 MillTurns = 0;
 	};
 
 	bool RollLullaby();

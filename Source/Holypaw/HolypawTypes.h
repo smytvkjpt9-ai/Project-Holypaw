@@ -453,6 +453,9 @@ struct HOLYPAW_API FHolypawAbilityDef
 
 	UPROPERTY()
 	int32 Stitch = 0;
+
+	UPROPERTY()
+	int32 Page = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -611,4 +614,5 @@ namespace HolypawCatalog
 	const FHolypawQuestDef* FindQuestByGiver(const FString& Speaker);
 	const TArray<FHolypawAbilityDef>& GetAbilities();
 	const FHolypawAbilityDef* FindAbility(FName Id);
+	const FHolypawAbilityDef* FindAbilityBySlot(int32 Page, int32 Slot);
 }

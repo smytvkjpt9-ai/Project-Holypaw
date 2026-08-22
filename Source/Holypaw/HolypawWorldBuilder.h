@@ -8,6 +8,7 @@
 
 class UProceduralMeshComponent;
 class UInstancedStaticMeshComponent;
+class UAudioComponent;
 class ADirectionalLight;
 class ASkyLight;
 class AExponentialHeightFog;
@@ -49,6 +50,10 @@ public:
 
 	FString GetCompassLine(const FVector& From) const;
 	TArray<FString> GetMapLines(const FVector& From) const;
+	void TickWorldStream();
+	void RequestDress(EHolypawZone Zone);
+	bool IsPlayerIndoors(const FVector& WorldPos) const;
+	void RefreshCityTheme();
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProceduralMeshComponent> TerrainMesh;
@@ -141,6 +146,13 @@ protected:
 	void PlaceCamp(const FVector2D& XY, const FText& Name);
 	void PlaceLantern(const FVector2D& XY, EHolypawZone Zone);
 	void PlaceShrine(const FVector2D& XY, EHolypawShrineKind Kind, const FText& Name);
+	void DressInterior(const FVector& Origin, EHolypawShrineKind Kind);
+	void DressRoomShell(const FVector& Origin, const FLinearColor& Wall, const FLinearColor& Floor, const FLinearColor& Trim);
+	void DressInnRoom(const FVector& Origin);
+	void DressChapelRoom(const FVector& Origin);
+	void DressWorkshopRoom(const FVector& Origin);
+	void DressCottageRooms(const FVector& Origin, float GroundZ);
+	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY);
 	void PlaceSign(const FVector2D& XY, const FText& Message);
@@ -203,4 +215,11 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AExponentialHeightFog> HeightFog;
+
+	TArray<EHolypawZone> DressedCities;
+	EHolypawZone ThemeZone = EHolypawZone::ForestCottage;
+	bool bThemeInterior = false;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> ThemeComp;
 };

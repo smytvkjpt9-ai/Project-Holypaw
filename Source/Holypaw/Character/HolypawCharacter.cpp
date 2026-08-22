@@ -430,6 +430,10 @@ void AHolypawCharacter::UpdateZone()
 		if (HolypawCatalog::IsCityZone(Z))
 		{
 			UnlockTravel(Z);
+			if (WorldB)
+			{
+				WorldB->RequestDress(Z);
+			}
 		}
 	}
 }
@@ -639,6 +643,10 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	FrostTurns = 0;
 	HymnShield = 0;
 	bEnemyStaggered = false;
+	BattlePage = 0;
+	EnemyRipTurns = 0;
+	MillTurns = 0;
+	bSeamBrace = false;
 	if (SpringArm)
 	{
 		SpringArm->TargetArmLength = BattleArm;
@@ -690,25 +698,53 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		return;
 	}
 
-	if (Kind == TEXT("guard"))
+	if (Kind == TEXT("guard") || Kind == TEXT("stitch") || Kind == TEXT("seamGuard"))
 	{
 		bGuarding = true;
-		const int32 Stitch = FMath::Max(4, HolypawBattleDirector::AbilityStitch(TEXT("guard")));
+		if (Kind == TEXT("seamGuard"))
+		{
+			bSeamBrace = true;
+		}
+		const int32 Stitch = FMath::Max(4, HolypawBattleDirector::AbilityStitch(Kind));
 		HP = FMath::Min(HPMax, HP + Stitch);
-		BattleLog = Skills->HasSkill(TEXT("seamGuard"))
-			? FString::Printf(TEXT("Seam Guard + stitch %d stuffing."), Stitch)
-			: FString::Printf(TEXT("You guard your seams and stitch %d."), Stitch);
+		if (Kind == TEXT("seamGuard"))
+		{
+			BattleLog = FString::Printf(TEXT("Seam Guard holds. Stitch %d stuffing."), Stitch);
+		}
+		else if (Kind == TEXT("stitch"))
+		{
+			BattleLog = FString::Printf(TEXT("Deep Stitch tucks %d stuffing."), Stitch);
+		}
+		else
+		{
+			BattleLog = Skills->HasSkill(TEXT("seamGuard"))
+				? FString::Printf(TEXT("Seam Guard + stitch %d stuffing."), Stitch)
+				: FString::Printf(TEXT("You guard your seams and stitch %d."), Stitch);
+		}
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.55f, false);
 		return;
 	}
 
-	if (Kind == TEXT("hymn"))
+	if (Kind == TEXT("hymn") || Kind == TEXT("lullaby"))
 	{
-		const int32 Cost = FMath::Max(8, HolypawBattleDirector::AbilityFpCost(TEXT("hymn")));
+		const int32 Cost = FMath::Max(Kind == TEXT("lullaby") ? 10 : 8, HolypawBattleDirector::AbilityFpCost(Kind));
 		if (!Affection->SpendFP(Cost))
 		{
-			BattleLog = FString::Printf(TEXT("Need %d FP for a Hymn!"), Cost);
+			BattleLog = FString::Printf(TEXT("Need %d FP for that hymn!"), Cost);
 			bBattleBusy = false;
+			return;
+		}
+		if (Kind == TEXT("lullaby"))
+		{
+			BattleLog = TEXT("You sing a dedicated Lullaby.");
+			if (FMath::FRand() < 0.62f || HolypawBattleDirector::RollLullaby())
+			{
+				BattleLog += TEXT(" They snooze a turn.");
+				GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::ResumePlayerTurn, 0.75f, false);
+				return;
+			}
+			BattleLog += TEXT(" They fidget through it.");
+			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 			return;
 		}
 		int32 Heal = Skills->HasSkill(TEXT("hymnWard")) ? 18 : 10;
@@ -782,6 +818,64 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 				: FString::Printf(TEXT("Lonely swipe for %d. Find fluffies!"), Dmg);
 		}
 	}
+	else if (Kind == TEXT("unstuff"))
+	{
+		const int32 Cost = HolypawBattleDirector::AbilityFpCost(TEXT("unstuff"));
+		if (Cost > 0 && !Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP to unstuff."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		Dmg = Attack + 4 + FMath::RandRange(0, 4);
+		if (E->GetDef().Faction == EHolypawFaction::PolyMill)
+		{
+			Dmg += 8;
+			BattleLog = FString::Printf(TEXT("Unstuff rips mill polyester for %d!"), Dmg);
+		}
+		else
+		{
+			BattleLog = FString::Printf(TEXT("Unstuff tugs a seam for %d."), Dmg);
+		}
+		EnemyRipTurns = FMath::Max(EnemyRipTurns, 3);
+		BattleLog += TEXT(" Rip DoT.");
+	}
+	else if (Kind == TEXT("buttonBeam"))
+	{
+		const int32 Cost = FMath::Max(14, HolypawBattleDirector::AbilityFpCost(TEXT("buttonBeam")));
+		if (!Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP!"), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		Dmg = FMath::FloorToInt(Attack * 2.4f) + FMath::RandRange(0, 5);
+		if (Skills->HasSkill(TEXT("buttonEyes")))
+		{
+			Dmg += 5;
+		}
+		BattleLog = FString::Printf(TEXT("Button Beam deals %d!"), Dmg);
+	}
+	else if (Kind == TEXT("polyRip"))
+	{
+		const int32 Cost = HolypawBattleDirector::AbilityFpCost(TEXT("polyRip"));
+		if (Cost > 0 && !Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP for Poly Rip."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		Dmg = Attack + 2 + FMath::RandRange(0, 3);
+		if (E->GetDef().Faction == EHolypawFaction::PolyMill)
+		{
+			Dmg += 10;
+			BattleLog = FString::Printf(TEXT("Poly Rip unravels mill stuffing for %d!"), Dmg);
+		}
+		else
+		{
+			BattleLog = FString::Printf(TEXT("Poly Rip shrugs off handmade seams (%d)."), Dmg);
+		}
+	}
 
 	if (E->GetDef().Faction == EHolypawFaction::PolyMill && Skills->HasSkill(TEXT("polyRip")))
 	{
@@ -797,7 +891,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	}
 
 	const HolypawBattleDirector::FOutgoing Outgoing = HolypawBattleDirector::ApplyOutgoing(
-		Dmg, FrostTurns, E->Special, Kind == TEXT("beam"), bCrit, BattleLog);
+		Dmg, FrostTurns, E->Special, Kind == TEXT("beam") || Kind == TEXT("buttonBeam"), bCrit, BattleLog);
 	Dmg = Outgoing.Damage;
 	if (Outgoing.bFrostConsumed)
 	{
@@ -848,7 +942,31 @@ void AHolypawCharacter::EnemyBattleSwing()
 	}
 
 	++BattleTurn;
+	if (EnemyRipTurns > 0)
+	{
+		En->HP -= 3;
+		--EnemyRipTurns;
+		En->PulseHit();
+		if (En->HP <= 0)
+		{
+			const FVillainDef Def = En->GetDef();
+			En->Defeat(true);
+			BattleLog = TEXT("Rip DoT finished the unstuffing.");
+			if (!Def.DefeatLine.IsEmpty())
+			{
+				BattleLog = Def.DefeatLine;
+			}
+			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
+			PlayCue(TEXT("BattleWin"));
+			return;
+		}
+	}
 	int32 Dmg = En->Attack + FMath::RandRange(0, 3);
+	if (MillTurns > 0)
+	{
+		Dmg += 2;
+		--MillTurns;
+	}
 	const FString Verb = En->GetDef().AttackLine.IsEmpty() ? TEXT("shreds stuffing") : En->GetDef().AttackLine;
 
 	HolypawBattleDirector::FIncomingRequest Req;
@@ -862,12 +980,13 @@ void AHolypawCharacter::EnemyBattleSwing()
 	Req.BattleTurn = BattleTurn;
 	Req.bStaggered = bEnemyStaggered;
 	Req.bGuarding = bGuarding;
-	Req.bSeamGuard = Skills->HasSkill(TEXT("seamGuard"));
+	Req.bSeamGuard = Skills->HasSkill(TEXT("seamGuard")) || bSeamBrace;
 	Req.HymnShield = HymnShield;
 	Req.bFaithArmor = Skills->HasSkill(TEXT("faithArmor"));
 	Req.bFluffShield = Skills->HasSkill(TEXT("fluffShield"));
 	Req.PlayerFP = Affection ? Affection->FP : 0;
 	Req.MiracleCharge = Affection ? Affection->MiracleCharge : 0.f;
+	Req.VillainId = En->VillainId;
 	const HolypawBattleDirector::FIncomingResult In = HolypawBattleDirector::ApplyIncoming(Req);
 	Dmg = In.Damage;
 	if (In.bClearStagger)
@@ -897,6 +1016,11 @@ void AHolypawCharacter::EnemyBattleSwing()
 	if (In.bClearGuard)
 	{
 		bGuarding = false;
+		bSeamBrace = false;
+	}
+	if (In.MillTurns > 0)
+	{
+		MillTurns = FMath::Max(MillTurns, In.MillTurns);
 	}
 	HymnShield = In.HymnShieldLeft;
 	const FString Extra = In.Extra;
@@ -1294,6 +1418,14 @@ void AHolypawCharacter::CycleSkillTree()
 	{
 		return;
 	}
+	if (Mode == EHolypawPawnMode::Battle)
+	{
+		BattlePage = 1 - BattlePage;
+		Toast(BattlePage == 0
+			? TEXT("Commands: Slap Beam Party Flee Guard Hymn  (Tab: overflow)")
+			: TEXT("Overflow: Unstuff ButtonBeam Stitch PolyRip Lullaby SeamGuard"));
+		return;
+	}
 	if (bMapOpen)
 	{
 		CycleTravel(1);
@@ -1493,7 +1625,7 @@ void AHolypawCharacter::BattleSlap()
 		TryBuyTreeSlot(0);
 		return;
 	}
-	PlayerBattleAttack(TEXT("slap"));
+	PlayerBattleAttack(BattleCommandId(1));
 }
 
 void AHolypawCharacter::BattleBeam()
@@ -1508,7 +1640,7 @@ void AHolypawCharacter::BattleBeam()
 		TryBuyTreeSlot(1);
 		return;
 	}
-	PlayerBattleAttack(TEXT("beam"));
+	PlayerBattleAttack(BattleCommandId(2));
 }
 
 void AHolypawCharacter::BattlePartyAtk()
@@ -1523,7 +1655,7 @@ void AHolypawCharacter::BattlePartyAtk()
 		TryBuyTreeSlot(2);
 		return;
 	}
-	PlayerBattleAttack(TEXT("party"));
+	PlayerBattleAttack(BattleCommandId(3));
 }
 
 void AHolypawCharacter::BattleFlee()
@@ -1533,7 +1665,7 @@ void AHolypawCharacter::BattleFlee()
 		TryBuyTreeSlot(3);
 		return;
 	}
-	PlayerBattleAttack(TEXT("flee"));
+	PlayerBattleAttack(BattleCommandId(4));
 }
 
 void AHolypawCharacter::Skill5()
@@ -1543,7 +1675,7 @@ void AHolypawCharacter::Skill5()
 		TryBuyTreeSlot(4);
 		return;
 	}
-	PlayerBattleAttack(TEXT("guard"));
+	PlayerBattleAttack(BattleCommandId(5));
 }
 
 void AHolypawCharacter::Skill6()
@@ -1553,7 +1685,7 @@ void AHolypawCharacter::Skill6()
 		TryBuyTreeSlot(5);
 		return;
 	}
-	PlayerBattleAttack(TEXT("hymn"));
+	PlayerBattleAttack(BattleCommandId(6));
 }
 
 void AHolypawCharacter::Toast(const FString& Msg)
@@ -1735,9 +1867,11 @@ void AHolypawCharacter::FastTravelToSelected()
 {
 	const EHolypawZone Dest = GetSelectedTravel();
 	FVector Loc = FVector::ZeroVector;
+	AHolypawWorldBuilder* WorldB = nullptr;
 	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
-		Loc = It->GetTravelLocation(Dest);
+		WorldB = *It;
+		Loc = WorldB->GetTravelLocation(Dest);
 		break;
 	}
 	if (Loc.IsNearlyZero())
@@ -1749,6 +1883,10 @@ void AHolypawCharacter::FastTravelToSelected()
 	bWantsFastTravel = false;
 	SetActorLocation(Loc);
 	CurrentZone = Dest;
+	if (WorldB)
+	{
+		WorldB->RequestDress(Dest);
+	}
 	if (Story)
 	{
 		Story->NotifyZone(Dest);
@@ -1998,9 +2136,38 @@ FString AHolypawCharacter::GetClockLine() const
 	return TEXT("");
 }
 
+FName AHolypawCharacter::BattleCommandId(const int32 Slot) const
+{
+	if (const FHolypawAbilityDef* A = HolypawCatalog::FindAbilityBySlot(BattlePage, Slot))
+	{
+		return A->Id;
+	}
+	if (const FHolypawAbilityDef* Fallback = HolypawCatalog::FindAbilityBySlot(0, Slot))
+	{
+		return Fallback->Id;
+	}
+	return NAME_None;
+}
+
 FString AHolypawCharacter::GetBattleStatusLine() const
 {
-	return HolypawBattle::FormatStatus(SlapCombo, PoisonTurns, FrostTurns, HymnShield, bEnemyStaggered);
+	FString Line = HolypawBattle::FormatStatus(SlapCombo, PoisonTurns, FrostTurns, HymnShield, bEnemyStaggered);
+	if (EnemyRipTurns > 0)
+	{
+		Line += Line.IsEmpty() ? TEXT("") : TEXT("  ·  ");
+		Line += FString::Printf(TEXT("Rip %d"), EnemyRipTurns);
+	}
+	if (MillTurns > 0)
+	{
+		Line += Line.IsEmpty() ? TEXT("") : TEXT("  ·  ");
+		Line += FString::Printf(TEXT("Polyester %d"), MillTurns);
+	}
+	if (BattlePage == 1)
+	{
+		Line += Line.IsEmpty() ? TEXT("") : TEXT("  ·  ");
+		Line += TEXT("Overflow");
+	}
+	return Line;
 }
 
 int32 AHolypawCharacter::ShopPrice(int32 BaseCost) const

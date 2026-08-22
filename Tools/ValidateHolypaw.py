@@ -12,6 +12,9 @@ VILLAINS = (ROOT / "Source/Holypaw/HolypawVillainCatalog.cpp").read_text()
 WORLD = (ROOT / "Source/Holypaw/HolypawWorldBuilder.cpp").read_text()
 CITIES = (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").exists() else ""
 RIM = (ROOT / "Source/Holypaw/Cities/HolypawRimCities.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawRimCities.cpp").exists() else ""
+INTERIOR = (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").exists() else ""
+STREAM = (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").read_text() if (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").exists() else ""
+BOSS = (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").exists() else ""
 SKILLS = (ROOT / "Source/Holypaw/HolypawSkillCatalog.cpp").read_text()
 MISSIONS = (ROOT / "Source/Holypaw/HolypawMissionCatalog.cpp").read_text()
 CHAR = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
@@ -87,8 +90,9 @@ required_hooks = [
     "NotifyMiracle",
     "NotifyZone",
     "CompleteBearFaith",
-    "PlayerBattleAttack(TEXT(\"guard\"))",
-    "PlayerBattleAttack(TEXT(\"hymn\"))",
+    "BattleCommandId",
+    "Kind == TEXT(\"guard\")",
+    "Kind == TEXT(\"hymn\")",
 ]
 for hook in required_hooks:
     if hook not in CHAR:
@@ -356,8 +360,8 @@ for needle, blob, label in (
     ("BuildSandHymnDistricts", CITIES, "living cities"),
     ("BuildCapePlushDistricts", CITIES, "living cities"),
     ("BuildSavannahBellDistricts", CITIES, "living cities"),
-    ("BuildCarnivalBahiaDistricts", WORLD, "world"),
-    ("BuildFeltIceCampDistricts", WORLD, "world"),
+    ("TickWorldStream", WORLD, "world"),
+    ("RequestDress", WORLD, "world"),
     ("pinePatch", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
     ("clockCog", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
     ("columnHat", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
@@ -383,6 +387,24 @@ for needle, blob, label in (
     ("Drum Kid", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Penguin Usher", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
     ("Skein Mender", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("DressInterior", INTERIOR, "interior kit"),
+    ("RoomShell", INTERIOR, "interior kit"),
+    ("InnBed", INTERIOR, "interior kit"),
+    ("ChapelPew", INTERIOR, "interior kit"),
+    ("WorkshopLoom", INTERIOR, "interior kit"),
+    ("DressCottageRooms", INTERIOR, "interior kit"),
+    ("TickWorldStream", STREAM, "world stream"),
+    ("DressCity", STREAM, "world stream"),
+    ("RequestDress", STREAM, "world stream"),
+    ("BuildCarnivalBahiaDistricts", STREAM, "world stream"),
+    ("BuildFeltIceCampDistricts", STREAM, "world stream"),
+    ("PlayTheme", (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").read_text(), "audio"),
+    ("FindAbilityBySlot", (ROOT / "Source/Holypaw/Combat/HolypawAbilityCatalog.cpp").read_text(), "ability catalog"),
+    ("SilkMagistrate", BOSS, "boss script"),
+    ("MiracleEater", BOSS, "boss script"),
+    ("BattlePage", CHAR, "character"),
+    ("unstuff", CHAR, "character"),
+    ("buttonBeam", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

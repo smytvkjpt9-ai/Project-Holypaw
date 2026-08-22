@@ -43,15 +43,15 @@ AAA is not a line-count trophy. It is:
 
 ## 2. Why the current game is not AAA
 
-The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening, 3-slot save, lantern travel, shops, talk errands, day/night, shrines, a dialogue VM (including Faith-gated third lines), a battle director (incoming + outgoing), and an ability catalog. **All 26 cities** have named districts, inns, pickups, and errands.
+The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening, 3-slot save, lantern travel, shops, talk errands, day/night, shrines, a dialogue VM (including Faith-gated third lines), a battle director (incoming + outgoing), an ability catalog with a Tab overflow page, walk-in inn/chapel/workshop/cottage rooms, a near-city streaming ring, and procedural city-theme pads.
 
 It is still not a store-page title:
 
-- Districts are kits, not interiors with schedules, 24 NPCs each, or local events.
+- Interiors are one room kit per shrine type, not 8 enterable building types with schedules, 24 NPCs each, or local events.
 - Dialogue VM is listen / hint / turn-in / accept plus a Faith-gated LineC. Not 650 speakers or cinematics.
-- Combat director covers specials, lullaby, hit-stop, flee, and a 12-entry ability table. Not 80 abilities or 12 authored boss scripts.
+- Combat director covers specials, lullaby, hit-stop, flee, two command pages, and eight authored boss extras. Not 80 abilities or 12 full boss files.
 - `AHolypawCharacter` still owns HUD, hug, miracle, map, and battle flow.
-- World generates in one shot (`Cities/HolypawLivingCities.cpp`, `Cities/HolypawRimCities.cpp`). No streaming ring.
+- Streaming dresses districts when you approach; it does not unload far cities yet.
 - This VM cannot sculpt Nanite, record WAV, or ship a Shipping `.exe`. Those stay on the user's PC.
 
 The 200k-line rewrite **splits that god class**, **fills the remaining globe with play**, and **ships systems**.

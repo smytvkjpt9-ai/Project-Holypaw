@@ -164,7 +164,7 @@ void UHolypawGameInstance::KeepWave(USoundWaveProcedural* Wave)
 		return;
 	}
 	LiveWaves.Add(Wave);
-	if (LiveWaves.Num() > 10)
+	if (LiveWaves.Num() > 24)
 	{
 		LiveWaves.RemoveAt(0);
 	}

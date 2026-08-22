@@ -114,6 +114,7 @@ void AHolypawWorldBuilder::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	TickClockLighting(DeltaSeconds);
+	TickWorldStream();
 }
 
 void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
@@ -168,6 +169,14 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 
 	if (APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
+		if (IsPlayerIndoors(Pawn->GetActorLocation()))
+		{
+			SunInt *= 0.42f;
+			SkyInt *= 0.55f;
+			FogDensity += 0.01f;
+			SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.82f, 0.58f), 0.45f);
+			FogCol = FMath::Lerp(FogCol, FLinearColor(0.72f, 0.52f, 0.4f), 0.35f);
+		}
 		const FVector2D Mill = RibbonCity + FVector2D(5200.f, -800.f);
 		const FVector2D P(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Y);
 		const float Dist = FVector2D::Distance(P, Mill);
@@ -299,32 +308,7 @@ void AHolypawWorldBuilder::GenerateWorld()
 	BuildCottage();
 	BuildRoads();
 	BuildAllSettlements();
-	BuildRibbonDistricts();
-	BuildTidewellDistricts();
-	BuildHearthfoldDistricts();
-	BuildEmberfenDistricts();
-	BuildSnowveilDistricts();
-	BuildLanternAngelesDistricts();
-	BuildMossgateDistricts();
-	BuildPalmaDuskDistricts();
-	BuildCherryLoomDistricts();
-	BuildQuiltlandDistricts();
-	BuildDustMesaDistricts();
-	BuildClockhavenDistricts();
-	BuildVelvetSeineDistricts();
-	BuildMarbleForumDistricts();
-	BuildIvorySpireDistricts();
-	BuildSandHymnDistricts();
-	BuildCapePlushDistricts();
-	BuildSavannahBellDistricts();
-	BuildCarnivalBahiaDistricts();
-	BuildAndesLoomDistricts();
-	BuildSilkDeltaDistricts();
-	BuildSpiceHarborDistricts();
-	BuildCoralChoirDistricts();
-	BuildAuroraBoroughDistricts();
-	BuildTundraParishDistricts();
-	BuildFeltIceCampDistricts();
+	RequestDress(EHolypawZone::RibbonCity);
 	BuildSkyRift();
 	SpawnGameplayActors();
 	SpawnPlayerStart();
@@ -718,7 +702,7 @@ void AHolypawWorldBuilder::BuildCottage()
 {
 	const float Z = SampleHeight(CottageSpawn.X, CottageSpawn.Y);
 	CottageSpawn.Z = Z + 120.f;
-	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y, Z + 160.f), FVector(6.5f, 5.2f, 3.2f), FLinearColor(0.72f, 0.48f, 0.36f), MakeName(TEXT("CottageBody")));
+	DressCottageRooms(CottageSpawn, Z);
 	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y, Z + 340.f), FVector(7.4f, 6.0f, 1.6f), FLinearColor(0.55f, 0.28f, 0.28f), MakeName(TEXT("CottageRoof")));
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 90.f), FVector(3.2f, 3.8f, 0.25f), FLinearColor(0.62f, 0.5f, 0.38f), MakeName(TEXT("Porch")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), FLinearColor(0.55f, 0.82f, 0.95f), MakeName(TEXT("Window")));
@@ -727,7 +711,6 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X - 140.f, CottageSpawn.Y + 40.f, Z + 70.f), FVector(2.4f, 1.3f, 0.45f), FLinearColor(0.78f, 0.55f, 0.62f), MakeName(TEXT("CottageBed")));
 	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y + 40.f, Z + 95.f), FVector(0.7f, 1.1f, 0.28f), FLinearColor(0.95f, 0.88f, 0.92f), MakeName(TEXT("CottagePillow")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 85.f), FVector(1.1f, 1.1f, 0.9f), FLinearColor(0.55f, 0.38f, 0.28f), MakeName(TEXT("CottageTable")));
-	PlaceCube(FVector(CottageSpawn.X + 310.f, CottageSpawn.Y, Z + 150.f), FVector(0.18f, 1.5f, 2.4f), FLinearColor(0.38f, 0.24f, 0.18f), MakeName(TEXT("CottageDoor")));
 	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree")));
 	PlaceCube(FVector(CottageSpawn.X - 40.f, CottageSpawn.Y, Z + 280.f), FVector(4.2f, 3.4f, 0.16f), FLinearColor(0.68f, 0.5f, 0.4f), MakeName(TEXT("CottageLoft")));
 	PlaceCube(FVector(CottageSpawn.X - 90.f, CottageSpawn.Y - 40.f, Z + 310.f), FVector(1.4f, 0.7f, 0.5f), FLinearColor(0.55f, 0.4f, 0.32f), MakeName(TEXT("LoftTrunk")));
@@ -1304,37 +1287,32 @@ void AHolypawWorldBuilder::PlaceLantern(const FVector2D& XY, EHolypawZone Zone)
 void AHolypawWorldBuilder::PlaceShrine(const FVector2D& XY, EHolypawShrineKind Kind, const FText& Name)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	FLinearColor Col(0.78f, 0.52f, 0.42f);
-	FVector Scale(2.6f, 2.2f, 2.8f);
-	if (Kind == EHolypawShrineKind::Chapel)
+	FVector Pad = FVector(XY.X, XY.Y, Z + 36.f);
+	if (Kind == EHolypawShrineKind::Inn || Kind == EHolypawShrineKind::Chapel || Kind == EHolypawShrineKind::Workshop)
 	{
-		Col = FLinearColor(0.92f, 0.82f, 0.55f);
-		Scale = FVector(2.2f, 2.2f, 4.2f);
+		DressInterior(FVector(XY.X, XY.Y, Z), Kind);
+		Pad = FVector(XY.X, XY.Y + 40.f, Z + 18.f);
 	}
-	else if (Kind == EHolypawShrineKind::Workshop)
+	else
 	{
-		Col = FLinearColor(0.72f, 0.48f, 0.68f);
-		Scale = FVector(2.8f, 2.0f, 2.4f);
-	}
-	else if (Kind == EHolypawShrineKind::Wish)
-	{
-		Col = FLinearColor(0.42f, 0.68f, 0.88f);
-		Scale = FVector(1.8f, 1.8f, 0.35f);
-	}
-	else if (Kind == EHolypawShrineKind::Crate)
-	{
-		Col = FLinearColor(0.55f, 0.45f, 0.32f);
-		Scale = FVector(1.1f, 0.9f, 0.8f);
-	}
-	PlaceCube(FVector(XY.X, XY.Y, Z + Scale.Z * 50.f), Scale, Col, MakeName(TEXT("ShrineBody")));
-	if (Kind == EHolypawShrineKind::Chapel)
-	{
-		PlaceCube(FVector(XY.X, XY.Y, Z + Scale.Z * 100.f + 40.f), FVector(1.4f, 1.4f, 0.5f), FLinearColor(0.95f, 0.75f, 0.35f), MakeName(TEXT("ChapelCap")));
+		FLinearColor Col(0.78f, 0.52f, 0.42f);
+		FVector Scale(2.6f, 2.2f, 2.8f);
+		if (Kind == EHolypawShrineKind::Wish)
+		{
+			Col = FLinearColor(0.42f, 0.68f, 0.88f);
+			Scale = FVector(1.8f, 1.8f, 0.35f);
+		}
+		else if (Kind == EHolypawShrineKind::Crate)
+		{
+			Col = FLinearColor(0.55f, 0.45f, 0.32f);
+			Scale = FVector(1.1f, 0.9f, 0.8f);
+		}
+		PlaceCube(FVector(XY.X, XY.Y, Z + Scale.Z * 50.f), Scale, Col, MakeName(TEXT("ShrineBody")));
 	}
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	if (AHolypawShrine* S = GetWorld()->SpawnActor<AHolypawShrine>(FVector(XY.X, XY.Y, Z + 36.f), FRotator::ZeroRotator, Sp))
+	if (AHolypawShrine* S = GetWorld()->SpawnActor<AHolypawShrine>(Pad, FRotator::ZeroRotator, Sp))
 	{
 		S->Kind = Kind;
 		S->PlaceName = Name;

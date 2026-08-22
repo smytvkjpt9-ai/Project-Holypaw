@@ -87,13 +87,36 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 			PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 300.f, Size.Y * 0.31f), Status, FLinearColor(0.7f, 0.95f, 0.85f), 0.95f);
 		}
 
-		PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(40.f, Size.Y - 280.f), FVector2D(420.f, 220.f), FLinearColor(0.10f, 0.07f, 0.14f, 0.82f));
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 268.f), TEXT("1  Soft Slap"), FLinearColor(1.f, 1.f, 1.f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 236.f), TEXT("2  Cuddle Beam (12 FP)"), FLinearColor(0.85f, 0.8f, 1.f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 204.f), TEXT("3  Party Assault"), FLinearColor(0.7f, 0.95f, 0.85f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 172.f), TEXT("4  Flee"), FLinearColor(1.f, 0.7f, 0.75f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 140.f), TEXT("5  Guard + stitch"), FLinearColor(0.85f, 0.9f, 1.f), 1.1f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 108.f), TEXT("6  Hymn (8 FP, lullaby?)"), FLinearColor(1.f, 0.85f, 0.55f), 1.1f);
+		PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(40.f, Size.Y - 310.f), FVector2D(440.f, 250.f), FLinearColor(0.10f, 0.07f, 0.14f, 0.82f));
+		const int32 Page = P->GetBattlePage();
+		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 298.f),
+			Page == 0 ? TEXT("Tab  overflow page") : TEXT("Tab  basic page"), FLinearColor(1.f, 0.85f, 0.55f), 0.85f);
+		for (int32 Slot = 1; Slot <= 6; ++Slot)
+		{
+			const FHolypawAbilityDef* A = HolypawCatalog::FindAbilityBySlot(Page, Slot);
+			FString Line = FString::Printf(TEXT("%d  —"), Slot);
+			FLinearColor Col(0.95f, 0.9f, 1.f);
+			if (A)
+			{
+				if (A->FpCost > 0)
+				{
+					Line = FString::Printf(TEXT("%d  %s  (%d FP)"), Slot, *A->DisplayName.ToString(), A->FpCost);
+				}
+				else if (A->Stitch > 0)
+				{
+					Line = FString::Printf(TEXT("%d  %s  +%d stitch"), Slot, *A->DisplayName.ToString(), A->Stitch);
+				}
+				else
+				{
+					Line = FString::Printf(TEXT("%d  %s"), Slot, *A->DisplayName.ToString());
+				}
+			}
+			if (Slot == 2) { Col = FLinearColor(0.85f, 0.8f, 1.f); }
+			if (Slot == 3) { Col = FLinearColor(0.7f, 0.95f, 0.85f); }
+			if (Slot == 4) { Col = FLinearColor(1.f, 0.7f, 0.75f); }
+			if (Slot == 6) { Col = FLinearColor(1.f, 0.85f, 0.55f); }
+			PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 266.f + (Slot - 1) * 28.f), Line, Col, 1.0f);
+		}
 	}
 
 	if (P->IsSkillsOpen() && P->Skills && P->Affection)

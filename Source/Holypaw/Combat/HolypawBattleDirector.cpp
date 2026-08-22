@@ -1,5 +1,6 @@
 #include "Combat/HolypawBattleDirector.h"
 #include "Combat/HolypawBattleMath.h"
+#include "Combat/HolypawBossScript.h"
 
 namespace HolypawBattleDirector
 {
@@ -134,6 +135,16 @@ namespace HolypawBattleDirector
 			}
 		}
 
+		if (Req.Rank == EVillainRank::Boss || Req.Rank == EVillainRank::WorldBoss)
+		{
+			const HolypawBossScript::FBossIncoming Boss = HolypawBossScript::ApplyIncoming(Req.VillainId, Req.bPhaseTwo, Req.BattleTurn);
+			Dmg += Boss.BonusDamage;
+			R.MillTurns = Boss.MillTurns;
+			if (!Boss.Extra.IsEmpty())
+			{
+				R.Extra += Boss.Extra;
+			}
+		}
 		if (Req.Rank == EVillainRank::WorldBoss && Req.BattleTurn >= 4)
 		{
 			Dmg += 4;
