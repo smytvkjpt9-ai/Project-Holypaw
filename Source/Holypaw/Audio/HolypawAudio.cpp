@@ -7,6 +7,7 @@
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "HolypawTypes.h"
+#include "UObject/Package.h"
 
 namespace HolypawAudio
 {

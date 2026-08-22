@@ -743,6 +743,37 @@ if "PlaceClothesline" not in WORLD:
 if "CottageHearth" not in INTERIOR:
     errors.append("cottage missing hearth")
 
+# UHT / editor-rebuild hygiene. The "missing module" dialog hides these.
+for header in (ROOT / "Source/Holypaw").rglob("*.h"):
+    text = header.read_text()
+    if ".generated.h" not in text:
+        continue
+    includes = re.findall(r'#include\s+"([^"]+)"', text)
+    if includes and not includes[-1].endswith(".generated.h"):
+        errors.append(f"{header.relative_to(ROOT)}: last include must be .generated.h (found {includes[-1]})")
+    if "HolypawProcAnim.h" in text:
+        errors.append(f"{header.relative_to(ROOT)} includes HolypawProcAnim.h — keep that namespace header out of UHT")
+
+for name in (
+    "Character/HolypawCharacter.h",
+    "Actors/HugHuman.h",
+    "Actors/WildFluffy.h",
+):
+    text = (ROOT / "Source/Holypaw" / name).read_text()
+    if "TUniquePtr<" not in text:
+        errors.append(f"{name} should pimpl motion with TUniquePtr")
+
+targets = (ROOT / "Source/Holypaw.Target.cs").read_text() + (ROOT / "Source/HolypawEditor.Target.cs").read_text()
+if "EngineIncludeOrderVersion.Oldest" not in targets:
+    errors.append("Target.cs should use EngineIncludeOrderVersion.Oldest so 5.8 IWYU Latest does not fail the live rebuild")
+uproject = (ROOT / "Holypaw.uproject").read_text()
+if '"ModelContextProtocol"' in uproject and re.search(
+    r'"Name":\s*"ModelContextProtocol"[\s\S]*?"Enabled":\s*true', uproject
+):
+    errors.append("ModelContextProtocol should stay disabled so a missing plugin cannot block editor load")
+if not (ROOT / "Tools/BuildHolypaw.bat").exists():
+    errors.append("missing Tools/BuildHolypaw.bat")
+
 if errors:
     print("FAIL")
     for e in errors:

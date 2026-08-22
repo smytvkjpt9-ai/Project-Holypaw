@@ -3,8 +3,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "HolypawTypes.h"
-#include "Anim/HolypawProcAnim.h"
+#include "Templates/UniquePtr.h"
 #include "HolypawCharacter.generated.h"
+
+struct FHolypawTeddyMotion;
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -66,6 +68,7 @@ class HOLYPAW_API AHolypawCharacter : public ACharacter
 
 public:
 	AHolypawCharacter();
+	virtual ~AHolypawCharacter();
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -422,9 +425,7 @@ protected:
 	int32 LastDamageDealt = 0;
 	int32 LastDamageTaken = 0;
 	float DamagePopupTime = 0.f;
-	HolypawAnim::FTeddyState TeddyAnim;
-	HolypawAnim::FTeddyRest TeddyRest;
-	HolypawAnim::FPartyState PartyAnim;
+	TUniquePtr<FHolypawTeddyMotion> TeddyMotion;
 	FVector ArmLBase = FVector::ZeroVector;
 	FVector ArmRBase = FVector::ZeroVector;
 	FVector LegLBase = FVector::ZeroVector;
@@ -451,7 +452,6 @@ protected:
 
 	void TickProcAnim(float DeltaSeconds);
 	void PlayCue(FName Cue);
-	HolypawAnim::FTeddyParts TeddyParts();
 	void CelebrateConvert();
 
 	UMaterialInterface* ShapeMat = nullptr;

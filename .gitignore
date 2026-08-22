@@ -19,6 +19,9 @@ Saved/
 .idea/
 *.log
 
+# Local engine path for Tools/BuildHolypaw.bat
+Tools/UE_PATH.txt
+
 # Local generated Content (keep folder)
 Content/Holypaw/Maps/
 Content/Holypaw/__ExternalActors__/

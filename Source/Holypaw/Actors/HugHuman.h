@@ -3,8 +3,10 @@
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
 #include "HolypawTypes.h"
-#include "Anim/HolypawProcAnim.h"
+#include "Templates/UniquePtr.h"
 #include "HugHuman.generated.h"
+
+struct FHolypawHumanMotion;
 
 UCLASS()
 class HOLYPAW_API AHugHuman : public AHolypawInteractable
@@ -13,6 +15,7 @@ class HOLYPAW_API AHugHuman : public AHolypawInteractable
 
 public:
 	AHugHuman();
+	virtual ~AHugHuman();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
 	FText PersonName;
@@ -118,6 +121,5 @@ public:
 
 protected:
 	bool bKnelt = false;
-	HolypawAnim::FHumanState HumanAnim;
-	HolypawAnim::FHumanRest HumanRest;
+	TUniquePtr<FHolypawHumanMotion> HumanMotion;
 };

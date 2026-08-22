@@ -6,7 +6,7 @@ public class HolypawEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
-		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Oldest;
 		ExtraModuleNames.Add("Holypaw");
 	}
 }

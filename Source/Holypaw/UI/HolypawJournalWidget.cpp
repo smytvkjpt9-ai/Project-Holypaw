@@ -1,5 +1,6 @@
 #include "UI/HolypawJournalWidget.h"
 #include "UI/HolypawUiTheme.h"
+#include "Rendering/DrawElements.h"
 #include "UI/HolypawUiCopy.h"
 #include "Character/HolypawCharacter.h"
 #include "Components/MissionComponent.h"

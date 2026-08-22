@@ -16,6 +16,7 @@
 #include "Engine/PostProcessVolume.h"
 #include "Engine/PointLight.h"
 #include "Engine/World.h"
+#include "GameFramework/Actor.h"
 
 void HolypawLook::Paint(UMeshComponent* Mesh, const FLinearColor& Color)
 {

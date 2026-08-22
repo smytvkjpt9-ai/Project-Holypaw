@@ -12,6 +12,9 @@
 #include "Engine/World.h"
 #include "Sound/SoundBase.h"
 #include "Stats/Stats.h"
+#include "GameFramework/Actor.h"
+#include "Subsystems/SubsystemCollection.h"
+#include "UObject/Package.h"
 
 UHolypawAudioSubsystem* UHolypawAudioSubsystem::Get(const UObject* WorldContext)
 {

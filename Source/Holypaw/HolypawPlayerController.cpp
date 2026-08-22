@@ -1,5 +1,6 @@
 #include "HolypawPlayerController.h"
 #include "Character/HolypawCharacter.h"
+#include "GameFramework/InputSettings.h"
 
 AHolypawPlayerController::AHolypawPlayerController()
 {

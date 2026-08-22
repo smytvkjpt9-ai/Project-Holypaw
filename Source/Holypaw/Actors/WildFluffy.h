@@ -3,8 +3,10 @@
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
 #include "HolypawTypes.h"
-#include "Anim/HolypawProcAnim.h"
+#include "Templates/UniquePtr.h"
 #include "WildFluffy.generated.h"
+
+struct FHolypawFluffyMotion;
 
 UCLASS()
 class HOLYPAW_API AWildFluffy : public AHolypawInteractable
@@ -13,6 +15,7 @@ class HOLYPAW_API AWildFluffy : public AHolypawInteractable
 
 public:
 	AWildFluffy();
+	virtual ~AWildFluffy();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
 	FFluffyTypeDef Type;
@@ -69,5 +72,5 @@ private:
 	FVector Vel = FVector::ZeroVector;
 	float AnimClock = 0.f;
 	FVector MeshBase = FVector::ZeroVector;
-	HolypawAnim::FFluffyRest FluffyRest;
+	TUniquePtr<FHolypawFluffyMotion> FluffyMotion;
 };

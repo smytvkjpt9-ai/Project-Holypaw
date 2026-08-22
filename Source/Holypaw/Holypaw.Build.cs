@@ -16,9 +16,7 @@ public class Holypaw : ModuleRules
 			"UMG",
 			"Slate",
 			"SlateCore",
-			"ProceduralMeshComponent",
-			"NavigationSystem",
-			"AIModule"
+			"ProceduralMeshComponent"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

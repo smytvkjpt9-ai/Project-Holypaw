@@ -2,9 +2,16 @@
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
 #include "Components/StaticMeshComponent.h"
+#include "Anim/HolypawProcAnim.h"
+
+struct FHolypawFluffyMotion
+{
+	HolypawAnim::FFluffyRest Rest;
+};
 
 AWildFluffy::AWildFluffy()
 {
+	FluffyMotion = MakeUnique<FHolypawFluffyMotion>();
 	PrimaryActorTick.bCanEverTick = true;
 
 	EarL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarL"));
@@ -71,6 +78,8 @@ AWildFluffy::AWildFluffy()
 	WingR->SetRelativeScale3D(FVector(0.12f, 0.42f, 0.08f));
 	WingR->SetHiddenInGame(true);
 }
+
+AWildFluffy::~AWildFluffy() = default;
 
 void AWildFluffy::BeginPlay()
 {
@@ -165,19 +174,19 @@ void AWildFluffy::BeginPlay()
 	MeshBase = Mesh ? Mesh->GetRelativeLocation() : FVector::ZeroVector;
 	if (EarL)
 	{
-		FluffyRest.EarL = EarL->GetRelativeRotation();
+		FluffyMotion->Rest.EarL = EarL->GetRelativeRotation();
 	}
 	if (EarR)
 	{
-		FluffyRest.EarR = EarR->GetRelativeRotation();
+		FluffyMotion->Rest.EarR = EarR->GetRelativeRotation();
 	}
 	if (Tail)
 	{
-		FluffyRest.TailLoc = Tail->GetRelativeLocation();
+		FluffyMotion->Rest.TailLoc = Tail->GetRelativeLocation();
 	}
 	if (Mesh)
 	{
-		FluffyRest.BodyScale = Mesh->GetRelativeScale3D();
+		FluffyMotion->Rest.BodyScale = Mesh->GetRelativeScale3D();
 	}
 }
 
@@ -222,7 +231,7 @@ void AWildFluffy::Tick(float DeltaSeconds)
 	{
 		SetActorLocation(Next);
 	}
-	const HolypawAnim::FFluffyPose Pose = HolypawAnim::EvaluateFluffy(FluffyRest, AnimClock, Vel, bRecruited);
+	const HolypawAnim::FFluffyPose Pose = HolypawAnim::EvaluateFluffy(FluffyMotion->Rest, AnimClock, Vel, bRecruited);
 	if (EarL)
 	{
 		EarL->SetRelativeRotation(Pose.EarL);
