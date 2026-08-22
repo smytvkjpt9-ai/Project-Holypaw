@@ -46,6 +46,41 @@
       font-size: 22px;
     }
     .zone-chip { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd; }
+    .speech-bubble {
+      position: absolute; pointer-events: none; transform: translate(-50%, -100%);
+      background: #fffaf4; color: #2e1065; border-radius: 14px 14px 14px 4px;
+      padding: 5px 10px; font-size: 12px; font-weight: 800; max-width: 200px;
+      text-align: center; line-height: 1.25;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4); border: 2px solid #e9d5ff;
+      white-space: normal;
+    }
+    .speech-bubble.hostile { background: #3f1219; color: #fecaca; border-color: #fb7185; }
+    .speech-bubble.villain { background: #1c0a0a; color: #fda4af; border-color: #be123c; }
+    .speech-bubble.fluff { background: #fff1f2; color: #9d174d; border-color: #f9a8d4; }
+    .speech-bubble.npc { background: #f5f3ff; color: #4c1d95; border-color: #c4b5fd; }
+    .skill-chip {
+      display: inline-block; font-size: 10px; letter-spacing: 0.04em;
+      padding: 1px 7px; border-radius: 999px; background: rgba(167,139,250,0.2);
+      color: #ddd6fe; border: 1px solid rgba(167,139,250,0.45);
+    }
+    .skill-chip.hot { background: rgba(244,63,94,0.2); color: #fecaca; border-color: rgba(251,113,133,0.5); }
+    .battle-stage { display: flex; align-items: flex-end; justify-content: center; gap: 28px; min-height: 210px; }
+    .battle-portrait {
+      width: 92px; height: 92px; border-radius: 24px; display: flex; align-items: center; justify-content: center;
+      font-size: 42px; border: 3px solid rgba(255,255,255,0.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35); position: relative;
+      animation: idleBob 1.4s ease-in-out infinite;
+    }
+    .battle-portrait.enemy { animation: menace 0.9s ease-in-out infinite; }
+    .battle-portrait.strike { animation: strikePop 0.35s ease-out; }
+    .battle-portrait .mini-skill {
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      white-space: nowrap; font-size: 10px; background: #1e1b4b; color: #fde68a;
+      border-radius: 999px; padding: 2px 8px; border: 1px solid #a78bfa;
+    }
+    @keyframes idleBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes menace { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+    @keyframes strikePop { 0% { transform: scale(1); } 40% { transform: scale(1.12) translateX(-6px); } 100% { transform: scale(1); } }
   </style>
 </head>
 <body>
@@ -104,7 +139,7 @@
         <h2 class="font-display text-lg text-pink-200">Fluffy Party</h2>
         <button id="closeParty" class="btn rounded-lg px-3 py-1.5 text-xs">Close</button>
       </div>
-      <p class="text-xs text-violet-300 mb-3">Recruit wild fluffies across the world — like catching partners. Max 4.</p>
+      <p class="text-xs text-violet-300 mb-3">Recruit wild fluffies — each brings a unique battle skill. Max 4.</p>
       <div id="partyList" class="space-y-2"></div>
     </div>
   </div>
@@ -112,9 +147,17 @@
   <!-- BATTLE -->
   <div id="battleUI" class="hidden absolute inset-0 z-50 flex flex-col justify-end bg-gradient-to-b from-[#1a1035f0] via-[#120c28e8] to-[#080614f5]">
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div class="text-center px-4">
+      <div class="text-center px-4 w-full max-w-lg">
+        <div class="battle-stage mb-3">
+          <div id="bHeroPort" class="battle-portrait" style="background:radial-gradient(circle at 30% 20%,#fbcfe8,#9d174d)">🧸</div>
+          <div id="bEnemyPort" class="battle-portrait enemy" style="background:radial-gradient(circle at 30% 20%,#fda4af,#7f1d1d)">
+            <span id="bEnemyEmoji">⚔️</span>
+            <span class="mini-skill" id="bEnemySkillChip">Skill</span>
+          </div>
+        </div>
         <p class="font-display text-2xl sm:text-3xl text-rose-300" id="bEnemyName">Hostile Pet</p>
         <p class="text-violet-200 text-sm mt-1" id="bHpLine">HP</p>
+        <p class="text-xs text-rose-200/90 mt-1" id="bEnemySkill">Skill</p>
         <p class="text-xs text-violet-400 mt-2" id="bPartyLine"></p>
       </div>
     </div>
@@ -143,12 +186,18 @@
   </div>
 
   <div class="absolute bottom-2 right-2 z-20 text-[10px] text-violet-500/80 pointer-events-none hidden sm:block">
-    WASD move · SPACE interact · K skills · P party · M miracle
+    WASD move · SPACE interact · K skills · P party · M miracle · listen for voices
   </div>
 
 <script>
 (() => {
   'use strict';
+
+  if (typeof THREE !== 'undefined' && !THREE.CapsuleGeometry) {
+    THREE.CapsuleGeometry = function (radius, length) {
+      return new THREE.CylinderGeometry(radius, radius, (length || 0.2) + radius * 2, 8);
+    };
+  }
 
   // ═══════════════════════════════════════════════════════
   // STATE
@@ -190,7 +239,151 @@
   const PARTY_MAX = 4;
   const party = []; // recruited fluffies {id,name,emoji,atk,hp,color}
 
-  const battle = { enemy: null, turn: 'player', busy: false, log: '' };
+  const battle = {
+    enemy: null, turn: 'player', busy: false, log: '',
+    bleed: 0, guard: 0, weaken: 0, stunned: false
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // VOICE + SFX (Web Audio creature voices + spoken NPC lines)
+  // ═══════════════════════════════════════════════════════
+  const audio = {
+    ctx: null,
+    master: null,
+    chatterAt: 0,
+    lastTalk: new WeakMap()
+  };
+
+  function ensureAudio() {
+    if (audio.ctx) return audio.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audio.ctx = new AC();
+    audio.master = audio.ctx.createGain();
+    audio.master.gain.value = 0.22;
+    audio.master.connect(audio.ctx.destination);
+    return audio.ctx;
+  }
+
+  function resumeAudio() {
+    const ctx = ensureAudio();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  }
+
+  function tone(freq, dur, type = 'sine', gain = 0.18, slide = 0, delay = 0) {
+    const ctx = ensureAudio();
+    if (!ctx || !audio.master) return;
+    const t0 = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const f = ctx.createBiquadFilter();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t0 + dur);
+    f.type = 'lowpass';
+    f.frequency.value = Math.min(4200, freq * 4);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(f); f.connect(g); g.connect(audio.master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
+  function noiseBurst(dur, gain, hp = 400) {
+    const ctx = ensureAudio();
+    if (!ctx || !audio.master) return;
+    const n = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const d = n.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = ctx.createBufferSource();
+    src.buffer = n;
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = hp;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(f); f.connect(g); g.connect(audio.master);
+    src.start();
+  }
+
+  const VOICES = {
+    bunny: () => { tone(920, 0.08, 'sine', 0.16, 80); tone(1180, 0.09, 'sine', 0.12, -40, 0.07); },
+    pup: () => { tone(220, 0.12, 'triangle', 0.2, -40); tone(180, 0.16, 'triangle', 0.18, -20, 0.12); },
+    duck: () => { tone(340, 0.14, 'square', 0.1, -120); tone(280, 0.12, 'square', 0.08, -80, 0.1); },
+    panda: () => { tone(140, 0.2, 'sine', 0.16, -20); tone(90, 0.22, 'triangle', 0.1, 0, 0.12); },
+    fox: () => { tone(640, 0.07, 'sawtooth', 0.08, 180); tone(880, 0.08, 'sawtooth', 0.07, 40, 0.06); },
+    dragon: () => { tone(90, 0.28, 'sawtooth', 0.12, 40); tone(520, 0.18, 'sine', 0.1, 80, 0.12); },
+    scrapdog: () => { tone(110, 0.18, 'sawtooth', 0.14, -30); noiseBurst(0.12, 0.08, 800); },
+    corpcat: () => { tone(740, 0.16, 'sawtooth', 0.07, -400); tone(1800, 0.08, 'square', 0.04, 0, 0.05); },
+    razorbot: () => { tone(880, 0.06, 'square', 0.08); tone(440, 0.08, 'square', 0.08, 0, 0.07); tone(1320, 0.05, 'square', 0.06, 0, 0.14); },
+    voidrat: () => { tone(210, 0.1, 'sawtooth', 0.1, 260); tone(70, 0.2, 'sine', 0.12, 0, 0.08); },
+    ripper: () => { tone(70, 0.28, 'sawtooth', 0.16, -20); noiseBurst(0.18, 0.1, 200); tone(160, 0.2, 'square', 0.08, 40, 0.1); },
+    child: () => { tone(640, 0.07, 'sine', 0.12, 80); tone(720, 0.08, 'sine', 0.1, 40, 0.06); },
+    parent: () => { tone(320, 0.12, 'triangle', 0.12, 20); tone(280, 0.14, 'triangle', 0.1, 0, 0.1); },
+    ranger: () => { tone(260, 0.1, 'triangle', 0.12); tone(390, 0.1, 'triangle', 0.1, 0, 0.09); },
+    shopkeep: () => { tone(480, 0.08, 'square', 0.07); tone(360, 0.1, 'square', 0.06, 0, 0.08); },
+    acolyte: () => { tone(520, 0.16, 'sine', 0.12, 60); tone(780, 0.2, 'sine', 0.1, 40, 0.1); },
+    hug: () => { tone(520, 0.1, 'sine', 0.12, 80); tone(780, 0.14, 'sine', 0.1, 120, 0.08); },
+    recruit: () => { tone(660, 0.08, 'sine', 0.12); tone(880, 0.1, 'sine', 0.1, 0, 0.07); tone(1100, 0.12, 'sine', 0.1, 0, 0.14); },
+    hit: () => { tone(180, 0.08, 'square', 0.1, -80); noiseBurst(0.06, 0.07, 300); },
+    miracle: () => { tone(392, 0.18, 'sine', 0.12, 80); tone(523, 0.2, 'sine', 0.1, 80, 0.1); tone(784, 0.28, 'sine', 0.1, 40, 0.22); }
+  };
+
+  function playVoice(id) {
+    resumeAudio();
+    const fn = VOICES[id];
+    if (fn) fn();
+  }
+
+  function speakWords(text, pitch = 1, rate = 1) {
+    try {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.pitch = pitch;
+      u.rate = rate;
+      u.volume = 0.78;
+      u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    } catch (_) { /* some browsers block speech until a gesture */ }
+  }
+
+  const bubbles = [];
+  function speak(mesh, text, kind = 'npc', voiceId, spoken, pitch = 1, rate = 1) {
+    if (!mesh) return;
+    playVoice(voiceId);
+    if (spoken) speakWords(spoken, pitch, rate);
+    const el = document.createElement('div');
+    el.className = 'speech-bubble ' + kind;
+    el.textContent = text;
+    labelLayer.appendChild(el);
+    const pos = mesh.position.clone();
+    pos.y += 1.7;
+    bubbles.push({ el, mesh, life: 2.4, pos });
+    audio.lastTalk.set(mesh, state.time);
+  }
+
+  function updateBubbles(dt) {
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      b.life -= dt;
+      if (b.mesh) {
+        b.pos.copy(b.mesh.position);
+        b.pos.y += 1.75 + Math.sin(state.time * 6) * 0.04;
+      }
+      const s = toScreen(b.pos);
+      b.el.style.left = s.x + 'px';
+      b.el.style.top = s.y + 'px';
+      b.el.style.opacity = String(Math.max(0, Math.min(1, b.life)));
+      b.el.style.display = s.ok ? 'block' : 'none';
+      if (b.life <= 0) { b.el.remove(); bubbles.splice(i, 1); }
+    }
+  }
+
+  function canTalk(mesh, gap = 5) {
+    const last = audio.lastTalk.get(mesh);
+    return last == null || state.time - last > gap;
+  }
 
   // ═══════════════════════════════════════════════════════
   // THREE.JS WORLD
@@ -386,44 +579,311 @@
   scene.add(bear);
 
   // ═══════════════════════════════════════════════════════
-  // WILD FLUFFIES (recruitable) + HOSTILE PETS
+  // WILD FLUFFIES (recruitable) + HOSTILE PETS + VILLAIN
   // ═══════════════════════════════════════════════════════
   const FLUFFY_TYPES = [
-    { id: 'bunny', name: 'Cotton Bunny', emoji: '🐰', color: 0xfce7f3, atk: 5, rarity: 'common' },
-    { id: 'pup', name: 'Plush Pup', emoji: '🐶', color: 0xfed7aa, atk: 7, rarity: 'common' },
-    { id: 'duck', name: 'Bath Duck', emoji: '🦆', color: 0xfef08a, atk: 4, rarity: 'common' },
-    { id: 'panda', name: 'Ink Panda', emoji: '🐼', color: 0xe5e7eb, atk: 9, rarity: 'rare' },
-    { id: 'fox', name: 'Ember Fox', emoji: '🦊', color: 0xfdba74, atk: 10, rarity: 'rare' },
-    { id: 'dragon', name: 'Velvet Dragon', emoji: '🐲', color: 0xc4b5fd, atk: 14, rarity: 'legend' }
+    { id: 'bunny', name: 'Cotton Bunny', emoji: '🐰', color: 0xfce7f3, atk: 5, rarity: 'common',
+      skill: { name: 'Heal Cotton', icon: '💗', desc: 'Party Assault restores 6 HP.' },
+      lines: ['Boing!', 'Soft hop!', 'Nuzzle?'] },
+    { id: 'pup', name: 'Plush Pup', emoji: '🐶', color: 0xfed7aa, atk: 7, rarity: 'common',
+      skill: { name: 'Loyal Guard', icon: '🛡️', desc: 'Party Assault grants Guard (−3 incoming).' },
+      lines: ['Arf!', 'I got you!', 'Woof woof!'] },
+    { id: 'duck', name: 'Bath Duck', emoji: '🦆', color: 0xfef08a, atk: 4, rarity: 'common',
+      skill: { name: 'Squeak Splash', icon: '💦', desc: '35% chance to stun the foe.' },
+      lines: ['Waaak!', 'Squeak!', 'Splash!'] },
+    { id: 'panda', name: 'Ink Panda', emoji: '🐼', color: 0xe5e7eb, atk: 9, rarity: 'rare',
+      skill: { name: 'Calm Ink', icon: '🖋️', desc: 'Party Assault grants +5 AP.' },
+      lines: ['Mmm.', 'Bamboo dreams.', 'Peace.'] },
+    { id: 'fox', name: 'Ember Fox', emoji: '🦊', color: 0xfdba74, atk: 10, rarity: 'rare',
+      skill: { name: 'Ember Dash', icon: '🔥', desc: 'Party Assault deals +35% damage.' },
+      lines: ['Yip!', 'Too slow!', 'Flicker!'] },
+    { id: 'dragon', name: 'Velvet Dragon', emoji: '🐲', color: 0xc4b5fd, atk: 14, rarity: 'legend',
+      skill: { name: 'Velvet Roar', icon: '🐉', desc: 'Roar adds +10 bonus damage.' },
+      lines: ['Rrrgh.', 'Warm velvet.', 'I keep watch.'] }
   ];
 
   const HOSTILE_TYPES = [
-    { id: 'scrapdog', name: 'Scrap Dog', emoji: '🐕', color: 0x78716c, hp: 28, atk: 7 },
-    { id: 'corpcat', name: 'Corp Cat', emoji: '🐱', color: 0xf8fafc, hp: 32, atk: 8 },
-    { id: 'razorbot', name: 'Razor Petbot', emoji: '🤖', color: 0x94a3b8, hp: 40, atk: 10 },
-    { id: 'voidrat', name: 'Void Rat', emoji: '🐀', color: 0x44403c, hp: 22, atk: 9 }
+    { id: 'scrapdog', name: 'Scrap Dog', emoji: '🐕', color: 0x78716c, hp: 28, atk: 7, aggro: 7, speed: 2.8, villain: false,
+      skill: { name: 'Rust Bite', icon: '⛓️', desc: 'Bites and leaves a metallic bleed.' },
+      lines: ['Grrrk!', 'Scrap! Scrap!', '*metal snarl*'] },
+    { id: 'corpcat', name: 'Corp Cat', emoji: '🐱', color: 0xf8fafc, hp: 32, atk: 8, aggro: 6.5, speed: 3.2, villain: false,
+      skill: { name: 'Audit Claw', icon: '📎', desc: 'Claws you and siphons 4 FP.' },
+      lines: ['Hsss.', 'You are off-brand.', 'Compliance.'] },
+    { id: 'razorbot', name: 'Razor Petbot', emoji: '🤖', color: 0x94a3b8, hp: 40, atk: 10, aggro: 8, speed: 2.4, villain: false,
+      skill: { name: 'Overclock', icon: '⚡', desc: '25% chance to strike twice.' },
+      lines: ['CUT-CUT.', 'SOFTNESS ERROR.', 'BLADE READY.'] },
+    { id: 'voidrat', name: 'Void Rat', emoji: '🐀', color: 0x44403c, hp: 22, atk: 9, aggro: 6, speed: 3.4, villain: false,
+      skill: { name: 'Void Nibble', icon: '🕳️', desc: 'Weakens your attack this battle.' },
+      lines: ['Skree!', '*wet giggle*', 'Nibble the light.'] },
+    { id: 'ripper', name: 'Stuffing Ripper', emoji: '✂️', color: 0x7f1d1d, hp: 86, atk: 14, aggro: 10, speed: 2.2, villain: true,
+      skill: { name: 'Unravel', icon: '🧵', desc: 'Rips stuffing and drains Miracle Charge.' },
+      lines: ['Softness is a defect.', 'I unmake the cute.', 'Come here, little halo.'] }
   ];
 
-  function makeCritter(color, scale = 1, style = 'fluff') {
-    const root = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.28 * scale, 12, 10), mat);
-    body.position.y = 0.32 * scale; body.castShadow = true; root.add(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22 * scale, 12, 10), mat);
-    head.position.set(0.15 * scale, 0.5 * scale, 0); head.castShadow = true; root.add(head);
-    if (style === 'hostile') {
-      const spike = new THREE.Mesh(
-        new THREE.ConeGeometry(0.08 * scale, 0.2 * scale, 6),
-        new THREE.MeshStandardMaterial({ color: 0xf43f5e })
-      );
-      spike.position.set(0.15 * scale, 0.72 * scale, 0);
-      root.add(spike);
-    } else {
-      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.08 * scale, 8, 6), mat);
-      ear.position.set(0.05 * scale, 0.7 * scale, 0.1 * scale);
-      root.add(ear);
-    }
+  const NPC_DEFS = [
+    { id: 'child', name: 'Mira', title: 'Nursery Child', x: 2, z: 18, color: 0x7dd3fc, scale: 0.78,
+      skill: { name: 'Giggle Spark', desc: 'Hugs grant extra Miracle Charge.' },
+      lines: ['Wanna play forever?', "You're soooo soft!", 'Again! Hug again!'],
+      pitch: 1.7, rate: 1.12 },
+    { id: 'parent', name: 'Jonah', title: 'Homestead Parent', x: -16, z: 6, color: 0xf9a8d4, scale: 1.08,
+      skill: { name: 'Warm Hearth', desc: 'Hugs grant bonus Affection.' },
+      lines: ['Oh, a walking teddy?', 'The house feels kinder.', 'Stay for cocoa, fluff?'],
+      pitch: 0.9, rate: 0.95 },
+    { id: 'ranger', name: 'Bramble', title: 'Park Ranger', x: -18, z: -12, color: 0x86efac, scale: 1.0,
+      skill: { name: 'Trail Beacon', desc: 'Hugs make nearby fluffies glow.' },
+      lines: ['Keep to the plush paths.', 'Wildlife likes you.', 'Heard a squeak west of here.'],
+      pitch: 0.85, rate: 1.0 },
+    { id: 'shopkeep', name: 'Nix', title: 'Ribbon Shopkeep', x: 18, z: 2, color: 0xfbbf24, scale: 1.0,
+      skill: { name: 'Ribbon Tip', desc: 'Hugs toss you a little Faith.' },
+      lines: ['Need buttons? Thread?', 'Cute sells. You are cute.', 'Take a ribbon, on the house.'],
+      pitch: 1.15, rate: 1.08 },
+    { id: 'acolyte', name: 'Vesper', title: 'Shrine Acolyte', x: 14, z: -16, color: 0xc4b5fd, scale: 1.02,
+      skill: { name: 'Velvet Hymn', desc: 'Hugs convert hearts faster.' },
+      lines: ['The orb hums for you.', 'Faith is a texture.', 'Kneel. Or nuzzle. Both work.'],
+      pitch: 0.75, rate: 0.88 }
+  ];
+
+  function mat(color, extra = {}) {
+    return new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.62, metalness: 0.05 }, extra));
+  }
+
+  function addMesh(root, geo, material, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
+    const m = new THREE.Mesh(geo, material);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    m.scale.set(sx, sy, sz);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    root.add(m);
+    return m;
+  }
+
+  function stampRig(root, parts) {
+    const prev = root.userData || {};
+    root.userData = Object.assign({
+      phase: Math.random() * Math.PI * 2,
+      t: 0,
+      gait: prev.gait || 'waddle',
+      hop: 0
+    }, parts);
     return root;
+  }
+
+  function makeFluffyMesh(type, scale = 1) {
+    const root = new THREE.Group();
+    const c = type.color;
+    const fur = mat(c);
+    const dark = mat(0x1f140f);
+    const pink = mat(0xf9a8d4);
+    const cream = mat(0xfff1e6);
+    let body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR;
+
+    if (type.id === 'bunny') {
+      body = addMesh(root, new THREE.SphereGeometry(0.30, 14, 12), fur, 0, 0.36, 0, 0, 0, 0, 1.05, 0.95, 1.15);
+      head = addMesh(root, new THREE.SphereGeometry(0.22, 14, 12), cream, 0, 0.62, 0.12);
+      earL = addMesh(root, new THREE.CapsuleGeometry(0.05, 0.28, 4, 8), fur, -0.1, 0.88, 0.08, 0.15, 0, 0.2);
+      earR = addMesh(root, new THREE.CapsuleGeometry(0.05, 0.28, 4, 8), fur, 0.1, 0.88, 0.08, 0.15, 0, -0.2);
+      addMesh(root, new THREE.CapsuleGeometry(0.03, 0.16, 3, 6), pink, -0.1, 0.88, 0.1, 0.15, 0, 0.2);
+      addMesh(root, new THREE.CapsuleGeometry(0.03, 0.16, 3, 6), pink, 0.1, 0.88, 0.1, 0.15, 0, -0.2);
+      tail = addMesh(root, new THREE.SphereGeometry(0.1, 8, 8), cream, 0, 0.34, -0.28);
+      addMesh(root, new THREE.SphereGeometry(0.035, 8, 8), pink, 0, 0.58, 0.32);
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, -0.07, 0.66, 0.28);
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, 0.07, 0.66, 0.28);
+      legL = addMesh(root, new THREE.SphereGeometry(0.09, 8, 8), fur, -0.12, 0.1, 0.06);
+      legR = addMesh(root, new THREE.SphereGeometry(0.09, 8, 8), fur, 0.12, 0.1, 0.06);
+      root.userData.gait = 'hop';
+    } else if (type.id === 'pup') {
+      body = addMesh(root, new THREE.SphereGeometry(0.28, 14, 12), fur, 0, 0.34, 0, 0, 0, 0, 1.15, 0.9, 1.25);
+      head = addMesh(root, new THREE.SphereGeometry(0.2, 12, 10), fur, 0, 0.52, 0.22);
+      addMesh(root, new THREE.SphereGeometry(0.12, 10, 8), mat(0xf8e0d0), 0, 0.46, 0.36, 0, 0, 0, 1, 0.8, 1.1);
+      addMesh(root, new THREE.SphereGeometry(0.04, 8, 8), dark, 0, 0.48, 0.48);
+      earL = addMesh(root, new THREE.BoxGeometry(0.12, 0.16, 0.04), mat(0xc2410c), -0.14, 0.58, 0.16, 0.5, 0, 0.4);
+      earR = addMesh(root, new THREE.BoxGeometry(0.12, 0.16, 0.04), mat(0xc2410c), 0.14, 0.58, 0.16, 0.5, 0, -0.4);
+      tail = addMesh(root, new THREE.CapsuleGeometry(0.035, 0.22, 3, 6), fur, 0, 0.4, -0.32, 0.9, 0, 0);
+      addMesh(root, new THREE.SphereGeometry(0.028, 8, 8), dark, -0.07, 0.56, 0.38);
+      addMesh(root, new THREE.SphereGeometry(0.028, 8, 8), dark, 0.07, 0.56, 0.38);
+      legL = addMesh(root, new THREE.CapsuleGeometry(0.05, 0.12, 3, 6), fur, -0.12, 0.12, 0.08);
+      legR = addMesh(root, new THREE.CapsuleGeometry(0.05, 0.12, 3, 6), fur, 0.12, 0.12, 0.08);
+      armL = addMesh(root, new THREE.CapsuleGeometry(0.045, 0.1, 3, 6), fur, -0.22, 0.3, 0.1, 0, 0, 0.4);
+      armR = addMesh(root, new THREE.CapsuleGeometry(0.045, 0.1, 3, 6), fur, 0.22, 0.3, 0.1, 0, 0, -0.4);
+      root.userData.gait = 'trot';
+    } else if (type.id === 'duck') {
+      body = addMesh(root, new THREE.SphereGeometry(0.28, 14, 12), fur, 0, 0.32, 0, 0, 0, 0, 1.15, 0.85, 1.2);
+      head = addMesh(root, new THREE.SphereGeometry(0.18, 12, 10), fur, 0, 0.55, 0.16);
+      addMesh(root, new THREE.BoxGeometry(0.16, 0.05, 0.2), mat(0xfb923c), 0, 0.52, 0.34);
+      wingL = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), mat(0xfacc15), -0.24, 0.34, 0, 0, 0, 0.4, 0.6, 0.35, 1);
+      wingR = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), mat(0xfacc15), 0.24, 0.34, 0, 0, 0, -0.4, 0.6, 0.35, 1);
+      tail = addMesh(root, new THREE.ConeGeometry(0.08, 0.14, 6), fur, 0, 0.36, -0.28, 1.2, 0, 0);
+      addMesh(root, new THREE.SphereGeometry(0.025, 8, 8), dark, -0.06, 0.6, 0.3);
+      addMesh(root, new THREE.SphereGeometry(0.025, 8, 8), dark, 0.06, 0.6, 0.3);
+      legL = addMesh(root, new THREE.BoxGeometry(0.08, 0.04, 0.12), mat(0xfb923c), -0.08, 0.06, 0.08);
+      legR = addMesh(root, new THREE.BoxGeometry(0.08, 0.04, 0.12), mat(0xfb923c), 0.08, 0.06, 0.08);
+      root.userData.gait = 'waddle';
+    } else if (type.id === 'panda') {
+      const ink = mat(0x1f2937);
+      body = addMesh(root, new THREE.SphereGeometry(0.32, 14, 12), cream, 0, 0.38, 0, 0, 0, 0, 1.1, 1, 0.95);
+      head = addMesh(root, new THREE.SphereGeometry(0.22, 12, 10), cream, 0, 0.66, 0.1);
+      earL = addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), ink, -0.16, 0.84, 0.04);
+      earR = addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), ink, 0.16, 0.84, 0.04);
+      addMesh(root, new THREE.SphereGeometry(0.07, 8, 8), ink, -0.08, 0.68, 0.26, 0, 0, 0, 1.1, 0.8, 0.5);
+      addMesh(root, new THREE.SphereGeometry(0.07, 8, 8), ink, 0.08, 0.68, 0.26, 0, 0, 0, 1.1, 0.8, 0.5);
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, -0.08, 0.68, 0.3);
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, 0.08, 0.68, 0.3);
+      armL = addMesh(root, new THREE.SphereGeometry(0.11, 8, 8), ink, -0.26, 0.34, 0.08);
+      armR = addMesh(root, new THREE.SphereGeometry(0.11, 8, 8), ink, 0.26, 0.34, 0.08);
+      legL = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), ink, -0.12, 0.12, 0.04);
+      legR = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), ink, 0.12, 0.12, 0.04);
+      tail = addMesh(root, new THREE.SphereGeometry(0.07, 8, 8), ink, 0, 0.28, -0.28);
+      root.userData.gait = 'amble';
+    } else if (type.id === 'fox') {
+      body = addMesh(root, new THREE.SphereGeometry(0.26, 14, 12), fur, 0, 0.34, 0, 0, 0, 0, 1, 0.85, 1.3);
+      head = addMesh(root, new THREE.SphereGeometry(0.18, 12, 10), fur, 0, 0.5, 0.24, 0, 0, 0, 1, 0.9, 1.15);
+      addMesh(root, new THREE.ConeGeometry(0.08, 0.16, 8), cream, 0, 0.44, 0.4, 1.2, 0, 0);
+      earL = addMesh(root, new THREE.ConeGeometry(0.06, 0.16, 6), fur, -0.1, 0.68, 0.18, 0, 0, 0.15);
+      earR = addMesh(root, new THREE.ConeGeometry(0.06, 0.16, 6), fur, 0.1, 0.68, 0.18, 0, 0, -0.15);
+      addMesh(root, new THREE.SphereGeometry(0.025, 8, 8), dark, -0.06, 0.54, 0.38);
+      addMesh(root, new THREE.SphereGeometry(0.025, 8, 8), dark, 0.06, 0.54, 0.38);
+      tail = addMesh(root, new THREE.SphereGeometry(0.12, 10, 8), fur, 0, 0.38, -0.36, 0, 0, 0, 0.7, 0.7, 1.6);
+      addMesh(tail, new THREE.SphereGeometry(0.08, 8, 8), cream, 0, 0, -0.16);
+      const ember = mat(0xfb923c, { emissive: 0xea580c, emissiveIntensity: 0.35 });
+      addMesh(root, new THREE.SphereGeometry(0.04, 6, 6), ember, 0, 0.42, -0.02);
+      legL = addMesh(root, new THREE.CapsuleGeometry(0.04, 0.12, 3, 6), mat(0x1f2937), -0.1, 0.12, 0.08);
+      legR = addMesh(root, new THREE.CapsuleGeometry(0.04, 0.12, 3, 6), mat(0x1f2937), 0.1, 0.12, 0.08);
+      root.userData.gait = 'trot';
+    } else {
+      // velvet dragon
+      const hide = mat(0xa78bfa, { emissive: 0x5b21b6, emissiveIntensity: 0.22 });
+      body = addMesh(root, new THREE.SphereGeometry(0.28, 14, 12), hide, 0, 0.4, 0, 0, 0, 0, 1.05, 0.9, 1.45);
+      head = addMesh(root, new THREE.SphereGeometry(0.2, 12, 10), hide, 0, 0.58, 0.28);
+      addMesh(root, new THREE.ConeGeometry(0.07, 0.16, 6), mat(0xf5d0fe), 0, 0.52, 0.44, 1.15, 0, 0);
+      addMesh(root, new THREE.ConeGeometry(0.04, 0.14, 5), mat(0xfde68a, { emissive: 0xfbbf24, emissiveIntensity: 0.5 }), -0.08, 0.74, 0.22);
+      addMesh(root, new THREE.ConeGeometry(0.04, 0.14, 5), mat(0xfde68a, { emissive: 0xfbbf24, emissiveIntensity: 0.5 }), 0.08, 0.74, 0.22);
+      const glowEye = mat(0x5eead4, { emissive: 0x2dd4bf, emissiveIntensity: 0.8 });
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), glowEye, -0.07, 0.62, 0.42);
+      addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), glowEye, 0.07, 0.62, 0.42);
+      wingL = addMesh(root, new THREE.ConeGeometry(0.22, 0.4, 3), mat(0xc4b5fd, { transparent: true, opacity: 0.85, emissive: 0x6d28d9, emissiveIntensity: 0.2 }), -0.28, 0.5, -0.02, 0, 0, 1.1);
+      wingR = addMesh(root, new THREE.ConeGeometry(0.22, 0.4, 3), mat(0xc4b5fd, { transparent: true, opacity: 0.85, emissive: 0x6d28d9, emissiveIntensity: 0.2 }), 0.28, 0.5, -0.02, 0, 0, -1.1);
+      tail = addMesh(root, new THREE.CapsuleGeometry(0.05, 0.34, 3, 6), hide, 0, 0.34, -0.4, 0.8, 0, 0);
+      addMesh(tail, new THREE.ConeGeometry(0.06, 0.1, 5), mat(0xf472b6), 0, 0, -0.24, 1.2, 0, 0);
+      legL = addMesh(root, new THREE.CapsuleGeometry(0.045, 0.12, 3, 6), hide, -0.12, 0.14, 0.1);
+      legR = addMesh(root, new THREE.CapsuleGeometry(0.045, 0.12, 3, 6), hide, 0.12, 0.14, 0.1);
+      const lite = new THREE.PointLight(0xc4b5fd, 0.45, 4);
+      lite.position.set(0, 0.7, 0);
+      root.add(lite);
+      root.userData.gait = 'glide';
+    }
+
+    root.scale.setScalar(scale);
+    return stampRig(root, { body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, kind: 'fluff', species: type.id });
+  }
+
+  function makeHostileMesh(type, scale = 1) {
+    const root = new THREE.Group();
+    const dark = mat(0x1c1917);
+    let body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, extra;
+
+    if (type.id === 'scrapdog') {
+      const rust = mat(0x7c6a58, { metalness: 0.55, roughness: 0.4 });
+      const plate = mat(0xa8a29e, { metalness: 0.85, roughness: 0.25 });
+      body = addMesh(root, new THREE.SphereGeometry(0.3, 10, 8), rust, 0, 0.36, 0, 0, 0, 0, 1.2, 0.85, 1.35);
+      head = addMesh(root, new THREE.BoxGeometry(0.28, 0.22, 0.3), rust, 0, 0.5, 0.28);
+      extra = addMesh(root, new THREE.BoxGeometry(0.32, 0.06, 0.36), plate, 0, 0.5, 0);
+      addMesh(root, new THREE.ConeGeometry(0.05, 0.12, 5), mat(0xf43f5e), -0.06, 0.48, 0.46, 1.2, 0, 0);
+      addMesh(root, new THREE.ConeGeometry(0.05, 0.12, 5), mat(0xf43f5e), 0.06, 0.48, 0.46, 1.2, 0, 0);
+      const eye = mat(0xfb7185, { emissive: 0xe11d48, emissiveIntensity: 0.9 });
+      addMesh(root, new THREE.SphereGeometry(0.035, 6, 6), eye, -0.07, 0.56, 0.42);
+      addMesh(root, new THREE.SphereGeometry(0.035, 6, 6), eye, 0.07, 0.56, 0.42);
+      earL = addMesh(root, new THREE.ConeGeometry(0.06, 0.14, 4), rust, -0.12, 0.66, 0.2, 0, 0, 0.4);
+      earR = addMesh(root, new THREE.ConeGeometry(0.05, 0.1, 4), rust, 0.12, 0.62, 0.18, 0.4, 0, -0.5);
+      tail = addMesh(root, new THREE.CylinderGeometry(0.02, 0.04, 0.3, 5), plate, 0, 0.4, -0.36, 0.9, 0, 0);
+      addMesh(root, new THREE.TorusGeometry(0.12, 0.02, 6, 12), plate, 0, 0.42, 0.16, Math.PI / 2, 0, 0);
+      legL = addMesh(root, new THREE.BoxGeometry(0.08, 0.18, 0.1), rust, -0.12, 0.12, 0.08);
+      legR = addMesh(root, new THREE.BoxGeometry(0.08, 0.18, 0.1), rust, 0.12, 0.12, 0.08);
+      root.userData.gait = 'lumber';
+    } else if (type.id === 'corpcat') {
+      const fur = mat(0xf8fafc, { roughness: 0.35 });
+      body = addMesh(root, new THREE.SphereGeometry(0.24, 12, 10), fur, 0, 0.34, 0, 0, 0, 0, 0.9, 0.8, 1.35);
+      head = addMesh(root, new THREE.SphereGeometry(0.16, 12, 10), fur, 0, 0.52, 0.22);
+      addMesh(root, new THREE.BoxGeometry(0.06, 0.12, 0.03), mat(0x0f172a), 0, 0.36, 0.22);
+      earL = addMesh(root, new THREE.ConeGeometry(0.05, 0.12, 5), fur, -0.08, 0.68, 0.18);
+      earR = addMesh(root, new THREE.ConeGeometry(0.05, 0.12, 5), fur, 0.08, 0.68, 0.18);
+      const slit = mat(0x22d3ee, { emissive: 0x0891b2, emissiveIntensity: 0.8 });
+      addMesh(root, new THREE.BoxGeometry(0.04, 0.012, 0.02), slit, -0.05, 0.54, 0.36);
+      addMesh(root, new THREE.BoxGeometry(0.04, 0.012, 0.02), slit, 0.05, 0.54, 0.36);
+      tail = addMesh(root, new THREE.CapsuleGeometry(0.03, 0.36, 3, 6), fur, 0.04, 0.4, -0.34, 0.6, 0.4, 0);
+      addMesh(root, new THREE.BoxGeometry(0.12, 0.08, 0.04), mat(0x1e293b, { metalness: 0.4 }), 0.22, 0.28, 0.08, 0, 0.4, 0); // briefcase
+      legL = addMesh(root, new THREE.CapsuleGeometry(0.03, 0.12, 3, 6), fur, -0.08, 0.12, 0.08);
+      legR = addMesh(root, new THREE.CapsuleGeometry(0.03, 0.12, 3, 6), fur, 0.08, 0.12, 0.08);
+      root.userData.gait = 'slink';
+    } else if (type.id === 'razorbot') {
+      const steel = mat(0x94a3b8, { metalness: 0.9, roughness: 0.22 });
+      const blade = mat(0xe2e8f0, { metalness: 1, roughness: 0.12, emissive: 0x64748b, emissiveIntensity: 0.15 });
+      body = addMesh(root, new THREE.BoxGeometry(0.42, 0.32, 0.36), steel, 0, 0.42, 0);
+      head = addMesh(root, new THREE.CylinderGeometry(0.12, 0.14, 0.16, 8), steel, 0, 0.66, 0.04);
+      extra = addMesh(root, new THREE.BoxGeometry(0.2, 0.05, 0.04), mat(0x22d3ee, { emissive: 0x06b6d4, emissiveIntensity: 1 }), 0, 0.68, 0.14);
+      addMesh(root, new THREE.CylinderGeometry(0.015, 0.015, 0.18, 6), steel, 0, 0.82, 0);
+      addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), mat(0xf43f5e, { emissive: 0xf43f5e, emissiveIntensity: 0.9 }), 0, 0.92, 0);
+      armL = addMesh(root, new THREE.BoxGeometry(0.05, 0.08, 0.32), blade, -0.28, 0.42, 0.12, 0, 0.2, 0);
+      armR = addMesh(root, new THREE.BoxGeometry(0.05, 0.08, 0.32), blade, 0.28, 0.42, 0.12, 0, -0.2, 0);
+      legL = addMesh(root, new THREE.BoxGeometry(0.12, 0.14, 0.2), steel, -0.12, 0.14, 0);
+      legR = addMesh(root, new THREE.BoxGeometry(0.12, 0.14, 0.2), steel, 0.12, 0.14, 0);
+      const lite = new THREE.PointLight(0x22d3ee, 0.4, 3.5);
+      lite.position.set(0, 0.7, 0.2);
+      root.add(lite);
+      root.userData.gait = 'stomp';
+    } else if (type.id === 'voidrat') {
+      const voidM = mat(0x292524, { emissive: 0x4c1d95, emissiveIntensity: 0.25 });
+      body = addMesh(root, new THREE.SphereGeometry(0.22, 12, 10), voidM, 0, 0.28, 0, 0, 0, 0, 1.3, 0.75, 1.6);
+      head = addMesh(root, new THREE.SphereGeometry(0.14, 10, 8), voidM, 0, 0.38, 0.28, 0, 0, 0, 1, 0.8, 1.2);
+      earL = addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), voidM, -0.12, 0.5, 0.22, 0, 0, 0, 0.7, 1, 0.2);
+      earR = addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), voidM, 0.12, 0.5, 0.22, 0, 0, 0, 0.7, 1, 0.2);
+      const eye = mat(0xf472b6, { emissive: 0xdb2777, emissiveIntensity: 1 });
+      addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), eye, -0.05, 0.42, 0.4);
+      addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), eye, 0.05, 0.42, 0.4);
+      addMesh(root, new THREE.ConeGeometry(0.03, 0.1, 4), dark, 0, 0.34, 0.42, 1.2, 0, 0);
+      tail = addMesh(root, new THREE.CapsuleGeometry(0.025, 0.46, 3, 6), voidM, 0, 0.28, -0.42, 0.7, 0, 0);
+      addMesh(root, new THREE.BoxGeometry(0.16, 0.02, 0.02), mat(0xc4b5fd, { emissive: 0x7c3aed, emissiveIntensity: 0.8 }), 0, 0.32, 0.02);
+      legL = addMesh(root, new THREE.CapsuleGeometry(0.025, 0.08, 3, 5), voidM, -0.1, 0.1, 0.08);
+      legR = addMesh(root, new THREE.CapsuleGeometry(0.025, 0.08, 3, 5), voidM, 0.1, 0.1, 0.08);
+      const lite = new THREE.PointLight(0x7c3aed, 0.55, 4);
+      lite.position.set(0, 0.5, 0);
+      root.add(lite);
+      root.userData.gait = 'skitter';
+    } else {
+      // Stuffing Ripper — anti-teddy villain
+      const hide = mat(0x4c0519, { roughness: 0.45 });
+      const stitch = mat(0xfca5a5, { emissive: 0x9f1239, emissiveIntensity: 0.3 });
+      body = addMesh(root, new THREE.SphereGeometry(0.46, 16, 12), hide, 0, 0.7, 0, 0, 0, 0, 1.05, 1.2, 0.85);
+      head = addMesh(root, new THREE.SphereGeometry(0.32, 14, 12), hide, 0, 1.28, 0.06);
+      earL = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), hide, -0.24, 1.52, 0);
+      earR = addMesh(root, new THREE.SphereGeometry(0.12, 8, 8), hide, 0.24, 1.52, 0);
+      const xEye = mat(0xfef2f2, { emissive: 0xf43f5e, emissiveIntensity: 1 });
+      addMesh(root, new THREE.BoxGeometry(0.12, 0.03, 0.03), xEye, -0.1, 1.32, 0.28, 0, 0, 0.7);
+      addMesh(root, new THREE.BoxGeometry(0.12, 0.03, 0.03), xEye, -0.1, 1.32, 0.28, 0, 0, -0.7);
+      addMesh(root, new THREE.BoxGeometry(0.12, 0.03, 0.03), xEye, 0.1, 1.32, 0.28, 0, 0, 0.7);
+      addMesh(root, new THREE.BoxGeometry(0.12, 0.03, 0.03), xEye, 0.1, 1.32, 0.28, 0, 0, -0.7);
+      addMesh(root, new THREE.BoxGeometry(0.16, 0.03, 0.04), stitch, 0, 1.18, 0.3);
+      armL = addMesh(root, new THREE.BoxGeometry(0.08, 0.08, 0.55), mat(0xcbd5e1, { metalness: 0.95, roughness: 0.15 }), -0.5, 0.85, 0.18, 0.2, 0.3, 0.2);
+      armR = addMesh(root, new THREE.BoxGeometry(0.08, 0.08, 0.55), mat(0xcbd5e1, { metalness: 0.95, roughness: 0.15 }), 0.5, 0.85, 0.18, 0.2, -0.3, -0.2);
+      addMesh(armL, new THREE.BoxGeometry(0.02, 0.16, 0.18), mat(0xf8fafc, { metalness: 1, roughness: 0.1 }), 0, 0, 0.28);
+      addMesh(armR, new THREE.BoxGeometry(0.02, 0.16, 0.18), mat(0xf8fafc, { metalness: 1, roughness: 0.1 }), 0, 0, 0.28);
+      extra = addMesh(root, new THREE.PlaneGeometry(0.7, 0.9), mat(0x3f0a12, { side: THREE.DoubleSide, transparent: true, opacity: 0.85 }), 0, 0.7, -0.28);
+      legL = addMesh(root, new THREE.BoxGeometry(0.16, 0.32, 0.2), hide, -0.16, 0.2, 0);
+      legR = addMesh(root, new THREE.BoxGeometry(0.16, 0.32, 0.2), hide, 0.16, 0.2, 0);
+      const lite = new THREE.PointLight(0xe11d48, 0.7, 6);
+      lite.position.set(0, 1.3, 0.3);
+      root.add(lite);
+      root.userData.gait = 'menace';
+    }
+
+    root.scale.setScalar(scale);
+    return stampRig(root, { body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, extra, kind: 'hostile', species: type.id, villain: !!type.villain });
+  }
+
+  function makeCritter(color, scale = 1, style = 'fluff') {
+    const type = (style === 'hostile' ? HOSTILE_TYPES : FLUFFY_TYPES).find(t => t.color === color)
+      || { id: style === 'hostile' ? 'scrapdog' : 'bunny', color, name: 'Critter', emoji: '✨' };
+    return style === 'hostile' ? makeHostileMesh(type, scale) : makeFluffyMesh(type, scale);
   }
 
   const wildFluffies = [];
@@ -431,7 +891,7 @@
   const humans = [];
 
   function spawnWildFluffy(type, x, z) {
-    const mesh = makeCritter(type.color, type.rarity === 'legend' ? 1.25 : 1, 'fluff');
+    const mesh = makeFluffyMesh(type, type.rarity === 'legend' ? 1.2 : type.rarity === 'rare' ? 1.08 : 1);
     mesh.position.set(x, 0, z);
     scene.add(mesh);
     const f = {
@@ -439,14 +899,15 @@
       recruited: false,
       homeX: x, homeZ: z,
       wanderT: Math.random() * 2,
-      vx: 0, vz: 0
+      vx: 0, vz: 0,
+      moving: false
     };
     wildFluffies.push(f);
     return f;
   }
 
   function spawnHostile(type, x, z) {
-    const mesh = makeCritter(type.color, 1.1, 'hostile');
+    const mesh = makeHostileMesh(type, type.villain ? 1.15 : 1.05);
     mesh.position.set(x, 0, z);
     scene.add(mesh);
     hostiles.push({
@@ -454,24 +915,56 @@
       hp: type.hp, hpMax: type.hp, atk: type.atk,
       defeated: false,
       homeX: x, homeZ: z,
-      aggro: 7,
-      vx: (Math.random() - 0.5), vz: (Math.random() - 0.5)
+      aggro: type.aggro,
+      vx: (Math.random() - 0.5), vz: (Math.random() - 0.5),
+      aggroCry: false,
+      moving: false
     });
   }
 
-  function makeHuman(name, x, z, color) {
+  function makeHuman(def) {
     const root = new THREE.Group();
-    const skin = new THREE.MeshStandardMaterial({ color: 0xf0c8a8 });
-    const shirt = new THREE.MeshStandardMaterial({ color });
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.25), shirt);
-    torso.position.y = 0.9; torso.castShadow = true; root.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), skin);
-    head.position.y = 1.35; root.add(head);
-    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-    legs.position.y = 0.35; root.add(legs);
-    root.position.set(x, 0, z);
+    const skin = mat(0xf0c8a8);
+    const shirt = mat(def.color);
+    const pants = mat(def.id === 'acolyte' ? 0x2e1065 : 0x334155);
+    const hairCol = { child: 0xf59e0b, parent: 0x78350f, ranger: 0x365314, shopkeep: 0x1e293b, acolyte: 0xc4b5fd }[def.id] || 0x44403c;
+    const hair = mat(hairCol, def.id === 'acolyte' ? { emissive: 0x5b21b6, emissiveIntensity: 0.2 } : {});
+
+    const torso = addMesh(root, new THREE.BoxGeometry(0.4, 0.5, 0.25), shirt, 0, 0.92, 0);
+    const head = addMesh(root, new THREE.SphereGeometry(0.2, 14, 12), skin, 0, 1.38, 0);
+    const hairM = addMesh(root, new THREE.SphereGeometry(0.21, 10, 8), hair, 0, 1.5, -0.02, 0, 0, 0, 1, 0.7, 1);
+    const armL = addMesh(root, new THREE.BoxGeometry(0.12, 0.38, 0.12), shirt, -0.28, 0.88, 0);
+    const armR = addMesh(root, new THREE.BoxGeometry(0.12, 0.38, 0.12), shirt, 0.28, 0.88, 0);
+    const legL = addMesh(root, new THREE.BoxGeometry(0.14, 0.42, 0.16), pants, -0.1, 0.28, 0);
+    const legR = addMesh(root, new THREE.BoxGeometry(0.14, 0.42, 0.16), pants, 0.1, 0.28, 0);
+    addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), mat(0x1f2937), -0.07, 1.4, 0.16);
+    addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), mat(0x1f2937), 0.07, 1.4, 0.16);
+
+    if (def.id === 'child') {
+      addMesh(root, new THREE.BoxGeometry(0.28, 0.22, 0.1), mat(0xf472b6), 0, 0.95, -0.18); // pack
+    } else if (def.id === 'parent') {
+      addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), hair, 0, 1.62, -0.02); // bun
+      addMesh(root, new THREE.BoxGeometry(0.42, 0.18, 0.08), mat(0xfce7f3), 0, 0.78, 0.16); // apron
+    } else if (def.id === 'ranger') {
+      addMesh(root, new THREE.CylinderGeometry(0.22, 0.22, 0.04, 12), mat(0x365314), 0, 1.58, 0);
+      addMesh(root, new THREE.CylinderGeometry(0.14, 0.16, 0.16, 10), mat(0x3f6212), 0, 1.66, 0);
+    } else if (def.id === 'shopkeep') {
+      addMesh(root, new THREE.BoxGeometry(0.28, 0.06, 0.22), mat(0x0f172a), 0, 1.48, 0.06); // visor
+      addMesh(root, new THREE.BoxGeometry(0.36, 0.22, 0.06), mat(0xfef3c7), 0, 0.82, 0.16);
+    } else if (def.id === 'acolyte') {
+      addMesh(root, new THREE.ConeGeometry(0.28, 0.34, 8), mat(0x2e1065), 0, 1.66, -0.04);
+      addMesh(root, new THREE.SphereGeometry(0.07, 8, 8), mat(0xfde68a, { emissive: 0xfbbf24, emissiveIntensity: 0.7 }), 0, 1.02, 0.16);
+    }
+
+    root.scale.setScalar(def.scale);
+    root.position.set(def.x, 0, def.z);
     scene.add(root);
-    humans.push({ name, mesh: root, hugged: false, convertProgress: 0 });
+    stampRig(root, { body: torso, head, hair: hairM, armL, armR, legL, legR, gait: 'walk', kind: 'npc', species: def.id });
+    humans.push({
+      name: def.name, title: def.title, id: def.id, def, mesh: root,
+      hugged: false, convertProgress: 0, believer: false,
+      homeX: def.x, homeZ: def.z, wanderT: Math.random() * 3, vx: 0, vz: 0, moving: false
+    });
   }
 
   // Populate world
@@ -492,12 +985,9 @@
   spawnHostile(HOSTILE_TYPES[1], 20, -10);
   spawnHostile(HOSTILE_TYPES[0], -6, -18);
   spawnHostile(HOSTILE_TYPES[2], 8, -22);
+  spawnHostile(HOSTILE_TYPES[4], 22, -18); // Stuffing Ripper near the shrine
 
-  makeHuman('Child', 2, 18, 0x7dd3fc);
-  makeHuman('Parent', -16, 6, 0xf9a8d4);
-  makeHuman('Park Ranger', -18, -12, 0x86efac);
-  makeHuman('Shopkeep', 18, 2, 0xfbbf24);
-  makeHuman('Acolyte', 14, -16, 0xc4b5fd);
+  NPC_DEFS.forEach(makeHuman);
 
   // ═══════════════════════════════════════════════════════
   // LABELS / FX
@@ -547,6 +1037,63 @@
       scene.add(p);
       particles.push(p);
     }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ANIMATION RIGS
+  // ═══════════════════════════════════════════════════════
+  function animateRig(mesh, dt, moving, mood = 'idle') {
+    const u = mesh.userData;
+    if (!u) return;
+    u.t = (u.t || 0) + dt;
+    const gait = u.gait || 'waddle';
+    const speed = mood === 'chase' ? 11 : moving ? 8 : gait === 'glide' ? 3.2 : 2.4;
+    u.phase = (u.phase || 0) + dt * speed;
+    const p = u.phase;
+    const breathe = 1 + Math.sin(u.t * (moving ? 7 : 2.3)) * (mood === 'menace' ? 0.06 : 0.035);
+    if (u.body) u.body.scale.y = breathe;
+
+    const swing = moving ? Math.sin(p) : Math.sin(u.t * 1.6) * 0.12;
+    const amp = moving ? (gait === 'stomp' ? 0.55 : gait === 'skitter' ? 0.7 : 0.45) : 0.06;
+    if (u.legL) u.legL.rotation.x = swing * amp;
+    if (u.legR) u.legR.rotation.x = -swing * amp;
+    if (u.armL) u.armL.rotation.x = -swing * amp * 0.85;
+    if (u.armR) u.armR.rotation.x = swing * amp * 0.85;
+
+    if (u.tail) {
+      u.tail.rotation.y = Math.sin(u.t * (moving ? 10 : 3.2)) * (gait === 'slink' ? 0.7 : 0.4);
+      u.tail.rotation.x = 0.15 + Math.sin(u.t * 2.1) * 0.12;
+    }
+    if (u.earL) u.earL.rotation.z = (u.earL.userData.z0 ?? u.earL.rotation.z * 0) + 0.12 + Math.sin(u.t * 2.6) * 0.1;
+    if (u.earR) u.earR.rotation.z = -0.12 - Math.sin(u.t * 2.6 + 0.4) * 0.1;
+    if (u.wingL) u.wingL.rotation.z = 1.05 + Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.45 : 0.18);
+    if (u.wingR) u.wingR.rotation.z = -1.05 - Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.45 : 0.18);
+    if (u.head) {
+      u.head.rotation.y = Math.sin(u.t * (mood === 'talk' ? 14 : 1.4)) * (mood === 'talk' ? 0.12 : 0.08);
+      u.head.rotation.z = Math.sin(u.t * 1.1) * 0.05;
+    }
+    if (u.extra && u.species === 'ripper') {
+      u.extra.rotation.y = Math.sin(u.t * 1.3) * 0.08;
+    }
+    if (u.extra && u.species === 'razorbot') {
+      u.extra.material.emissiveIntensity = 0.7 + Math.sin(u.t * 8) * 0.4;
+    }
+
+    let hop = 0;
+    if (gait === 'hop') hop = moving ? Math.abs(Math.sin(p)) * 0.16 : Math.abs(Math.sin(u.t * 2)) * 0.03;
+    else if (gait === 'glide') hop = 0.08 + Math.sin(u.t * 2.5) * 0.05;
+    else if (gait === 'skitter') hop = moving ? Math.abs(Math.sin(p * 2)) * 0.07 : 0.02;
+    else hop = Math.abs(Math.sin(u.t * (moving ? 6 : 2))) * (moving ? 0.04 : 0.02);
+
+    if (gait === 'waddle' && moving) mesh.rotation.z = Math.sin(p) * 0.14;
+    else if (gait === 'menace') mesh.rotation.z = Math.sin(u.t * 2.2) * 0.03;
+    else mesh.rotation.z *= 0.85;
+
+    if (mood === 'chase') mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, 0.16, 0.12);
+    else mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, 0, 0.12);
+
+    u.hop = hop;
+    if (mood !== 'lockY') mesh.position.y = hop;
   }
 
   // ═══════════════════════════════════════════════════════
@@ -620,21 +1167,56 @@
     const dx = h.mesh.position.x - bear.position.x;
     const dz = h.mesh.position.z - bear.position.z;
     bear.rotation.y = Math.atan2(dx, dz);
+    h.mesh.rotation.y = Math.atan2(-dx, -dz);
 
     let gain = 12 + Math.floor(Math.random() * 8);
     if (player.skills.buttonEyes) gain = Math.floor(gain * 1.2);
+    if (h.id === 'parent') gain += 6;
+
+    let convert = gain;
+    if (h.id === 'acolyte') convert = Math.floor(gain * 1.45);
+
+    let charge = gain * 0.85;
+    if (h.id === 'child') charge += 10;
+    if (h.id === 'acolyte') charge += 6;
+
     state.ap += gain;
-    state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + gain * 0.85);
-    h.convertProgress = Math.min(100, h.convertProgress + gain);
+    state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + charge);
+    h.convertProgress = Math.min(100, h.convertProgress + convert);
     h.hugged = true;
+
+    if (h.id === 'shopkeep') {
+      state.fp += 4;
+      spawnFloat(h.mesh.position.clone().setY(1.6), '+4 FP', '#fde68a');
+    }
+    if (h.id === 'ranger') {
+      for (const f of wildFluffies) {
+        if (f.recruited) continue;
+        if (h.mesh.position.distanceTo(f.mesh.position) < 16) {
+          f.mesh.traverse(o => {
+            if (o.isMesh && o.material && o.material.emissive) {
+              o.material.emissive = new THREE.Color(0x6ee7b7);
+              o.material.emissiveIntensity = 0.35;
+            }
+          });
+        }
+      }
+      toast('Trail Beacon: nearby fluffies shimmer.');
+    }
 
     const mid = bear.position.clone().lerp(h.mesh.position, 0.5);
     mid.y = 1.3;
     spawnFloat(mid, `+${gain} AP`, '#f9a8d4');
     burst(mid, 0xf472b6, 8);
+    playVoice('hug');
 
-    if (h.convertProgress >= 100) {
-      toast(`${h.name} believes! Miracle Charge surges.`);
+    const line = h.def.lines[Math.floor(Math.random() * h.def.lines.length)];
+    speak(h.mesh, line, 'npc', h.id, line, h.def.pitch, h.def.rate);
+    spawnFloat(h.mesh.position.clone().setY(1.9), h.def.skill.name, '#c4b5fd');
+
+    if (h.convertProgress >= 100 && !h.believer) {
+      h.believer = true;
+      toast(`${h.name} believes! ${h.def.skill.name} blossoms.`);
       state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 20);
       h.mesh.traverse(o => {
         if (o.isMesh && o.material && o.geometry?.type === 'BoxGeometry') {
@@ -642,6 +1224,14 @@
           o.material.color.set(0x7c3aed);
         }
       });
+      const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(0.2, 0.025, 8, 16),
+        new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xfbbf24, emissiveIntensity: 0.6 })
+      );
+      halo.rotation.x = Math.PI / 2;
+      halo.position.y = 1.78;
+      h.mesh.add(halo);
+      speak(h.mesh, 'I believe in the fluff!', 'npc', h.id, 'I believe in the fluff!', h.def.pitch, 0.9);
     }
     updateHUD();
   }
@@ -655,18 +1245,24 @@
     f.mesh.visible = false;
     const member = {
       id: f.type.id + '_' + Math.random().toString(36).slice(2, 6),
+      typeId: f.type.id,
       name: f.type.name,
       emoji: f.type.emoji,
       atk: f.type.atk,
       color: f.type.color,
-      rarity: f.type.rarity
+      rarity: f.type.rarity,
+      skill: f.type.skill
     };
     party.push(member);
     state.ap += 8;
     state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 10);
     spawnFloat(f.mesh.position.clone().setY(1.2), 'JOINED!', '#6ee7b7');
     burst(f.mesh.position.clone().setY(0.8), f.type.color, 14);
-    toast(`${member.emoji} ${member.name} joined your party!`);
+    playVoice('recruit');
+    playVoice(f.type.id);
+    const line = f.type.lines[Math.floor(Math.random() * f.type.lines.length)];
+    speak(f.mesh, line + ' — ' + f.type.skill.name, 'fluff', f.type.id);
+    toast(`${member.emoji} ${member.name} joined! Skill: ${member.skill.name}`);
     updateHUD();
     renderPartyHud();
   }
@@ -686,6 +1282,7 @@
     bear.userData.halo.visible = true;
 
     // Screen miracle FX
+    playVoice('miracle');
     burst(bear.position.clone().setY(1.2), 0xfde68a, 28);
     burst(bear.position.clone().setY(1.5), 0xc4b5fd, 20);
     spawnFloat(bear.position.clone().setY(2), `MIRACLE +${fpGain} FP`, '#fde68a');
@@ -715,22 +1312,56 @@
     battle.enemy = enemy;
     battle.turn = 'player';
     battle.busy = false;
-    battle.log = `${enemy.type.emoji} ${enemy.type.name} tries to rip the fluff apart!`;
-    if (player.skills.fluffShield) {
-      battle.log += ' Fluff Shield braces you.';
-    }
+    battle.bleed = 0;
+    battle.guard = 0;
+    battle.weaken = 0;
+    battle.stunned = false;
+    const skill = enemy.type.skill;
+    const villain = enemy.type.villain;
+    battle.log = villain
+      ? `${enemy.type.name} unfolds scissor-arms. “${enemy.type.lines[0]}”`
+      : `${enemy.type.emoji} ${enemy.type.name} lunges! (${skill.icon} ${skill.name})`;
+    if (player.skills.fluffShield) battle.log += ' Fluff Shield braces you.';
     document.getElementById('battleUI').classList.remove('hidden');
     document.getElementById('bEnemyName').textContent = `${enemy.type.emoji} ${enemy.type.name}`;
+    document.getElementById('bEnemyEmoji').textContent = enemy.type.emoji;
+    document.getElementById('bEnemySkillChip').textContent = skill.icon + ' ' + skill.name;
+    document.getElementById('bEnemySkill').textContent = skill.name + ' — ' + skill.desc;
+    document.getElementById('bEnemyPort').style.background = villain
+      ? 'radial-gradient(circle at 30% 20%,#fb7185,#4c0519)'
+      : 'radial-gradient(circle at 30% 20%,#fda4af,#7f1d1d)';
+    playVoice(enemy.type.id);
+    const line = enemy.type.lines[Math.floor(Math.random() * enemy.type.lines.length)];
+    speak(enemy.mesh, line, villain ? 'villain' : 'hostile', enemy.type.id,
+      villain ? line : null, villain ? 0.35 : 1, villain ? 0.78 : 1);
+    pulsePortrait('bEnemyPort');
     syncBattle();
+  }
+
+  function pulsePortrait(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('strike');
+    void el.offsetWidth;
+    el.classList.add('strike');
   }
 
   function syncBattle() {
     const e = battle.enemy;
+    if (!e) return;
     document.getElementById('bLog').textContent = battle.log;
+    const flags = [
+      battle.bleed ? `bleed ${battle.bleed}` : '',
+      battle.guard ? 'guarded' : '',
+      battle.weaken ? 'weakened' : '',
+      battle.stunned ? 'stunned' : ''
+    ].filter(Boolean).join(' · ');
     document.getElementById('bHpLine').textContent =
-      `Enemy ${Math.max(0, Math.ceil(e.hp))}/${e.hpMax} · You ${Math.max(0, Math.ceil(player.hp))}/${player.hpMax}`;
+      `Enemy ${Math.max(0, Math.ceil(e.hp))}/${e.hpMax} · You ${Math.max(0, Math.ceil(player.hp))}/${player.hpMax}`
+      + (flags ? ' · ' + flags : '');
     document.getElementById('bPartyLine').textContent =
-      party.length ? 'Party: ' + party.map(p => p.emoji).join(' ') : 'No party partners yet';
+      party.length
+        ? 'Party: ' + party.map(p => `${p.emoji} ${p.skill.name}`).join(' · ')
+        : 'No party partners yet';
     document.querySelectorAll('[data-atk]').forEach(b => {
       b.disabled = battle.busy || battle.turn !== 'player';
     });
@@ -757,23 +1388,48 @@
     }
 
     let dmg = 0;
+    const notes = [];
     if (kind === 'slap') {
-      dmg = player.atk + Math.floor(Math.random() * 5);
-      battle.log = `Soft Slap hits for ${dmg}!`;
+      dmg = player.atk + Math.floor(Math.random() * 5) - battle.weaken;
+      battle.log = `Soft Slap hits for ${Math.max(1, dmg)}!`;
+      playVoice('hit');
+      pulsePortrait('bHeroPort');
     } else if (kind === 'beam') {
       if (state.fp < 12) { battle.log = 'Need 12 FP!'; battle.busy = false; syncBattle(); return; }
       state.fp -= 12;
-      dmg = Math.floor(player.atk * 2.2) + Math.floor(Math.random() * 6);
-      battle.log = `Cuddle Beam deals ${dmg}!`;
+      dmg = Math.floor(player.atk * 2.2) + Math.floor(Math.random() * 6) - battle.weaken;
+      battle.log = `Cuddle Beam deals ${Math.max(1, dmg)}!`;
+      playVoice('miracle');
+      pulsePortrait('bHeroPort');
       updateHUD();
     } else if (kind === 'party') {
+      let mult = player.skills.partyBond ? 1.4 : 1;
+      const types = new Set();
+      for (const p of party) {
+        if (types.has(p.typeId)) continue;
+        types.add(p.typeId);
+        if (p.typeId === 'fox') mult *= 1.35;
+        if (p.typeId === 'bunny') {
+          const heal = 6;
+          player.hp = Math.min(player.hpMax, player.hp + heal);
+          notes.push(`${p.emoji} Heal Cotton +${heal} HP`);
+        }
+        if (p.typeId === 'pup') { battle.guard = 2; notes.push(`${p.emoji} Loyal Guard`); }
+        if (p.typeId === 'duck' && Math.random() < 0.35) { battle.stunned = true; notes.push(`${p.emoji} Squeak Splash stuns!`); }
+        if (p.typeId === 'panda') { state.ap += 5; notes.push(`${p.emoji} Calm Ink +5 AP`); }
+        if (p.typeId === 'dragon') { dmg += 10; notes.push(`${p.emoji} Velvet Roar +10`); }
+        playVoice(p.typeId);
+      }
       const base = party.reduce((s, p) => s + p.atk, 0) + 4;
-      dmg = Math.floor(base * (player.skills.partyBond ? 1.4 : 1)) + Math.floor(Math.random() * 5);
+      dmg += Math.floor(base * mult) + Math.floor(Math.random() * 5) - battle.weaken;
       battle.log = party.length
-        ? `Party Assault! ${party.map(p => p.emoji).join('')} deal ${dmg}!`
-        : `Lonely swipe for ${dmg}. Find fluffies!`;
+        ? `Party Assault! ${party.map(p => p.emoji).join('')} deal ${Math.max(1, dmg)}!` + (notes.length ? ' ' + notes.join(' ') : '')
+        : `Lonely swipe for ${Math.max(1, dmg)}. Find fluffies!`;
+      pulsePortrait('bHeroPort');
+      updateHUD();
     }
 
+    dmg = Math.max(1, dmg);
     e.hp -= dmg;
     syncBattle();
     if (e.hp <= 0) setTimeout(() => { defeatHostile(e, true); endBattle(); }, 600);
@@ -784,15 +1440,70 @@
     const e = battle.enemy;
     if (!e || e.hp <= 0) return;
     battle.turn = 'enemy';
+
+    if (battle.stunned) {
+      battle.stunned = false;
+      battle.log = `${e.type.name} is stunned by Squeak Splash!`;
+      playVoice('duck');
+      syncBattle();
+      setTimeout(() => { battle.turn = 'player'; battle.busy = false; syncBattle(); }, 650);
+      return;
+    }
+
+    if (battle.bleed > 0) {
+      player.hp -= 2;
+      battle.bleed--;
+    }
+
+    const useSkill = Math.random() < (e.type.villain ? 0.7 : 0.48);
     let dmg = e.atk + Math.floor(Math.random() * 4);
+    let note = `${e.type.name} shreds stuffing for`;
+    if (useSkill) {
+      playVoice(e.type.id);
+      const id = e.type.id;
+      if (id === 'scrapdog') {
+        battle.bleed = Math.max(battle.bleed, 2);
+        dmg += 2;
+        note = `Rust Bite gnaws you for`;
+      } else if (id === 'corpcat') {
+        const steal = Math.min(4, state.fp);
+        state.fp -= steal;
+        note = `Audit Claw siphons ${steal} FP and hits for`;
+        updateHUD();
+      } else if (id === 'razorbot') {
+        note = `Overclock blades you for`;
+        if (Math.random() < 0.25) {
+          dmg *= 2;
+          note = `Overclock STRIKES TWICE for`;
+        }
+      } else if (id === 'voidrat') {
+        battle.weaken = 2;
+        note = `Void Nibble weakens you and hits for`;
+      } else if (id === 'ripper') {
+        const drain = Math.min(18, state.miracleCharge);
+        state.miracleCharge -= drain;
+        dmg += 4;
+        note = `Unravel rips stuffing (−${drain} Miracle) for`;
+        updateHUD();
+        speak(e.mesh, e.type.lines[Math.floor(Math.random() * e.type.lines.length)], 'villain', 'ripper',
+          'Softness is a defect.', 0.3, 0.75);
+      }
+    } else {
+      playVoice('hit');
+    }
+
     if (player.skills.fluffShield) dmg = Math.max(1, dmg - 3);
+    if (battle.guard > 0) { dmg = Math.max(1, dmg - 3); battle.guard--; }
     player.hp -= dmg;
-    battle.log = `${e.type.name} shreds stuffing for ${dmg}!`;
+    battle.log = `${note} ${dmg}!`;
+    pulsePortrait('bEnemyPort');
     syncBattle();
 
     if (player.hp <= 0) {
       player.hp = 0;
-      battle.log = 'Unstuffed… waking up in Nursery Hills.';
+      battle.log = e.type.villain
+        ? 'The Ripper unmakes you… waking up in Nursery Hills.'
+        : 'Unstuffed… waking up in Nursery Hills.';
       syncBattle();
       setTimeout(() => {
         endBattle();
@@ -808,20 +1519,22 @@
   function defeatHostile(e, grantRewards) {
     e.defeated = true;
     e.mesh.visible = false;
+    e.aggroCry = false;
     if (grantRewards) {
-      const ap = 10 + Math.floor(Math.random() * 8);
-      const fp = 5 + Math.floor(Math.random() * 6);
+      const boss = e.type.villain;
+      const ap = (boss ? 28 : 10) + Math.floor(Math.random() * 8);
+      const fp = (boss ? 16 : 5) + Math.floor(Math.random() * 6);
       state.ap += ap;
       state.fp += fp;
-      state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 8);
-      toast(`Pet defeated! +${ap} AP · +${fp} FP`);
-      // Respawn later
+      state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + (boss ? 22 : 8));
+      toast(`${e.type.name} defeated! +${ap} AP · +${fp} FP`);
+      playVoice('recruit');
       setTimeout(() => {
         e.defeated = false;
         e.hp = e.hpMax;
         e.mesh.visible = true;
         e.mesh.position.set(e.homeX + (Math.random() - 0.5) * 4, 0, e.homeZ + (Math.random() - 0.5) * 4);
-      }, 25000);
+      }, boss ? 45000 : 25000);
       updateHUD();
     }
   }
@@ -889,6 +1602,7 @@
           <div>
             <p class="font-display text-sm text-pink-100">${p.name}</p>
             <p class="text-[11px] text-violet-400">${p.rarity} · ATK ${p.atk}</p>
+            <p class="text-[11px] text-pink-200 mt-0.5">${p.skill.icon} ${p.skill.name} — ${p.skill.desc}</p>
           </div>
         </div>
         <span class="text-xs text-violet-500">#${i + 1}</span>
@@ -944,6 +1658,7 @@
   // INPUT
   // ═══════════════════════════════════════════════════════
   window.addEventListener('keydown', e => {
+    resumeAudio();
     state.keys[e.key] = true;
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     if (e.key === ' ' && state.mode === 'play') state.actionQueued = true;
@@ -953,6 +1668,7 @@
     if (e.key === 'Escape') closeUI();
   });
   window.addEventListener('keyup', e => { state.keys[e.key] = false; });
+  window.addEventListener('pointerdown', resumeAudio, { passive: true });
 
   document.getElementById('btnAction').onclick = () => { if (state.mode === 'play') state.actionQueued = true; };
   document.getElementById('btnSkills').onclick = () => openUI('skills');
@@ -1001,7 +1717,8 @@
   function syncFollowers() {
     while (followerMeshes.length < party.length) {
       const p = party[followerMeshes.length];
-      const m = makeCritter(p.color, 0.85, 'fluff');
+      const type = FLUFFY_TYPES.find(t => t.id === p.typeId) || FLUFFY_TYPES[0];
+      const m = makeFluffyMesh(type, 0.82);
       scene.add(m);
       followerMeshes.push(m);
     }
@@ -1037,6 +1754,7 @@
 
     if (state.mode === 'battle' || state.mode === 'ui') {
       updateFloaters(dt);
+      updateBubbles(dt);
       return;
     }
 
@@ -1048,10 +1766,21 @@
       bear.userData.armL.rotation.z = 0.3 + swing;
       bear.userData.armR.rotation.z = -0.3 - swing;
       bear.position.y = Math.sin(t * Math.PI) * 0.12;
+      if (state.hugTarget) {
+        const hu = state.hugTarget.mesh.userData;
+        if (hu.armL) hu.armL.rotation.z = swing * 0.9;
+        if (hu.armR) hu.armR.rotation.z = -swing * 0.9;
+        animateRig(state.hugTarget.mesh, dt, false, 'talk');
+      }
       if (state.hugT >= 0.65) {
         bear.userData.armL.rotation.set(0, 0, 0.3);
         bear.userData.armR.rotation.set(0, 0, -0.3);
         bear.position.y = 0;
+        if (state.hugTarget) {
+          const hu = state.hugTarget.mesh.userData;
+          if (hu.armL) hu.armL.rotation.z = 0;
+          if (hu.armR) hu.armR.rotation.z = 0;
+        }
         state.mode = 'play';
         state.hugTarget = null;
       }
@@ -1081,13 +1810,17 @@
       // Prompt
       const fNear = nearest(wildFluffies, 2.2, f => !f.recruited);
       const hNear = nearest(humans, 2.0);
+      const vNear = nearest(hostiles, 3.8, x => !x.defeated);
       const prompt = document.getElementById('prompt');
       if (fNear) {
         prompt.style.opacity = '1';
-        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to recruit <b>${fNear.type.emoji} ${fNear.type.name}</b>`;
+        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to recruit <b>${fNear.type.emoji} ${fNear.type.name}</b><br/><span class="skill-chip">${fNear.type.skill.icon} ${fNear.type.skill.name}</span>`;
       } else if (hNear) {
         prompt.style.opacity = '1';
-        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to hug <b>${hNear.name}</b> (${Math.floor(hNear.convertProgress)}%)`;
+        prompt.innerHTML = `Press <b class="text-pink-300">SPACE / A</b> to hug <b>${hNear.name}</b> the ${hNear.title} (${Math.floor(hNear.convertProgress)}%)<br/><span class="skill-chip">${hNear.def.skill.name}</span> ${hNear.def.skill.desc}`;
+      } else if (vNear) {
+        prompt.style.opacity = '1';
+        prompt.innerHTML = `<b class="text-rose-300">${vNear.type.emoji} ${vNear.type.name}</b> is hunting you<br/><span class="skill-chip hot">${vNear.type.skill.icon} ${vNear.type.skill.name}</span> ${vNear.type.skill.desc}`;
       } else {
         prompt.style.opacity = '0';
       }
@@ -1109,10 +1842,11 @@
       const idx = Math.min(trail.length - 1, (i + 1) * 12);
       const t = trail[idx];
       if (!t) return;
+      const moving = Math.hypot(t.x - m.position.x, t.z - m.position.z) > 0.04;
       m.position.x += (t.x - m.position.x) * Math.min(1, 8 * dt);
       m.position.z += (t.z - m.position.z) * Math.min(1, 8 * dt);
       m.rotation.y = t.y;
-      m.position.y = Math.abs(Math.sin(state.time * 6 + i)) * 0.04;
+      animateRig(m, dt, moving, 'idle');
     });
 
     // Wild fluffies wander
@@ -1128,33 +1862,93 @@
       let nz = f.mesh.position.z + f.vz * dt;
       if (Math.hypot(nx - f.homeX, nz - f.homeZ) > 4) {
         f.vx *= -1; f.vz *= -1;
+        f.moving = false;
       } else {
         f.mesh.position.x = nx; f.mesh.position.z = nz;
+        f.moving = Math.hypot(f.vx, f.vz) > 0.15;
       }
-      f.mesh.position.y = Math.abs(Math.sin(state.time * 4 + f.homeX)) * 0.05;
       if (f.vx || f.vz) f.mesh.rotation.y = Math.atan2(f.vx, f.vz);
+      animateRig(f.mesh, dt, f.moving, 'idle');
     }
 
     // Hostiles: wander + chase + collide
     for (const h of hostiles) {
       if (h.defeated) continue;
       const dist = bear.position.distanceTo(h.mesh.position);
-      if (dist < h.aggro && state.mode === 'play') {
+      const chasing = dist < h.aggro && state.mode === 'play';
+      const spd = h.type.speed || 2.8;
+      if (chasing) {
         const dx = bear.position.x - h.mesh.position.x;
         const dz = bear.position.z - h.mesh.position.z;
         const len = Math.hypot(dx, dz) || 1;
-        h.mesh.position.x += (dx / len) * 2.8 * dt;
-        h.mesh.position.z += (dz / len) * 2.8 * dt;
+        h.mesh.position.x += (dx / len) * spd * dt;
+        h.mesh.position.z += (dz / len) * spd * dt;
         h.mesh.rotation.y = Math.atan2(dx, dz);
+        h.moving = true;
+        if (!h.aggroCry) {
+          h.aggroCry = true;
+          const line = h.type.lines[Math.floor(Math.random() * h.type.lines.length)];
+          speak(h.mesh, line, h.type.villain ? 'villain' : 'hostile', h.type.id,
+            h.type.villain ? line : null, h.type.villain ? 0.3 : 1, h.type.villain ? 0.8 : 1);
+        }
       } else {
+        h.aggroCry = false;
         h.mesh.position.x += h.vx * 1.5 * dt;
         h.mesh.position.z += h.vz * 1.5 * dt;
-        if (Math.hypot(h.mesh.position.x - h.homeX, h.mesh.position.z - h.homeZ) > 6) {
+        h.moving = Math.hypot(h.vx, h.vz) > 0.1;
+        if (Math.hypot(h.mesh.position.x - h.homeX, h.mesh.position.z - h.homeZ) > (h.type.villain ? 10 : 6)) {
           h.vx *= -1; h.vz *= -1;
         }
+        if (h.moving) h.mesh.rotation.y = Math.atan2(h.vx, h.vz);
       }
-      h.mesh.position.y = Math.abs(Math.sin(state.time * 5)) * 0.04;
-      if (state.mode === 'play' && state.invuln <= 0 && dist < 1.3) startBattle(h);
+      animateRig(h.mesh, dt, h.moving, chasing ? 'chase' : (h.type.villain ? 'menace' : 'idle'));
+      const hitR = h.type.villain ? 1.7 : 1.35;
+      if (state.mode === 'play' && state.invuln <= 0 && dist < hitR) startBattle(h);
+    }
+
+    // Humans stroll + idle talk
+    for (const h of humans) {
+      if (state.mode === 'hug' && state.hugTarget === h) continue;
+      h.wanderT -= dt;
+      if (h.wanderT <= 0) {
+        h.wanderT = 2 + Math.random() * 3;
+        if (Math.random() < 0.55) {
+          h.vx = (Math.random() - 0.5) * 1.4;
+          h.vz = (Math.random() - 0.5) * 1.4;
+        } else { h.vx = 0; h.vz = 0; }
+      }
+      const nx = h.mesh.position.x + h.vx * dt;
+      const nz = h.mesh.position.z + h.vz * dt;
+      if (Math.hypot(nx - h.homeX, nz - h.homeZ) > 3.2) {
+        h.vx *= -1; h.vz *= -1;
+        h.moving = false;
+      } else {
+        h.mesh.position.x = nx; h.mesh.position.z = nz;
+        h.moving = Math.hypot(h.vx, h.vz) > 0.05;
+      }
+      if (h.moving) h.mesh.rotation.y = Math.atan2(h.vx, h.vz);
+      animateRig(h.mesh, dt, h.moving, h.believer ? 'talk' : 'idle');
+      if (h.believer && h.mesh.userData.head) {
+        h.mesh.userData.head.rotation.y += Math.sin(state.time * 3) * 0.002;
+      }
+    }
+
+    // Ambient chatter when the player is nearby
+    if (state.mode === 'play' && state.time >= audio.chatterAt) {
+      const f = nearest(wildFluffies, 5.5, x => !x.recruited);
+      const n = nearest(humans, 5.5);
+      const pick = Math.random();
+      if (n && pick < 0.5 && canTalk(n.mesh, 8)) {
+        const line = n.believer ? 'The fluff chose me!' : n.def.lines[Math.floor(Math.random() * n.def.lines.length)];
+        speak(n.mesh, line, 'npc', n.id, line, n.def.pitch, n.def.rate);
+        audio.chatterAt = state.time + 5.5;
+      } else if (f && canTalk(f.mesh, 7)) {
+        const line = f.type.lines[Math.floor(Math.random() * f.type.lines.length)];
+        speak(f.mesh, line, 'fluff', f.type.id);
+        audio.chatterAt = state.time + 4.5;
+      } else {
+        audio.chatterAt = state.time + 2;
+      }
     }
 
     // Camera
@@ -1167,6 +1961,7 @@
     if (zc) scene.fog.color.lerp(new THREE.Color(zc.color).multiplyScalar(0.35).add(new THREE.Color(0x87a0c8).multiplyScalar(0.65)), 0.02);
 
     updateFloaters(dt);
+    updateBubbles(dt);
     updateHUD();
   }
 
@@ -1178,7 +1973,7 @@
 
   renderPartyHud();
   updateHUD();
-  toast('Explore the world. Recruit fluffies. Hug humans. Charge a Miracle!');
+  toast('Fluffies hop, NPCs talk, and the Stuffing Ripper hunts the shrine. Recruit, hug, survive!');
   requestAnimationFrame(frame);
 })();
 </script>
