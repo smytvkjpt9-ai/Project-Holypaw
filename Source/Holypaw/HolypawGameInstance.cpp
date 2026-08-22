@@ -155,7 +155,7 @@ bool UHolypawGameInstance::LoadSlotOntoPawn(AHolypawCharacter* Pawn, int32 Index
 void UHolypawGameInstance::StartNewGame(AHolypawCharacter* Pawn, int32 Index)
 {
 	ActiveSlot = FMath::Clamp(Index, 0, SlotCount - 1);
-	PlaySeconds = 8.f * 60.f;
+	PlaySeconds = 10.f * 60.f;
 	bSessionStarted = true;
 	if (Pawn)
 	{

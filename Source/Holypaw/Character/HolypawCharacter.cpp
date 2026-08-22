@@ -170,8 +170,8 @@ AHolypawCharacter::AHolypawCharacter()
 	KeyFill = CreateDefaultSubobject<UPointLightComponent>(TEXT("KeyFill"));
 	KeyFill->SetupAttachment(RootComponent);
 	KeyFill->SetRelativeLocation(FVector(110.f, 60.f, 150.f));
-	KeyFill->SetIntensity(7200.f);
-	KeyFill->SetAttenuationRadius(1600.f);
+	KeyFill->SetIntensity(14000.f);
+	KeyFill->SetAttenuationRadius(2200.f);
 	KeyFill->SetLightColor(FLinearColor(1.f, 0.94f, 0.86f));
 	KeyFill->SetCastShadows(false);
 	KeyFill->SetUseInverseSquaredFalloff(true);
@@ -495,7 +495,7 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	{
 		const bool bPlayView = Mode == EHolypawPawnMode::Play || Mode == EHolypawPawnMode::Title;
 		KeyFill->SetVisibility(bPlayView);
-		KeyFill->SetIntensity(bPlayView ? 7200.f : 0.f);
+		KeyFill->SetIntensity(bPlayView ? 14000.f : 0.f);
 	}
 	if (Mode == EHolypawPawnMode::Play)
 	{

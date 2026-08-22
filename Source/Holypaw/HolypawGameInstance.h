@@ -33,7 +33,7 @@ public:
 	bool bSessionStarted = false;
 
 	UPROPERTY()
-	float PlaySeconds = 0.f;
+	float PlaySeconds = 10.f * 60.f;
 
 	UPROPERTY()
 	TObjectPtr<UHolypawSettingsSave> Settings;

@@ -151,12 +151,12 @@ namespace
 		}
 		else if (H <= 81)
 		{
-			K.SunInt = 8.2f;
-			K.SkyInt = 1.02f;
-			K.FogDensity = 0.009f;
+			K.SunInt = 11.f;
+			K.SkyInt = 1.35f;
+			K.FogDensity = 0.004f;
 			K.MoonInt = 0.f;
 			K.Pitch = -34.f;
-			K.Bias = 0.28f;
+			K.Bias = 0.55f;
 			K.Temp = 6000.f;
 			K.SunCol = FLinearColor(1.f, 0.90f, 0.76f);
 			K.FogCol = FLinearColor(0.82f, 0.84f, 0.90f);
@@ -164,12 +164,12 @@ namespace
 		}
 		else if (H <= 121)
 		{
-			K.SunInt = 10.f;
-			K.SkyInt = 1.16f;
-			K.FogDensity = 0.008f;
+			K.SunInt = 12.f;
+			K.SkyInt = 1.55f;
+			K.FogDensity = 0.0035f;
 			K.MoonInt = 0.f;
 			K.Pitch = -58.f;
-			K.Bias = 0.36f;
+			K.Bias = 0.65f;
 			K.Temp = 6500.f;
 			K.SunCol = FLinearColor(1.f, 0.95f, 0.88f);
 			K.FogCol = FLinearColor(0.80f, 0.86f, 0.94f);
@@ -262,7 +262,7 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	S.bOverride_AutoExposureMethod = true;
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
-	S.AutoExposureBias = 0.92f;
+	S.AutoExposureBias = 1.35f;
 
 	S.bOverride_ColorSaturation = true;
 	S.ColorSaturation = FVector4(1.02f, 1.02f, 1.02f, 1.f);
@@ -289,12 +289,12 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	S.BloomThreshold = 0.08f;
 
 	S.bOverride_VignetteIntensity = true;
-	S.VignetteIntensity = 0.18f;
+	S.VignetteIntensity = 0.06f;
 	S.bOverride_FilmGrainIntensity = true;
 	S.FilmGrainIntensity = 0.02f;
 
 	S.bOverride_AmbientOcclusionIntensity = true;
-	S.AmbientOcclusionIntensity = 0.42f;
+	S.AmbientOcclusionIntensity = 0.18f;
 	S.bOverride_AmbientOcclusionRadius = true;
 	S.AmbientOcclusionRadius = 42.f;
 
@@ -323,16 +323,16 @@ void HolypawLook::TickGrade(APostProcessVolume* PP, const float Hour, const bool
 	FHourLook L = SampleHour(Hour);
 	if (bIndoors)
 	{
-		L.Bias -= 0.16f;
-		L.Temp = FMath::Lerp(L.Temp, 4200.f, 0.45f);
-		L.Tint = FMath::Lerp(L.Tint, FLinearColor(1.06f, 0.95f, 0.84f), 0.4f);
+		L.Bias -= 0.04f;
+		L.Temp = FMath::Lerp(L.Temp, 4800.f, 0.25f);
+		L.Tint = FMath::Lerp(L.Tint, FLinearColor(1.04f, 0.98f, 0.92f), 0.2f);
 	}
 	if (MillWeight > 0.f)
 	{
-		L.Bias -= 0.20f * MillWeight;
+		L.Bias -= 0.10f * MillWeight;
 		L.Tint = FMath::Lerp(L.Tint, FLinearColor(0.92f, 0.88f, 0.78f), MillWeight);
 	}
-	S.AutoExposureBias = L.Bias + 0.42f;
+	S.AutoExposureBias = L.Bias + 1.15f;
 	S.WhiteTemp = L.Temp;
 	S.SceneColorTint = L.Tint;
 }
@@ -343,7 +343,7 @@ void HolypawLook::DressSun(UDirectionalLightComponent* C, const bool bLinkAtmosp
 	{
 		return;
 	}
-	C->SetIntensity(bLinkAtmosphere ? 10.5f : 14.f);
+	C->SetIntensity(bLinkAtmosphere ? 12.f : 16.f);
 	C->SetLightColor(FLinearColor(1.f, 0.93f, 0.82f));
 	C->SetAtmosphereSunLight(bLinkAtmosphere);
 	C->SetAtmosphereSunLightIndex(0);
@@ -371,7 +371,7 @@ void HolypawLook::DressFill(UDirectionalLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(0.62f);
+	C->SetIntensity(0.95f);
 	C->SetLightColor(Powder);
 	C->SetCastShadows(false);
 	C->SetSpecularScale(0.08f);
@@ -407,7 +407,7 @@ void HolypawLook::DressSky(USkyLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(1.45f);
+	C->SetIntensity(1.85f);
 	C->SetLightColor(FLinearColor(0.74f, 0.84f, 1.f));
 	C->bRealTimeCapture = true;
 	C->IndirectLightingIntensity = 1.1f;
@@ -492,7 +492,7 @@ void HolypawLook::ApplyViewExposure(UCameraComponent* Camera, const float Bias)
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
 	S.AutoExposureBias = Bias;
-	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.35f);
+	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.65f);
 }
 
 void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, const float DeltaSeconds)
@@ -503,7 +503,8 @@ void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, cons
 	}
 	const float WantFov = bBattle ? 56.f : 66.f;
 	Camera->SetFieldOfView(FMath::FInterpTo(Camera->FieldOfView, WantFov, DeltaSeconds, 5.5f));
-	Camera->PostProcessBlendWeight = FMath::FInterpTo(Camera->PostProcessBlendWeight, bBattle ? 0.48f : 0.04f, DeltaSeconds, 4.5f);
+	Camera->PostProcessBlendWeight = FMath::FInterpTo(Camera->PostProcessBlendWeight, bBattle ? 0.48f : 0.62f, DeltaSeconds, 4.5f);
+	ApplyViewExposure(Camera, bBattle ? 1.25f : 1.85f);
 	FPostProcessSettings& S = Camera->PostProcessSettings;
 	S.bOverride_DepthOfFieldFstop = true;
 	S.DepthOfFieldFstop = bBattle ? 3.4f : 8.5f;

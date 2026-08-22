@@ -206,7 +206,8 @@ bool AHolypawWorldBuilder::IsPlayerIndoors(const FVector& WorldPos) const
 	}
 	const FVector Cottage(CottageSpawn.X, CottageSpawn.Y, CottageSpawn.Z);
 	const FVector C = WorldPos - Cottage;
-	if (FMath::Abs(C.X) < 280.f && FMath::Abs(C.Y) < 250.f && C.Z > -80.f && C.Z < 280.f)
+	// Interior only — porch and yard stay outdoor-bright.
+	if (FMath::Abs(C.X) < 110.f && FMath::Abs(C.Y) < 95.f && C.Z > -10.f && C.Z < 210.f)
 	{
 		return true;
 	}

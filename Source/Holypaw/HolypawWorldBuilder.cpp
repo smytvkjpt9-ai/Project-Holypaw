@@ -179,9 +179,9 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		if (IsPlayerIndoors(Pawn->GetActorLocation()))
 		{
 			bIndoors = true;
-			SunInt *= 0.42f;
-			SkyInt *= 0.55f;
-			FogDensity += 0.004f;
+			SunInt *= 0.78f;
+			SkyInt *= 0.82f;
+			FogDensity += 0.0015f;
 			SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.82f, 0.58f), 0.45f);
 			FogCol = FMath::Lerp(FogCol, FLinearColor(0.72f, 0.52f, 0.4f), 0.35f);
 		}
@@ -295,7 +295,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		FillLight->SetActorRotation(FRotator(-28.f, 215.f, 0.f));
 		if (UDirectionalLightComponent* C = FillLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
-			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.45f : 0.62f, DeltaSeconds, 1.2f));
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.72f : 1.05f, DeltaSeconds, 1.2f));
 		}
 	}
 	if (MoonLight)
