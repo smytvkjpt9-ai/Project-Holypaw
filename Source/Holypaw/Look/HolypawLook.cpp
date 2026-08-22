@@ -492,7 +492,7 @@ void HolypawLook::ApplyViewExposure(UCameraComponent* Camera, const float Bias)
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
 	S.AutoExposureBias = Bias;
-	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.65f);
+	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.35f);
 }
 
 void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, const float DeltaSeconds)

@@ -24,6 +24,9 @@ public:
 	virtual void DrawHUD() override;
 
 protected:
+	void DrawLabel(float X, float Y, const FString& Text, const FLinearColor& Color, float Scale) const;
+	void DrawTitleCanvas(const class AHolypawCharacter* Pawn) const;
+
 	UPROPERTY()
 	TObjectPtr<UHolypawPlayHudWidget> PlayHudWidget;
 
