@@ -288,6 +288,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		{
 			C->SetIntensity(FMath::FInterpTo(C->Intensity, SunInt, DeltaSeconds, 1.2f));
 			C->SetLightColor(SunCol);
+			C->SetAtmosphereSunLight(false);
 		}
 	}
 	if (FillLight)
@@ -304,7 +305,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		if (UDirectionalLightComponent* C = MoonLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
 			C->SetIntensity(FMath::FInterpTo(C->Intensity, MoonInt, DeltaSeconds, 1.2f));
-			C->SetAtmosphereSunLight(MoonInt > 0.35f);
+			C->SetAtmosphereSunLight(false);
 		}
 	}
 	if (SkyLight)
@@ -373,6 +374,24 @@ void AHolypawWorldBuilder::HideTemplateFloor()
 	}
 }
 
+void AHolypawWorldBuilder::SuppressForeignAtmosphereLights()
+{
+	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It)
+	{
+		ADirectionalLight* Light = *It;
+		if (!Light || Light == SunLight || Light == FillLight || Light == MoonLight)
+		{
+			continue;
+		}
+		if (UDirectionalLightComponent* C = Light->FindComponentByClass<UDirectionalLightComponent>())
+		{
+			C->SetAtmosphereSunLight(false);
+		}
+		Light->SetActorHiddenInGame(true);
+		Light->SetActorEnableCollision(false);
+	}
+}
+
 void AHolypawWorldBuilder::SpawnAtmosphere()
 {
 	FActorSpawnParameters Sp;
@@ -382,7 +401,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42.f, 35.f, 0.f), Sp))
 	{
 		SunLight = Sun;
-		HolypawLook::DressSun(Sun->FindComponentByClass<UDirectionalLightComponent>(), SkyAtmosphereComp != nullptr);
+		HolypawLook::DressSun(Sun->FindComponentByClass<UDirectionalLightComponent>());
 	}
 	if (ADirectionalLight* Fill = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-28.f, 215.f, 0.f), Sp))
 	{
@@ -408,29 +427,12 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	{
 		HolypawLook::DressAtmosphere(SkyAtmosphereComp);
 	}
-	if (UClass* SkyAtmoClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.SkyAtmosphere")))
-	{
-		if (AActor* AtmoActor = GetWorld()->SpawnActor<AActor>(SkyAtmoClass, FVector(0.f, 0.f, 500.f), FRotator::ZeroRotator, Sp))
-		{
-			SkyAtmo = Cast<ASkyAtmosphere>(AtmoActor);
-		}
-	}
-	if (UClass* CloudClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.VolumetricCloud")))
-	{
-		if (AActor* CloudActor = GetWorld()->SpawnActor<AActor>(CloudClass, FVector::ZeroVector, FRotator::ZeroRotator, Sp))
-		{
-			Clouds = Cast<AVolumetricCloud>(CloudActor);
-			if (UVolumetricCloudComponent* CloudComp = CloudActor->FindComponentByClass<UVolumetricCloudComponent>())
-			{
-				HolypawLook::DressClouds(CloudComp);
-			}
-		}
-	}
 	if (APostProcessVolume* PP = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
 	{
 		GradeVolume = PP;
 		HolypawLook::GradeVolume(PP);
 	}
+	SuppressForeignAtmosphereLights();
 	if (SkyLight)
 	{
 		if (USkyLightComponent* SkyComp = SkyLight->GetLightComponent())

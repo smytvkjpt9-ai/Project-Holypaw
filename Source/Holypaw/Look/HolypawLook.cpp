@@ -260,9 +260,13 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	FPostProcessSettings& S = PP->Settings;
 
 	S.bOverride_AutoExposureMethod = true;
-	S.AutoExposureMethod = AEM_Manual;
+	S.AutoExposureMethod = AEM_Histogram;
+	S.bOverride_AutoExposureMinBrightness = true;
+	S.AutoExposureMinBrightness = 0.75f;
+	S.bOverride_AutoExposureMaxBrightness = true;
+	S.AutoExposureMaxBrightness = 4.f;
 	S.bOverride_AutoExposureBias = true;
-	S.AutoExposureBias = 1.35f;
+	S.AutoExposureBias = 0.35f;
 
 	S.bOverride_ColorSaturation = true;
 	S.ColorSaturation = FVector4(1.02f, 1.02f, 1.02f, 1.f);
@@ -332,21 +336,25 @@ void HolypawLook::TickGrade(APostProcessVolume* PP, const float Hour, const bool
 		L.Bias -= 0.10f * MillWeight;
 		L.Tint = FMath::Lerp(L.Tint, FLinearColor(0.92f, 0.88f, 0.78f), MillWeight);
 	}
-	S.AutoExposureBias = L.Bias + 1.15f;
+	S.bOverride_AutoExposureMethod = true;
+	S.AutoExposureMethod = AEM_Histogram;
+	S.bOverride_AutoExposureBias = true;
+	S.AutoExposureBias = L.Bias + 0.35f;
 	S.WhiteTemp = L.Temp;
 	S.SceneColorTint = L.Tint;
 }
 
-void HolypawLook::DressSun(UDirectionalLightComponent* C, const bool bLinkAtmosphere)
+void HolypawLook::DressSun(UDirectionalLightComponent* C)
 {
 	if (!C)
 	{
 		return;
 	}
-	C->SetIntensity(bLinkAtmosphere ? 12.f : 16.f);
+	// Plain movable sun — never bind to SkyAtmosphere (multiple atmosphere suns go black in UE 5.8).
+	C->SetMobility(EComponentMobility::Movable);
+	C->SetIntensity(16.f);
 	C->SetLightColor(FLinearColor(1.f, 0.93f, 0.82f));
-	C->SetAtmosphereSunLight(bLinkAtmosphere);
-	C->SetAtmosphereSunLightIndex(0);
+	C->SetAtmosphereSunLight(false);
 	C->SetCastShadows(true);
 	C->SetDynamicShadowDistanceMovableLight(110000.f);
 	C->DynamicShadowCascades = 4;
@@ -371,7 +379,8 @@ void HolypawLook::DressFill(UDirectionalLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(0.95f);
+	C->SetMobility(EComponentMobility::Movable);
+	C->SetIntensity(1.2f);
 	C->SetLightColor(Powder);
 	C->SetCastShadows(false);
 	C->SetSpecularScale(0.08f);
@@ -386,11 +395,11 @@ void HolypawLook::DressMoon(UDirectionalLightComponent* C)
 	{
 		return;
 	}
+	C->SetMobility(EComponentMobility::Movable);
 	C->SetIntensity(0.f);
 	C->SetLightColor(FLinearColor(0.62f, 0.72f, 1.f));
-	C->SetAtmosphereSunLight(true);
-	C->SetAtmosphereSunLightIndex(1);
-	C->SetCastShadows(true);
+	C->SetAtmosphereSunLight(false);
+	C->SetCastShadows(false);
 	C->SetDynamicShadowDistanceMovableLight(60000.f);
 	C->LightSourceAngle = 0.4f;
 	C->ContactShadowLength = 0.06f;
@@ -489,7 +498,11 @@ void HolypawLook::ApplyViewExposure(UCameraComponent* Camera, const float Bias)
 	}
 	FPostProcessSettings& S = Camera->PostProcessSettings;
 	S.bOverride_AutoExposureMethod = true;
-	S.AutoExposureMethod = AEM_Manual;
+	S.AutoExposureMethod = AEM_Histogram;
+	S.bOverride_AutoExposureMinBrightness = true;
+	S.AutoExposureMinBrightness = 0.75f;
+	S.bOverride_AutoExposureMaxBrightness = true;
+	S.AutoExposureMaxBrightness = 4.f;
 	S.bOverride_AutoExposureBias = true;
 	S.AutoExposureBias = Bias;
 	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.65f);
@@ -504,7 +517,7 @@ void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, cons
 	const float WantFov = bBattle ? 56.f : 66.f;
 	Camera->SetFieldOfView(FMath::FInterpTo(Camera->FieldOfView, WantFov, DeltaSeconds, 5.5f));
 	Camera->PostProcessBlendWeight = FMath::FInterpTo(Camera->PostProcessBlendWeight, bBattle ? 0.48f : 0.62f, DeltaSeconds, 4.5f);
-	ApplyViewExposure(Camera, bBattle ? 1.25f : 1.85f);
+	ApplyViewExposure(Camera, bBattle ? 0.25f : 0.45f);
 	FPostProcessSettings& S = Camera->PostProcessSettings;
 	S.bOverride_DepthOfFieldFstop = true;
 	S.DepthOfFieldFstop = bBattle ? 3.4f : 8.5f;

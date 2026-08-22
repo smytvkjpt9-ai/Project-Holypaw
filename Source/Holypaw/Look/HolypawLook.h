@@ -80,7 +80,7 @@ namespace HolypawLook
 
 	void GradeVolume(APostProcessVolume* PP);
 	void TickGrade(APostProcessVolume* PP, float Hour, bool bIndoors, float MillWeight);
-	void DressSun(UDirectionalLightComponent* C, bool bLinkAtmosphere = true);
+	void DressSun(UDirectionalLightComponent* C);
 	void DressFill(UDirectionalLightComponent* C);
 	void DressMoon(UDirectionalLightComponent* C);
 	void DressSky(USkyLightComponent* C);

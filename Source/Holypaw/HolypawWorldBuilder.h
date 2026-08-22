@@ -123,6 +123,7 @@ public:
 
 protected:
 	void HideTemplateFloor();
+	void SuppressForeignAtmosphereLights();
 	void SpawnAtmosphere();
 	void BindKits();
 	void AddKit(UInstancedStaticMeshComponent* ISM, const FVector& Loc, const FRotator& Rot, const FVector& Scale);
