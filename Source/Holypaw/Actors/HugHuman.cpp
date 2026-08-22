@@ -1,12 +1,10 @@
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 #include "HolypawGameInstance.h"
 #include "HolypawTypes.h"
 #include "AI/HolypawSchedule.h"
 #include "Faith/HolypawFaithSim.h"
-#include "Look/HolypawLook.h"
-#include "UObject/ConstructorHelpers.h"
-#include "Materials/MaterialInstanceDynamic.h"
 
 AHugHuman::AHugHuman()
 {
@@ -68,14 +66,6 @@ AHugHuman::AHugHuman()
 	ArmR->SetRelativeLocation(FVector(0.f, -24.f, 18.f));
 	ArmR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.48f));
 
-	Sash = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sash"));
-	Sash->SetupAttachment(Root);
-	Sash->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Sash->SetRelativeLocation(FVector(4.f, 0.f, 22.f));
-	Sash->SetRelativeScale3D(FVector(0.42f, 0.08f, 0.55f));
-	Sash->SetRelativeRotation(FRotator(0.f, 0.f, 28.f));
-	Sash->SetHiddenInGame(true);
-
 	HandL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandL"));
 	HandL->SetupAttachment(ArmL);
 	HandL->SetRelativeLocation(FVector(0.f, 0.f, -22.f));
@@ -105,6 +95,14 @@ AHugHuman::AHugHuman()
 	ShoeR->SetupAttachment(LegR);
 	ShoeR->SetRelativeLocation(FVector(6.f, 0.f, -18.f));
 	ShoeR->SetRelativeScale3D(FVector(0.85f, 0.70f, 0.28f));
+
+	Sash = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Sash"));
+	Sash->SetupAttachment(Root);
+	Sash->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Sash->SetRelativeLocation(FVector(4.f, 0.f, 22.f));
+	Sash->SetRelativeScale3D(FVector(0.42f, 0.08f, 0.55f));
+	Sash->SetRelativeRotation(FRotator(0.f, 0.f, 28.f));
+	Sash->SetHiddenInGame(true);
 }
 
 void AHugHuman::BeginPlay()
@@ -141,7 +139,6 @@ void AHugHuman::BeginPlay()
 	}
 	Mesh->SetRelativeScale3D(FVector(0.42f, 0.32f, 0.95f));
 	Mesh->SetRelativeLocation(FVector(0.f, 0.f, 8.f));
-	HomeLocation = GetActorLocation();
 	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
 	HolypawLook::Paint(Hair, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
 	HolypawLook::Paint(Bangs, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
@@ -159,7 +156,13 @@ void AHugHuman::BeginPlay()
 	HolypawLook::Paint(LegR, ShirtColor * 0.72f);
 	HolypawLook::Paint(ShoeL, HolypawLook::Wood);
 	HolypawLook::Paint(ShoeR, HolypawLook::Wood);
+	HolypawLook::Paint(Sash, HolypawLook::Rose);
 	HolypawLook::Paint(Mesh, ShirtColor);
+	HomeLocation = GetActorLocation();
+	HomeZone = HolypawFaith::ZoneAt(this, HomeLocation);
+	bHomeZoneReady = true;
+	bTendsStall = PersonName.ToString().Contains(TEXT("Shopkeep")) || PersonName.ToString().Contains(TEXT("Hawker"));
+	ParadeSalt = FMath::Fmod(static_cast<float>(GetTypeHash(PersonName.ToString())) * 0.017f + FMath::Abs(HomeLocation.X) * 0.00013f, 4.f);
 	HumanRest.Scale = GetActorScale3D();
 	HumanRest.ActorRot = GetActorRotation();
 	if (HeadMesh)
@@ -175,25 +178,12 @@ void AHugHuman::BeginPlay()
 	{
 		HumanRest.ArmRLoc = ArmR->GetRelativeLocation();
 	}
-	HomeZone = HolypawFaith::ZoneAt(this, HomeLocation);
-	bHomeZoneReady = true;
-	bTendsStall = PersonName.ToString().Contains(TEXT("Shopkeep")) || PersonName.ToString().Contains(TEXT("Hawker"));
-	ParadeSalt = FMath::Fmod(static_cast<float>(GetTypeHash(PersonName.ToString())) * 0.017f + FMath::Abs(HomeLocation.X) * 0.00013f, 4.f);
 }
 
 void AHugHuman::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	BounceT += DeltaSeconds;
-	if (HugPulse > 0.f)
-	{
-		HugPulse = FMath::Max(0.f, HugPulse - DeltaSeconds);
-	}
-	if (ClapBurst > 0.f)
-	{
-		ClapBurst = FMath::Max(0.f, ClapBurst - DeltaSeconds);
-	}
-
 	HumanAnim.bBeliever = bBeliever;
 	HolypawAnim::TickHuman(HumanAnim, DeltaSeconds);
 	const HolypawAnim::FHumanPose Pose = HolypawAnim::EvaluateHuman(HumanAnim, HumanRest);
@@ -212,37 +202,43 @@ void AHugHuman::Tick(float DeltaSeconds)
 		bDusk = GI->IsDusk();
 	}
 	const int32 Hearts = HolypawFaith::HeartsAt(this, HomeZone);
-	const bool bClap = IsClapping();
+	const bool bClap = IsClapping() && !Pose.bHoldFeet;
 	if (ArmL && ArmR)
 	{
-		FRotator ArmLRot = Pose.ArmL;
-		FRotator ArmRRot = Pose.ArmR;
-		FVector ArmLLoc = Pose.ArmLLoc;
-		FVector ArmRLoc = Pose.ArmRLoc;
-		if (!Pose.bHoldFeet && bClap)
+		if (bClap)
 		{
 			const float Rate = HolypawFaith::ClapRate(Hearts, bDusk);
 			const float Clap = 42.f * FMath::Abs(FMath::Sin(BounceT * Rate));
-			ArmLRot = FRotator(Clap, 0.f, 8.f);
-			ArmRRot = FRotator(Clap, 0.f, -8.f);
-			ArmLLoc = HumanRest.ArmLLoc + FVector(8.f + Clap * 0.15f, 0.f, Clap * 0.35f);
-			ArmRLoc = HumanRest.ArmRLoc + FVector(8.f + Clap * 0.15f, 0.f, Clap * 0.35f);
+			ArmL->SetRelativeRotation(FRotator(Clap, 0.f, 8.f));
+			ArmR->SetRelativeRotation(FRotator(Clap, 0.f, -8.f));
+			ArmL->SetRelativeLocation(FVector(8.f + Clap * 0.15f, 22.f, 18.f + Clap * 0.35f));
+			ArmR->SetRelativeLocation(FVector(8.f + Clap * 0.15f, -22.f, 18.f + Clap * 0.35f));
 		}
-		ArmL->SetRelativeRotation(ArmLRot);
-		ArmL->SetRelativeLocation(ArmLLoc);
-		ArmR->SetRelativeRotation(ArmRRot);
-		ArmR->SetRelativeLocation(ArmRLoc);
+		else
+		{
+			ArmL->SetRelativeRotation(Pose.ArmL);
+			ArmL->SetRelativeLocation(Pose.ArmLLoc);
+			ArmR->SetRelativeRotation(Pose.ArmR);
+			ArmR->SetRelativeLocation(Pose.ArmRLoc);
+		}
 	}
 
-	if (!Pose.bHoldFeet)
+	if (CelebrateHold > 0.f)
 	{
-		HolypawSchedule::TickHuman(*this, DeltaSeconds, Hour);
-		// Day parade / dusk chapel / night inn: bBeliever && !bKnelt is the old beat; TickHuman owns it now.
+		CelebrateHold = FMath::Max(0.f, CelebrateHold - DeltaSeconds);
 	}
-	else
+	if (Pose.bHoldFeet || IsKnelt())
 	{
 		SetActorRotation(Pose.ActorRot);
+		FVector Feet = GetActorLocation();
+		Feet.Z = HomeLocation.Z + Pose.DropZ;
+		SetActorLocation(Feet);
+		return;
 	}
+
+	HolypawSchedule::TickHuman(*this, DeltaSeconds, Hour);
+	// Day parade / dusk chapel / night inn: bBeliever && !bKnelt is the old beat; TickHuman owns it now.
+	HumanRest.ActorRot = FRotator(0.f, GetActorRotation().Yaw, 0.f);
 	FVector Feet = GetActorLocation();
 	Feet.Z = HomeLocation.Z + Pose.DropZ;
 	SetActorLocation(Feet);
@@ -274,13 +270,11 @@ bool AHugHuman::Interact(AHolypawCharacter* InstigatorPawn)
 
 void AHugHuman::ReceiveHug()
 {
-	HugPulse = 1.f;
 	HolypawAnim::PlayHumanHug(HumanAnim);
 }
 
 void AHugHuman::ReceiveHug(const FVector& FromWorld)
 {
-	HugPulse = 1.f;
 	HolypawAnim::PlayHumanHug(HumanAnim, FromWorld - GetActorLocation());
 }
 
@@ -290,13 +284,13 @@ void AHugHuman::NoticeConvert(const FVector& At)
 	{
 		return;
 	}
-	HugPulse = FMath::Max(HugPulse, 0.7f);
 	NoticeHold = 1.5f;
 	const FVector Step = At - GetActorLocation();
 	if (Step.SizeSquared2D() > 4.f)
 	{
 		NoticeYaw = FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X));
 	}
+	HolypawAnim::PlayHumanHug(HumanAnim, At - GetActorLocation());
 }
 
 FString AHugHuman::GetSkepticLine(int32 Pct) const
@@ -343,6 +337,11 @@ FString AHugHuman::GetBelieverLine() const
 	return FString::Printf(TEXT("%s: \"%s\""), *Who, *Quote);
 }
 
+bool AHugHuman::IsAnimLocked() const
+{
+	return HumanAnim.HugT > 0.f || HumanAnim.BowDelay > 0.f || HumanAnim.Kneel != HolypawAnim::EHumanKneel::None;
+}
+
 bool AHugHuman::IsClapping() const
 {
 	if (!bBeliever || bKnelt)
@@ -382,7 +381,7 @@ void AHugHuman::BecomeBeliever(const bool bCelebrate)
 	if (bCelebrate)
 	{
 		ClapBurst = 2.6f;
-		CelebrateHold = 1.25f;
+		CelebrateHold = 1.7f;
 		ParadeKick = 8.5f;
 	}
 	HolypawLook::Paint(HeadMesh, HolypawLook::BelieverGold);
@@ -391,10 +390,10 @@ void AHugHuman::BecomeBeliever(const bool bCelebrate)
 	HolypawLook::Paint(Bangs, HolypawLook::Gold);
 	HolypawLook::Paint(ArmL, HolypawLook::Rose);
 	HolypawLook::Paint(ArmR, HolypawLook::Rose);
+	HolypawLook::Paint(Sash, HolypawLook::Rose);
 	if (Sash)
 	{
 		Sash->SetHiddenInGame(false);
-		HolypawLook::Paint(Sash, HolypawLook::Rose);
 	}
 	if (Hat)
 	{
@@ -428,14 +427,13 @@ void AHugHuman::ResetFaith()
 	bBeliever = false;
 	ConvertProgress = 0.f;
 	bKnelt = false;
-	HolypawAnim::ResetHumanMotion(HumanAnim);
-	SetActorRotation(HumanRest.ActorRot);
-	SetActorScale3D(HumanRest.Scale);
 	ClapBurst = 0.f;
 	ParadeKick = 0.f;
 	CelebrateHold = 0.f;
 	NoticeHold = 0.f;
-	HugPulse = 0.f;
+	HolypawAnim::ResetHumanMotion(HumanAnim);
+	SetActorRotation(HumanRest.ActorRot);
+	SetActorScale3D(HumanRest.Scale);
 	SetActorLocation(HomeLocation);
 	SetSolidColor(ShirtColor);
 	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
@@ -445,7 +443,8 @@ void AHugHuman::ResetFaith()
 	HolypawLook::Paint(ArmR, ShirtColor);
 	HolypawLook::Paint(HandL, HolypawLook::Skin);
 	HolypawLook::Paint(HandR, HolypawLook::Skin);
-	HolypawLook::Paint(Mesh, ShirtColor);
+	HolypawLook::Paint(LegL, ShirtColor * 0.72f);
+	HolypawLook::Paint(LegR, ShirtColor * 0.72f);
 	if (Sash)
 	{
 		Sash->SetHiddenInGame(true);

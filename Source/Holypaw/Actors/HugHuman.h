@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
-#include "Anim/HolypawProcAnim.h"
 #include "HolypawTypes.h"
+#include "Anim/HolypawProcAnim.h"
 #include "HugHuman.generated.h"
 
 UCLASS()
@@ -53,9 +53,6 @@ public:
 	TObjectPtr<UStaticMeshComponent> ArmR;
 
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UStaticMeshComponent> Sash;
-
-	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> Hair;
 
 	UPROPERTY(VisibleAnywhere)
@@ -97,6 +94,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> ShoeR;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Sash;
+
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual FText GetPrompt() const override;
@@ -106,12 +106,13 @@ public:
 	void KneelInWorship();
 	void PlayConvertBow();
 	void ReceiveHug();
-	void ReceiveHug(const FVector& FromWorld);
 	void NoticeConvert(const FVector& At);
+	void ReceiveHug(const FVector& FromWorld);
 	void ResetFaith();
 	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
 	bool IsKnelt() const { return bKnelt; }
 	bool IsClapping() const;
+	bool IsAnimLocked() const;
 	FString GetSkepticLine(int32 Pct) const;
 	FString GetBelieverLine() const;
 
@@ -119,5 +120,4 @@ protected:
 	bool bKnelt = false;
 	HolypawAnim::FHumanState HumanAnim;
 	HolypawAnim::FHumanRest HumanRest;
-	float HugPulse = 0.f;
 };

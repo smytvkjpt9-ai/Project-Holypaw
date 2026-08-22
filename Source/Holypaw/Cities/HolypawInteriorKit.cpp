@@ -1,7 +1,7 @@
 #include "HolypawWorldBuilder.h"
 #include "Actors/HolypawShrine.h"
-#include "Actors/FaithStall.h"
 #include "Look/HolypawLook.h"
+#include "Actors/FaithStall.h"
 #include "Engine/PointLight.h"
 #include "Components/PointLightComponent.h"
 #include "EngineUtils.h"

@@ -422,6 +422,20 @@ protected:
 	HolypawAnim::FTeddyState TeddyAnim;
 	HolypawAnim::FTeddyRest TeddyRest;
 	HolypawAnim::FPartyState PartyAnim;
+	FVector ArmLBase = FVector::ZeroVector;
+	FVector ArmRBase = FVector::ZeroVector;
+	FVector LegLBase = FVector::ZeroVector;
+	FVector LegRBase = FVector::ZeroVector;
+	FVector FootLBase = FVector::ZeroVector;
+	FVector FootRBase = FVector::ZeroVector;
+	FVector HighlightLScale = FVector::OneVector;
+	FVector HighlightRScale = FVector::OneVector;
+	FRotator ArmLRot = FRotator::ZeroRotator;
+	FRotator ArmRRot = FRotator::ZeroRotator;
+	FRotator LegLRot = FRotator::ZeroRotator;
+	FRotator LegRRot = FRotator::ZeroRotator;
+	FRotator FootLRot = FRotator::ZeroRotator;
+	FRotator FootRRot = FRotator::ZeroRotator;
 
 	UPROPERTY()
 	TArray<FHolypawItemStack> Inventory;

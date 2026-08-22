@@ -186,14 +186,12 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		const float Dist = FVector2D::Distance(P, Mill);
 		if (Dist < 6200.f)
 		{
-			const float W = 1.f - Dist / 6200.f;
 			int32 RibbonHearts = 0;
 			if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
 			{
 				RibbonHearts = Teddy->GetCityHearts(EHolypawZone::RibbonCity);
 			}
-			const float Smog = HolypawFaith::MillSmogScale(RibbonHearts);
-			MillW = W * Smog;
+			MillW = (1.f - Dist / 6200.f) * HolypawFaith::MillSmogScale(RibbonHearts);
 			FogDensity += 0.034f * MillW;
 			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), MillW);
 			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), MillW * 0.45f);

@@ -15,8 +15,8 @@
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveCodec.h"
 #include "Audio/HolypawAudio.h"
-#include "Anim/HolypawProcAnim.h"
 #include "Faith/HolypawFaithSim.h"
+#include "Anim/HolypawProcAnim.h"
 #include "Look/HolypawLook.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -321,6 +321,14 @@ void AHolypawCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	UnlockTravel(EHolypawZone::ForestCottage);
 	Mode = EHolypawPawnMode::Title;
+	if (ArmL) { ArmLBase = ArmL->GetRelativeLocation(); ArmLRot = ArmL->GetRelativeRotation(); }
+	if (ArmR) { ArmRBase = ArmR->GetRelativeLocation(); ArmRRot = ArmR->GetRelativeRotation(); }
+	if (LegL) { LegLBase = LegL->GetRelativeLocation(); LegLRot = LegL->GetRelativeRotation(); }
+	if (LegR) { LegRBase = LegR->GetRelativeLocation(); LegRRot = LegR->GetRelativeRotation(); }
+	if (FootL) { FootLBase = FootL->GetRelativeLocation(); FootLRot = FootL->GetRelativeRotation(); }
+	if (FootR) { FootRBase = FootR->GetRelativeLocation(); FootRRot = FootR->GetRelativeRotation(); }
+	if (HighlightL) { HighlightLScale = HighlightL->GetRelativeScale3D(); }
+	if (HighlightR) { HighlightRScale = HighlightR->GetRelativeScale3D(); }
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = false;
@@ -2510,7 +2518,46 @@ void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 		}
 	}
 	HolypawAnim::ApplyTeddyPose(HolypawAnim::EvaluateTeddy(TeddyAnim, TeddyRest), TeddyParts());
-	if (Camera)
+
+	const float Walk = TeddyAnim.Walk;
+	const float HugAmt = HolypawAnim::WrapAmount(TeddyAnim);
+	const float Stride = TeddyAnim.Clock * (7.4f + Walk * 5.6f);
+	auto DriveLimb = [](UStaticMeshComponent* Limb, UStaticMeshComponent* End,
+		const FVector& LimbBase, const FRotator& LimbRot,
+		const FVector& EndBase, const FRotator& EndRot,
+		const float Phase, const float WalkAmt, const float Hug, const float HugYaw)
+	{
+		const float Swing = FMath::Sin(Phase);
+		const float Lift = FMath::Max(0.f, -FMath::Cos(Phase));
+		const float Plant = FMath::Max(0.f, FMath::Cos(Phase));
+		if (Limb)
+		{
+			Limb->SetRelativeRotation(LimbRot + FRotator(Swing * WalkAmt * 26.f + Hug * 42.f, 0.f, HugYaw));
+			Limb->SetRelativeLocation(LimbBase + FVector(Hug * 8.f + Swing * WalkAmt * 3.f, 0.f, Lift * WalkAmt * 6.f - Plant * WalkAmt * 1.8f));
+		}
+		if (End)
+		{
+			End->SetRelativeRotation(EndRot + FRotator(Swing * WalkAmt * -16.f + Hug * 28.f, 0.f, HugYaw * 0.8f));
+			End->SetRelativeLocation(EndBase + FVector(0.f, 0.f, Lift * WalkAmt * 2.f));
+		}
+	};
+	DriveLimb(ArmL, nullptr, ArmLBase, ArmLRot, FVector::ZeroVector, FRotator::ZeroRotator, Stride + PI, Walk, HugAmt, HugAmt * 22.f);
+	DriveLimb(ArmR, nullptr, ArmRBase, ArmRRot, FVector::ZeroVector, FRotator::ZeroRotator, Stride, Walk, HugAmt, HugAmt * -22.f);
+	DriveLimb(LegL, FootL, LegLBase, LegLRot, FootLBase, FootLRot, Stride, Walk, 0.f, 0.f);
+	DriveLimb(LegR, FootR, LegRBase, LegRRot, FootRBase, FootRRot, Stride + PI, Walk, 0.f, 0.f);
+
+	const float EyeY = EyeL ? EyeL->GetRelativeScale3D().Z / FMath::Max(TeddyRest.EyeLScale.Z, 0.01f) : 1.f;
+	if (HighlightL)
+	{
+		HighlightL->SetRelativeScale3D(HighlightLScale * FMath::Clamp(EyeY, 0.f, 1.f));
+		HighlightL->SetHiddenInGame(EyeY < 0.4f);
+	}
+	if (HighlightR)
+	{
+		HighlightR->SetRelativeScale3D(HighlightRScale * FMath::Clamp(EyeY, 0.f, 1.f));
+		HighlightR->SetHiddenInGame(EyeY < 0.4f);
+	}
+	if (Camera && EyeY >= 0.4f)
 	{
 		const FVector CamLoc = Camera->GetComponentLocation();
 		HolypawLook::AimCatchlight(HighlightL, EyeL, CamLoc);
@@ -2518,7 +2565,7 @@ void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 	}
 	if (Tail)
 	{
-		Tail->SetRelativeRotation(FRotator(FMath::Sin(TeddyAnim.Clock * 4.8f) * 8.f, 0.f, 0.f));
+		Tail->SetRelativeRotation(FRotator(FMath::Sin(TeddyAnim.Clock * 4.8f) * (8.f + Walk * 10.f), 0.f, 0.f));
 	}
 }
 

@@ -166,7 +166,6 @@ namespace HolypawSchedule
 		EnsureAnchors(Human);
 		if (Human.CelebrateHold > 0.f)
 		{
-			Human.CelebrateHold = FMath::Max(0.f, Human.CelebrateHold - DeltaSeconds);
 			if (AHolypawCharacter* Teddy = HolypawFaith::FindTeddy(&Human))
 			{
 				FaceToward(Human, Teddy->GetActorLocation(), DeltaSeconds);

@@ -285,6 +285,8 @@ PAUSEW = (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").read_text() if (ROO
 TALKW = (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").exists() else ""
 SHOPW = (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").exists() else ""
 PLAYW = (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").exists() else ""
+if "GetFaithLine" not in PLAYW:
+    errors.append("play HUD missing conversion stage line")
 JOURNALW = (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").exists() else ""
 CODEXW = (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").exists() else ""
 
@@ -662,6 +664,12 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("CanopyPuffs", WORLD, "world"),
+    ("GradeVolume", WORLD, "world"),
+    ("FillLight", WORLD, "world"),
+    ("earL", CHAR, "character"),
+    ("HaloLight", CHAR, "character"),
+    ("TickProcAnim", CHAR, "character"),
     ("TickHuman", SCHEDULE, "schedule"),
     ("ChapelGoal", SCHEDULE, "schedule"),
     ("ParadeGoal", SCHEDULE, "schedule"),
@@ -679,12 +687,6 @@ for needle, blob, label in (
     ("ShopClosedLine", CHAR, "character"),
     ("NotifyConvertPulse", CHAR, "character"),
     ("ribbonPlaza", WORLD, "world"),
-    ("CanopyPuffs", WORLD, "world"),
-    ("GradeVolume", WORLD, "world"),
-    ("FillLight", WORLD, "world"),
-    ("earL", CHAR, "character"),
-    ("HaloLight", CHAR, "character"),
-    ("TickProcAnim", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")
