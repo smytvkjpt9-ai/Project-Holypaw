@@ -17,9 +17,9 @@
 
 namespace
 {
-	void AddHolypawViewportWidget(UUserWidget* Widget, APlayerController* PC, const int32 ZOrder)
+	void AddHolypawViewportWidget(UUserWidget* Widget, const int32 ZOrder)
 	{
-		if (!Widget || !PC)
+		if (!Widget)
 		{
 			return;
 		}
@@ -28,14 +28,6 @@ namespace
 		Widget->SetAlignmentInViewport(FVector2D(0.f, 0.f));
 		Widget->SetPositionInViewport(FVector2D::ZeroVector, false);
 		Widget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-
-		int32 ViewX = 0;
-		int32 ViewY = 0;
-		PC->GetViewportSize(ViewX, ViewY);
-		if (ViewX > 0 && ViewY > 0)
-		{
-			Widget->SetDesiredSizeInViewport(FVector2D(static_cast<float>(ViewX), static_cast<float>(ViewY)));
-		}
 	}
 
 	bool TitleWidgetFillsViewport(const UHolypawTitleWidget* Title)
@@ -59,31 +51,31 @@ void AHolypawHUD::BeginPlay()
 	}
 
 	PlayHudWidget = CreateWidget<UHolypawPlayHudWidget>(PC);
-	AddHolypawViewportWidget(PlayHudWidget, PC, 10);
+	AddHolypawViewportWidget(PlayHudWidget, 10);
 
 	OverlayWidget = CreateWidget<UHolypawBattleWidget>(PC);
-	AddHolypawViewportWidget(OverlayWidget, PC, 20);
+	AddHolypawViewportWidget(OverlayWidget, 20);
 
 	MapWidget = CreateWidget<UHolypawMapWidget>(PC);
-	AddHolypawViewportWidget(MapWidget, PC, 30);
+	AddHolypawViewportWidget(MapWidget, 30);
 
 	JournalWidget = CreateWidget<UHolypawJournalWidget>(PC);
-	AddHolypawViewportWidget(JournalWidget, PC, 31);
+	AddHolypawViewportWidget(JournalWidget, 31);
 
 	TalkWidget = CreateWidget<UHolypawTalkWidget>(PC);
-	AddHolypawViewportWidget(TalkWidget, PC, 32);
+	AddHolypawViewportWidget(TalkWidget, 32);
 
 	ShopWidget = CreateWidget<UHolypawShopWidget>(PC);
-	AddHolypawViewportWidget(ShopWidget, PC, 33);
+	AddHolypawViewportWidget(ShopWidget, 33);
 
 	CodexWidget = CreateWidget<UHolypawCodexWidget>(PC);
-	AddHolypawViewportWidget(CodexWidget, PC, 34);
+	AddHolypawViewportWidget(CodexWidget, 34);
 
 	TitleWidget = CreateWidget<UHolypawTitleWidget>(PC);
-	AddHolypawViewportWidget(TitleWidget, PC, 40);
+	AddHolypawViewportWidget(TitleWidget, 40);
 
 	PauseWidget = CreateWidget<UHolypawPauseWidget>(PC);
-	AddHolypawViewportWidget(PauseWidget, PC, 41);
+	AddHolypawViewportWidget(PauseWidget, 41);
 }
 
 void AHolypawHUD::DrawLabel(float X, float Y, const FString& Text, const FLinearColor& Color, float Scale) const
