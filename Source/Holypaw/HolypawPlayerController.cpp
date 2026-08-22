@@ -23,19 +23,19 @@ void AHolypawPlayerController::SetupInputComponent()
 void AHolypawPlayerController::OnEscape()
 {
 	// Jump is already on the pawn. Escape closes UI if we bind it separately later.
-	if (AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(GetPawn()))
+	if (AHolypawCharacter* HolypawPawn = Cast<AHolypawCharacter>(GetPawn()))
 	{
-		if (Pawn->IsSkillsOpen())
+		if (HolypawPawn->IsSkillsOpen())
 		{
-			Pawn->ToggleSkills();
+			HolypawPawn->ToggleSkills();
 		}
-		else if (Pawn->IsMapOpen())
+		else if (HolypawPawn->IsMapOpen())
 		{
-			Pawn->ToggleMap();
+			HolypawPawn->ToggleMap();
 		}
-		else if (Pawn->IsJournalOpen())
+		else if (HolypawPawn->IsJournalOpen())
 		{
-			Pawn->ToggleJournal();
+			HolypawPawn->ToggleJournal();
 		}
 	}
 }

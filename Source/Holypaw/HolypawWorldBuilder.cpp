@@ -25,8 +25,6 @@
 #include "Engine/DirectionalLight.h"
 #include "Engine/SkyLight.h"
 #include "Engine/ExponentialHeightFog.h"
-#include "Engine/SkyAtmosphere.h"
-#include "Engine/VolumetricCloud.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/PostProcessVolume.h"
 #include "Engine/PlayerStart.h"
@@ -403,15 +401,27 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 		HeightFog = Fog;
 		HolypawLook::DressFog(Fog->FindComponentByClass<UExponentialHeightFogComponent>());
 	}
-	if (ASkyAtmosphere* Atmo = GetWorld()->SpawnActor<ASkyAtmosphere>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+	if (UClass* SkyAtmoClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.SkyAtmosphere")))
 	{
-		SkyAtmo = Atmo;
-		HolypawLook::DressAtmosphere(Atmo->FindComponentByClass<USkyAtmosphereComponent>());
+		if (AActor* AtmoActor = GetWorld()->SpawnActor<AActor>(SkyAtmoClass, FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+		{
+			SkyAtmo = Cast<ASkyAtmosphere>(AtmoActor);
+			if (USkyAtmosphereComponent* AtmoComp = AtmoActor->FindComponentByClass<USkyAtmosphereComponent>())
+			{
+				HolypawLook::DressAtmosphere(AtmoComp);
+			}
+		}
 	}
-	if (AVolumetricCloud* Cloud = GetWorld()->SpawnActor<AVolumetricCloud>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+	if (UClass* CloudClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.VolumetricCloud")))
 	{
-		Clouds = Cloud;
-		HolypawLook::DressClouds(Cloud->FindComponentByClass<UVolumetricCloudComponent>());
+		if (AActor* CloudActor = GetWorld()->SpawnActor<AActor>(CloudClass, FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+		{
+			Clouds = Cast<AVolumetricCloud>(CloudActor);
+			if (UVolumetricCloudComponent* CloudComp = CloudActor->FindComponentByClass<UVolumetricCloudComponent>())
+			{
+				HolypawLook::DressClouds(CloudComp);
+			}
+		}
 	}
 	if (APostProcessVolume* PP = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
 	{

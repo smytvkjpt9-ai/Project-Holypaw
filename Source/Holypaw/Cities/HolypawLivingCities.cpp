@@ -250,19 +250,19 @@ void AHolypawWorldBuilder::BuildCapePlushDistricts()
 
 void AHolypawWorldBuilder::BuildSavannahBellDistricts()
 {
-	const FVector2D Grass = SavannahBell + FVector2D(40.f, 20.f);
+	const FVector2D GrassPatch = SavannahBell + FVector2D(40.f, 20.f);
 	const FVector2D Acacia = SavannahBell + FVector2D(-740.f, 260.f);
 	const FVector2D Choir = SavannahBell + FVector2D(80.f, 880.f);
 	const FVector2D Stoop = SavannahBell + FVector2D(740.f, -170.f);
 	const FVector2D Wind = SavannahBell + FVector2D(-80.f, -720.f);
 
-	PlaceSign(Grass, NSLOCTEXT("Holypaw", "SavGrass", "Gold Grass  |  savannah does not need polyester"));
+	PlaceSign(GrassPatch, NSLOCTEXT("Holypaw", "SavGrass", "Gold Grass  |  savannah does not need polyester"));
 	PlaceSign(Acacia, NSLOCTEXT("Holypaw", "SavAcacia", "Acacia Walk  |  bells hung without a permit"));
 	PlaceSign(Choir, NSLOCTEXT("Holypaw", "SavChoir", "Wind Choir  |  hymns the weather already knew"));
 	PlaceSign(Stoop, NSLOCTEXT("Holypaw", "SavStoop", "Bell Stoop  |  wishes that come back ringing"));
 	PlaceSign(Wind, NSLOCTEXT("Holypaw", "SavWind", "Wind Notch  |  Cape Plush if the oceans want a rematch"));
 
-	PlaceShrine(Grass + FVector2D(190.f, 50.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "GrassInn", "Grass Inn"));
+	PlaceShrine(GrassPatch + FVector2D(190.f, 50.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "GrassInn", "Grass Inn"));
 	PlaceShrine(Choir + FVector2D(40.f, 20.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "WindChap", "Wind Chapel"));
 	PlaceShrine(Stoop + FVector2D(-30.f, 40.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "BellFontS", "Bell Font"));
 	PlaceShrine(Wind + FVector2D(50.f, 20.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "SavCrate", "Acacia Crate"));

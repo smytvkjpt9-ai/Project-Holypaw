@@ -271,7 +271,7 @@ AHolypawCharacter::AHolypawCharacter()
 	HolypawLook::PrepPart(InnerEarR, SphereMesh);
 	HolypawLook::PrepPart(EarL, ConeMesh ? ConeMesh : SphereMesh);
 	HolypawLook::PrepPart(EarR, ConeMesh ? ConeMesh : SphereMesh);
-	HolypawLook::PrepPart(HaloMesh, TorusFinder.Succeeded() ? TorusFinder.Object : SphereMesh);
+	HolypawLook::PrepPart(HaloMesh, TorusFinder.Succeeded() ? TorusFinder.Object.Get() : SphereMesh);
 	if (ShapeMat)
 	{
 		TArray<UStaticMeshComponent*> Parts = {
@@ -612,19 +612,19 @@ void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 	}
 }
 
-UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach)
+UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* PartMesh, const FLinearColor& Color, USceneComponent* Attach)
 {
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
 	if (!Comp)
 	{
 		return nullptr;
 	}
-	HolypawLook::PrepPart(Comp, Mesh);
+	HolypawLook::PrepPart(Comp, PartMesh);
 	Comp->SetMobility(EComponentMobility::Movable);
 	Comp->CreationMethod = EComponentCreationMethod::Instance;
 	AddInstanceComponent(Comp);
 	Comp->RegisterComponent();
-	USceneComponent* Parent = Attach ? Attach : RootComponent;
+	USceneComponent* Parent = Attach ? Attach : RootComponent.Get();
 	Comp->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
 	if (ShapeMat)
 	{
@@ -705,7 +705,7 @@ AActor* AHolypawCharacter::FindNearestInteractable(float Range) const
 	for (TActorIterator<AHolypawInteractable> It(GetWorld()); It; ++It)
 	{
 		AHolypawInteractable* I = *It;
-		if (!I || I == this)
+		if (!I)
 		{
 			continue;
 		}

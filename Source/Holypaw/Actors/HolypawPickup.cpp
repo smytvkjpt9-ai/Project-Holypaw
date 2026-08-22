@@ -1,5 +1,6 @@
 #include "Actors/HolypawPickup.h"
 #include "Character/HolypawCharacter.h"
+#include "Audio/HolypawAudio.h"
 #include "Look/HolypawLook.h"
 
 AHolypawPickup::AHolypawPickup()
@@ -64,7 +65,7 @@ bool AHolypawPickup::Interact(AHolypawCharacter* InstigatorPawn)
 		return true;
 	}
 	InstigatorPawn->AddItem(ItemId, 1);
-	InstigatorPawn->PlayCue(TEXT("Pickup"));
+	HolypawAudio::PlayCue(InstigatorPawn, TEXT("Pickup"));
 	InstigatorPawn->Toast(FString::Printf(TEXT("Pocketed %s."), *Label.ToString()));
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);

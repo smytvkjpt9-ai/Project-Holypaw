@@ -457,7 +457,7 @@ protected:
 	UMaterialInterface* ShapeMat = nullptr;
 
 	void SyncFollowers(float DeltaSeconds);
-	UStaticMeshComponent* MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach = nullptr);
+	UStaticMeshComponent* MakeFollowerPart(UStaticMesh* PartMesh, const FLinearColor& Color, USceneComponent* Attach = nullptr);
 
 	UPROPERTY()
 	TArray<FHolypawFollowerVisual> Followers;
