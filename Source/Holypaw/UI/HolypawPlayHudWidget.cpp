@@ -32,71 +32,92 @@ int32 UHolypawPlayHudWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 	{
 		if (Pawn->GetToastAlpha() > 0.f)
 		{
-			Q.Fill(FVector2D(Size.X * 0.5f - 260.f, 16.f), FVector2D(520.f, 36.f), Pal.Felt);
-			Q.Frame(FVector2D(Size.X * 0.5f - 260.f, 16.f), FVector2D(520.f, 36.f), Pal.Gold, 1.4f);
-			Q.Icon(FVector2D(Size.X * 0.5f - 248.f, 20.f), 20.f, EHolypawUiIcon::Halo, Pal.Gold);
-			Q.Text(FVector2D(Size.X * 0.5f - 220.f, 22.f), HolypawUi::Ellipsize(Pawn->GetToast(), 480.f, 0.85f), Pal.Cream, 0.85f, 480.f);
+			Q.Toast(Size, 16.f, Pawn->GetToast());
 		}
 		return Layer + 4;
 	}
 
-	const FVector2D Bar(Size.X - 32.f, 56.f);
+	const FString Clock = Pawn->GetClockLine();
+	const float ClockW = Clock.IsEmpty() ? 0.f : HolypawUi::TextWidth(Clock, 0.85f) + 16.f;
+	const bool bWide = Size.X >= 1100.f;
+	const bool bMid = Size.X >= 860.f;
+
+	const FVector2D Bar(Size.X - 32.f, 48.f);
 	const FVector2D BarPos(16.f, 14.f);
 	Q.Fill(BarPos, Bar, Pal.Felt);
 	Q.Frame(BarPos, Bar, Pal.Rose, 1.6f);
 
-	Q.Icon(BarPos + FVector2D(10.f, 16.f), 22.f, EHolypawUiIcon::MapPin, Pal.Powder);
-	Q.Text(BarPos + FVector2D(36.f, 16.f), HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), Pal.Cream, 0.95f, 180.f);
+	float X = BarPos.X + 10.f;
+	const float Right = BarPos.X + Bar.X - 10.f - ClockW;
+	const FString Zone = HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone);
+	const float ZoneW = FMath::Clamp(bWide ? 200.f : (bMid ? 150.f : 36.f), 36.f, Right - X - 280.f);
+	Q.Icon(FVector2D(X, BarPos.Y + 13.f), 22.f, EHolypawUiIcon::MapPin, Pal.Powder);
+	if (ZoneW > 50.f)
+	{
+		Q.Text(FVector2D(X + 26.f, BarPos.Y + 14.f), HolypawUi::Ellipsize(Zone, ZoneW - 30.f, 0.9f), Pal.Cream, 0.9f, ZoneW - 26.f);
+	}
+	X += ZoneW + 8.f;
 
 	const int32 Hearts = Pawn->Story ? Pawn->Story->Converts : 0;
 	const int32 CityH = Pawn->GetCityHearts(Pawn->CurrentZone);
-	float X = BarPos.X + 230.f;
-	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Heart, Pal.Heart);
-	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Hearts), Pal.Cream, 0.95f, 50.f);
-	X += 78.f;
-	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Coin, Pal.Gold);
-	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Pawn->Affection->AP), Pal.Cream, 0.95f, 50.f);
-	X += 78.f;
-	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Jar, Pal.Powder);
-	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Pawn->Affection->FP), Pal.Cream, 0.95f, 50.f);
-	X += 86.f;
-	Q.Bar(FVector2D(X, BarPos.Y + 20.f), FVector2D(160.f, 12.f),
-		Pawn->HPMax > 0 ? float(Pawn->HP) / float(Pawn->HPMax) : 0.f, Pal.HpFill);
-	Q.Text(FVector2D(X + 168.f, BarPos.Y + 16.f), FString::Printf(TEXT("%d/%d"), Pawn->HP, Pawn->HPMax), Pal.Cream, 0.8f, 80.f);
-	X += 260.f;
-	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 18.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(CityH));
-	Q.Text(FVector2D(X + 22.f, BarPos.Y + 16.f), FString::Printf(TEXT("%s %d"), *HolypawUiCopy::CityHearts().ToString(), CityH), Pal.Cream, 0.8f, 80.f);
-
-	if (!Pawn->GetClockLine().IsEmpty())
+	auto Stat = [&](EHolypawUiIcon IconId, const FString& Value, FLinearColor Tint)
 	{
-		Q.Text(BarPos + FVector2D(Bar.X - 150.f, 16.f), Pawn->GetClockLine(), Pal.Gold, 0.85f, 140.f);
+		const float W = FMath::Clamp(28.f + HolypawUi::TextWidth(Value, 0.9f), 54.f, 90.f);
+		if (X + W > Right)
+		{
+			return;
+		}
+		Q.Icon(FVector2D(X, BarPos.Y + 14.f), 20.f, IconId, Tint);
+		Q.Text(FVector2D(X + 24.f, BarPos.Y + 14.f), Value, Pal.Cream, 0.9f, W - 24.f);
+		X += W + 10.f;
+	};
+	Stat(EHolypawUiIcon::Heart, FString::FromInt(Hearts), Pal.Heart);
+	Stat(EHolypawUiIcon::Coin, FString::FromInt(Pawn->Affection->AP), Pal.Gold);
+	Stat(EHolypawUiIcon::Jar, FString::FromInt(Pawn->Affection->FP), Pal.Powder);
+	if (bMid)
+	{
+		Stat(EHolypawUiIcon::Heart, FString::FromInt(CityH), HolypawUi::HeartsHeat(CityH));
+	}
+
+	const float HpW = FMath::Clamp(Right - X - 70.f, 70.f, 180.f);
+	if (HpW >= 70.f)
+	{
+		Q.Meter(FVector2D(X, BarPos.Y + 18.f), FVector2D(HpW, 12.f),
+			Pawn->HPMax > 0 ? float(Pawn->HP) / float(Pawn->HPMax) : 0.f,
+			HolypawUiCopy::HpFrac(Pawn->HP, Pawn->HPMax).ToString(), Pal.HpFill);
+	}
+
+	if (!Clock.IsEmpty())
+	{
+		Q.Text(FVector2D(BarPos.X + Bar.X - ClockW, BarPos.Y + 14.f), Clock, Pal.Gold, 0.85f, ClockW);
 	}
 
 	const float Pct = Pawn->Affection->MiracleMax > 0.f ? Pawn->Affection->MiracleCharge / Pawn->Affection->MiracleMax : 0.f;
-	Q.Icon(FVector2D(20.f, 78.f), 16.f, EHolypawUiIcon::Halo, Pal.Miracle);
-	Q.Bar(FVector2D(42.f, 82.f), FVector2D(220.f, 8.f), Pct, Pal.Miracle);
+	Q.Icon(FVector2D(20.f, 72.f), 16.f, EHolypawUiIcon::Halo, Pal.Miracle);
+	Q.Bar(FVector2D(42.f, 76.f), FVector2D(FMath::Min(220.f, Size.X * 0.22f), 8.f), Pct, Pal.Miracle);
+	float InfoX = 42.f + FMath::Min(220.f, Size.X * 0.22f) + 16.f;
 	if (Pawn->Story)
 	{
-		Q.Icon(FVector2D(276.f, 76.f), 16.f, EHolypawUiIcon::Book, Pal.Gold);
-		Q.Text(FVector2D(296.f, 76.f), HolypawUi::Ellipsize(Pawn->Story->GetCurrent().Title.ToString(), 280.f, 0.8f), Pal.Gold, 0.8f, 280.f);
+		Q.Icon(FVector2D(InfoX, 70.f), 16.f, EHolypawUiIcon::Book, Pal.Gold);
+		const float TitleW = FMath::Max(120.f, Size.X - InfoX - 200.f);
+		Q.Text(FVector2D(InfoX + 20.f, 70.f), HolypawUi::Ellipsize(Pawn->Story->GetCurrent().Title.ToString(), TitleW, 0.8f), Pal.Gold, 0.8f, TitleW);
+		InfoX += 28.f + FMath::Min(TitleW, 280.f);
 	}
-	if (!Pawn->GetCompassLine().IsEmpty())
+	if (!Pawn->GetCompassLine().IsEmpty() && Size.X - InfoX > 120.f)
 	{
-		Q.Text(FVector2D(20.f, 98.f), HolypawUi::Ellipsize(Pawn->GetCompassLine(), 420.f, 0.75f), Pal.Powder, 0.75f, 420.f);
+		Q.Text(FVector2D(InfoX + 8.f, 70.f), HolypawUi::Ellipsize(Pawn->GetCompassLine(), Size.X - InfoX - 40.f, 0.75f), Pal.Powder, 0.75f, Size.X - InfoX - 36.f);
 	}
 
 	if (Pawn->GetToastAlpha() > 0.f)
 	{
-		Q.Fill(FVector2D(Size.X * 0.5f - 260.f, 118.f), FVector2D(520.f, 36.f), Pal.Felt);
-		Q.Frame(FVector2D(Size.X * 0.5f - 260.f, 118.f), FVector2D(520.f, 36.f), Pal.Gold, 1.4f);
-		Q.Icon(FVector2D(Size.X * 0.5f - 248.f, 122.f), 20.f, EHolypawUiIcon::Halo, Pal.Gold);
-		Q.Text(FVector2D(Size.X * 0.5f - 220.f, 124.f), HolypawUi::Ellipsize(Pawn->GetToast(), 480.f, 0.85f), Pal.Cream, 0.85f, 480.f);
+		Q.Toast(Size, 100.f, Pawn->GetToast());
 	}
 
 	if (!Pawn->GetPrompt().IsEmpty())
 	{
 		const FString Prompt = Pawn->GetPrompt().ToString();
-		Q.Chip(FVector2D(Size.X * 0.5f - 200.f, Size.Y - 86.f), FVector2D(400.f, 36.f),
+		const float PromptW = FMath::Min(420.f, FMath::Max(180.f, 40.f + HolypawUi::TextWidth(Prompt, 0.85f)));
+		Q.Chip(FVector2D((Size.X - PromptW) * 0.5f, Size.Y - 86.f), FVector2D(PromptW, 36.f),
 			EHolypawUiIcon::Key, Prompt, Pal.Rose);
 	}
 

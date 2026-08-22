@@ -29,7 +29,7 @@ int32 UHolypawJournalWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(1080.f, 700.f), 32.f);
 	const FVector2D Origin = HolypawUi::Centered(Size, Panel);
 	Q.Panel(Origin, Panel);
-	Q.Caption(Origin + FVector2D(24.f, 18.f), EHolypawUiIcon::Book, HolypawUiCopy::JournalTitle().ToString(), Pal.Gold);
+	Q.Caption(Origin + FVector2D(24.f, 18.f), EHolypawUiIcon::Book, HolypawUiCopy::JournalTitle().ToString(), Pal.Gold, Panel.X - 56.f);
 
 	const float Mid = Origin.X + Panel.X * 0.42f;
 	Q.Fill(FVector2D(Mid, Origin.Y + 62.f), FVector2D(3.f, Panel.Y - 110.f), HolypawUi::WithAlpha(Pal.Rose, 0.45f));
@@ -57,27 +57,37 @@ int32 UHolypawJournalWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 
 	const FVector2D Right(Mid + 20.f, Origin.Y + 60.f);
 	const float RightW = Origin.X + Panel.X - Right.X - 28.f;
+	const float FooterY = Origin.Y + Panel.Y - 50.f;
 	Q.Text(Right, HolypawUiCopy::Current(), Pal.Gold, 0.9f, 160.f);
 	const FMissionDef Cur = Pawn->Story->GetCurrent();
-	Q.Text(Right + FVector2D(0.f, 24.f), Cur.Title, Pal.Cream, 1.1f, RightW);
-	const float BriefH = Q.TextBlock(Right + FVector2D(0.f, 52.f), Cur.Brief.ToString(), Pal.Powder, 0.82f, RightW, 4);
-	Q.TextBlock(Right + FVector2D(0.f, 56.f + BriefH), Cur.Hint.ToString(), Pal.Muted, 0.75f, RightW, 3);
+	Q.Text(Right + FVector2D(0.f, 24.f), HolypawUi::Ellipsize(Cur.Title.ToString(), RightW, 1.1f), Pal.Cream, 1.1f, RightW);
 
-	const float ChipY = Right.Y + 56.f + BriefH + 62.f;
-	const float ChipW = FMath::Max(120.f, (RightW - 16.f) * 0.5f);
-	Q.Chip(FVector2D(Right.X, ChipY), FVector2D(ChipW, 32.f), EHolypawUiIcon::Heart,
-		FString::Printf(TEXT("%s %d"), *HolypawUiCopy::Hearts().ToString(), Pawn->Story->Converts), Pal.Heart);
-	Q.Chip(FVector2D(Right.X + ChipW + 8.f, ChipY), FVector2D(ChipW, 32.f), EHolypawUiIcon::Party,
-		FString::Printf(TEXT("Recruits %d"), Pawn->Story->Recruits), Pal.Gold);
-	Q.Chip(FVector2D(Right.X, ChipY + 38.f), FVector2D(ChipW, 32.f), EHolypawUiIcon::Halo,
-		FString::Printf(TEXT("Miracles %d"), Pawn->Story->Miracles), Pal.Gold);
-	Q.Chip(FVector2D(Right.X + ChipW + 8.f, ChipY + 38.f), FVector2D(ChipW, 32.f), EHolypawUiIcon::MapPin,
-		FString::Printf(TEXT("Cities %d/%d"), Pawn->Story->ZonesVisited.Num(), HolypawCatalog::GetCities().Num()), Pal.Mint);
+	int32 BriefLines = 4;
+	int32 HintLines = 3;
+	while (Right.Y + 52.f + BriefLines * 16.f + HintLines * 14.f + 120.f > FooterY && BriefLines > 2)
+	{
+		--BriefLines;
+	}
+	while (Right.Y + 52.f + BriefLines * 16.f + HintLines * 14.f + 120.f > FooterY && HintLines > 1)
+	{
+		--HintLines;
+	}
 
-	Q.Text(FVector2D(Right.X, ChipY + 80.f), HolypawUiCopy::Errands(), Pal.Rose, 0.9f, 160.f);
+	const float BriefH = Q.TextBlock(Right + FVector2D(0.f, 52.f), Cur.Brief.ToString(), Pal.Powder, 0.82f, RightW, BriefLines);
+	const float HintH = Q.TextBlock(Right + FVector2D(0.f, 56.f + BriefH), Cur.Hint.ToString(), Pal.Muted, 0.75f, RightW, HintLines);
+
+	TArray<HolypawUi::FChipSpec> Stats;
+	Stats.Add({EHolypawUiIcon::Heart, HolypawUiCopy::HeartsN(Pawn->Story->Converts).ToString(), Pal.Heart});
+	Stats.Add({EHolypawUiIcon::Party, HolypawUiCopy::RecruitsN(Pawn->Story->Recruits).ToString(), Pal.Gold});
+	Stats.Add({EHolypawUiIcon::Halo, HolypawUiCopy::MiraclesN(Pawn->Story->Miracles).ToString(), Pal.Gold});
+	Stats.Add({EHolypawUiIcon::MapPin, HolypawUiCopy::CitiesN(Pawn->Story->ZonesVisited.Num(), HolypawCatalog::GetCities().Num()).ToString(), Pal.Mint});
+	const float ChipY = Right.Y + 64.f + BriefH + HintH;
+	const float ChipH = Q.ChipRow(FVector2D(Right.X, ChipY), RightW, Stats, 30.f);
+
+	Q.Text(FVector2D(Right.X, ChipY + ChipH + 10.f), HolypawUiCopy::Errands(), Pal.Rose, 0.9f, 160.f);
 	int32 Shown = 0;
-	const float ErrandTop = ChipY + 104.f;
-	const int32 Room = FMath::Max(2, FMath::FloorToInt((Origin.Y + Panel.Y - 56.f - ErrandTop) / 26.f));
+	const float ErrandTop = ChipY + ChipH + 32.f;
+	const int32 Room = FMath::Max(2, FMath::FloorToInt((FooterY - ErrandTop) / 26.f));
 	for (const FHolypawQuestDef& Quest : HolypawCatalog::GetQuests())
 	{
 		if (Shown >= Room)
@@ -92,14 +102,14 @@ int32 UHolypawJournalWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 		}
 		const FVector2D Row(Right.X, ErrandTop + Shown * 26.f);
 		Q.Icon(Row, 14.f, bDone ? EHolypawUiIcon::Check : EHolypawUiIcon::Arrow, bDone ? Pal.Mint : Pal.Gold);
-		Q.Text(Row + FVector2D(20.f, 0.f),
-			HolypawUi::Ellipsize(bDone ? Quest.Title.ToString() : Quest.Title.ToString() + TEXT(" — ") + Quest.Brief.ToString(), RightW - 20.f, 0.75f),
+		const FString Line = bDone ? Quest.Title.ToString() : Quest.Title.ToString() + TEXT(" — ") + Quest.Brief.ToString();
+		Q.Text(Row + FVector2D(20.f, 0.f), HolypawUi::Ellipsize(Line, RightW - 20.f, 0.75f),
 			bDone ? Pal.Mint : Pal.Cream, 0.75f, RightW - 16.f);
 		++Shown;
 	}
 	if (Shown == 0)
 	{
-		Q.Text(FVector2D(Right.X, ErrandTop), TEXT("Talk 4 takes a job. Talk 3 turns it in."), Pal.Muted, 0.8f, RightW);
+		Q.Text(FVector2D(Right.X, ErrandTop), HolypawUiCopy::JournalEmptyErrands(), Pal.Muted, 0.8f, RightW);
 	}
 
 	Q.Footer(Origin, Panel, HolypawUiCopy::JournalClose().ToString());

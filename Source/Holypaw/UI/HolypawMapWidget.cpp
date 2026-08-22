@@ -67,7 +67,7 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(1180.f, 720.f), 28.f);
 	const FVector2D Origin = HolypawUi::Centered(Size, Panel);
 	Q.Panel(Origin, Panel);
-	Q.Caption(Origin + FVector2D(24.f, 16.f), EHolypawUiIcon::Lantern, HolypawUiCopy::MapTitle().ToString(), Pal.Gold);
+	Q.Caption(Origin + FVector2D(24.f, 16.f), EHolypawUiIcon::Lantern, HolypawUiCopy::MapTitle().ToString(), Pal.Gold, Panel.X - 56.f);
 
 	const float SideW = FMath::Clamp(Panel.X * 0.28f, 240.f, 300.f);
 	const FVector2D AtlasPos = Origin + FVector2D(24.f, 62.f);
@@ -83,7 +83,6 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 		const FLinearColor Tint = LandTint(Land.Name);
 		Q.Fill(Center - FVector2D(W * 0.5f, H * 0.5f), FVector2D(W, H), Tint);
 		Q.Fill(Center - FVector2D(W * 0.32f, H * 0.32f), FVector2D(W * 0.64f, H * 0.64f), HolypawUi::WithAlpha(Tint, Tint.A + 0.08f));
-		Q.Text(Center - FVector2D(40.f, 6.f), Land.Name, HolypawUi::WithAlpha(Pal.Cream, 0.55f), 0.62f, 120.f);
 	}
 
 	for (const HolypawCatalog::FHolypawRoadLink& Road : HolypawCatalog::GetRoads())
@@ -108,9 +107,9 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 	const FVector2D Home = WorldToMap(Cottage, AtlasPos, AtlasSize);
 	const FVector2D PeakPt = WorldToMap(Peak, AtlasPos, AtlasSize);
 	Q.Icon(Home - FVector2D(8.f, 8.f), 16.f, EHolypawUiIcon::Teddy, Pal.Rose);
-	Q.Text(Home + FVector2D(10.f, -8.f), TEXT("Home"), Pal.Rose, 0.68f, 70.f);
+	Q.Text(Home + FVector2D(10.f, -8.f), HolypawUiCopy::HomePin(), Pal.Rose, 0.68f, 70.f);
 	Q.Icon(PeakPt - FVector2D(8.f, 8.f), 16.f, EHolypawUiIcon::Halo, Pal.Gold);
-	Q.Text(PeakPt + FVector2D(10.f, -8.f), TEXT("Peak"), Pal.Gold, 0.68f, 70.f);
+	Q.Text(PeakPt + FVector2D(10.f, -8.f), HolypawUiCopy::PeakPin(), Pal.Gold, 0.68f, 70.f);
 
 	const EHolypawZone Selected = Pawn->GetSelectedTravel();
 	FHolypawCity Focus;
@@ -138,20 +137,20 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 		}
 		if (bHere || bSel || Hearts > 0)
 		{
-			Q.Text(Pt + FVector2D(8.f, -10.f), HolypawUi::Ellipsize(City.DisplayName.ToString(), 90.f, 0.62f),
+			Q.Text(Pt + FVector2D(8.f, 8.f), HolypawUi::Ellipsize(City.DisplayName.ToString(), 90.f, 0.62f),
 				bSel ? Pal.Gold : Pal.Cream, 0.62f, 100.f);
 		}
 	}
 
 	const FVector2D You = WorldToMap(FVector2D(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Y), AtlasPos, AtlasSize);
+	Q.Frame(You - FVector2D(12.f, 12.f), FVector2D(24.f, 24.f), Pal.Cream, 1.6f);
 	Q.Icon(You - FVector2D(9.f, 9.f), 18.f, EHolypawUiIcon::Paw, Pal.Cream);
 
-	Q.Icon(AtlasPos + FVector2D(10.f, AtlasSize.Y - 28.f), 12.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(0));
-	Q.Text(AtlasPos + FVector2D(26.f, AtlasSize.Y - 28.f), HolypawUiCopy::HeatCold(), Pal.Muted, 0.65f, 30.f);
-	Q.Icon(AtlasPos + FVector2D(56.f, AtlasSize.Y - 28.f), 12.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(1));
-	Q.Text(AtlasPos + FVector2D(72.f, AtlasSize.Y - 28.f), HolypawUiCopy::HeatWarm(), Pal.Rose, 0.65f, 50.f);
-	Q.Icon(AtlasPos + FVector2D(126.f, AtlasSize.Y - 28.f), 12.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(3));
-	Q.Text(AtlasPos + FVector2D(142.f, AtlasSize.Y - 28.f), HolypawUiCopy::HeatGlow(), Pal.Gold, 0.65f, 70.f);
+	TArray<HolypawUi::FChipSpec> Heat;
+	Heat.Add({EHolypawUiIcon::Heart, HolypawUiCopy::HeatCold().ToString(), HolypawUi::HeartsHeat(0)});
+	Heat.Add({EHolypawUiIcon::Heart, HolypawUiCopy::HeatWarm().ToString(), HolypawUi::HeartsHeat(1)});
+	Heat.Add({EHolypawUiIcon::Heart, HolypawUiCopy::HeatGlow().ToString(), HolypawUi::HeartsHeat(3)});
+	Q.ChipRow(AtlasPos + FVector2D(8.f, AtlasSize.Y - 36.f), AtlasSize.X - 16.f, Heat, 26.f);
 
 	const FVector2D Side(Origin.X + Panel.X - SideW - 16.f, Origin.Y + 62.f);
 	const FVector2D SideSize(SideW, Panel.Y - 108.f);
@@ -161,37 +160,54 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 	const FString FocusName = bFocusCity ? Focus.DisplayName.ToString() : HolypawCatalog::ZoneDisplayName(Selected);
 	Q.Icon(Side + FVector2D(14.f, 14.f), 22.f, EHolypawUiIcon::Lantern, Pal.Gold);
 	Q.Text(Side + FVector2D(42.f, 16.f), HolypawUi::Ellipsize(FocusName, SideW - 60.f, 1.0f), Pal.Cream, 1.0f, SideW - 56.f);
+	float SideY = 44.f;
 	if (bFocusCity)
 	{
-		Q.Text(Side + FVector2D(14.f, 44.f), Focus.Continent, Pal.Mint, 0.8f, SideW - 28.f);
-		Q.TextBlock(Side + FVector2D(14.f, 66.f), Focus.Flavor.ToString(), Pal.Muted, 0.72f, SideW - 28.f, 3);
+		Q.Text(Side + FVector2D(14.f, SideY), Focus.Continent, Pal.Mint, 0.8f, SideW - 28.f);
+		SideY += 20.f;
+		SideY += Q.TextBlock(Side + FVector2D(14.f, SideY), Focus.Flavor.ToString(), Pal.Muted, 0.72f, SideW - 28.f, 3);
 	}
 	else
 	{
-		Q.Text(Side + FVector2D(14.f, 44.f), HolypawUiCopy::HomeSewn(), Pal.Mint, 0.8f, SideW - 28.f);
+		Q.Text(Side + FVector2D(14.f, SideY), HolypawUiCopy::HomeSewn(), Pal.Mint, 0.8f, SideW - 28.f);
+		SideY += 22.f;
 	}
 
 	const int32 FocusHearts = Pawn->GetCityHearts(Selected);
-	Q.Text(Side + FVector2D(14.f, 128.f), HolypawUiCopy::MapHearts(), Pal.Gold, 0.8f, SideW - 28.f);
-	Q.HeartRow(Side + FVector2D(14.f, 150.f), FocusHearts, 15.f, 5);
+	Q.Text(Side + FVector2D(14.f, SideY + 6.f), HolypawUiCopy::MapHearts(), Pal.Gold, 0.8f, SideW - 28.f);
+	Q.HeartRow(Side + FVector2D(14.f, SideY + 26.f), FocusHearts, 15.f, 5);
 	const bool bLit = Pawn->GetUnlockedTravel().Contains(Selected) || Selected == EHolypawZone::ForestCottage;
-	Q.Text(Side + FVector2D(14.f, 176.f), bLit ? HolypawUiCopy::MapHop() : HolypawUiCopy::MapUnlit(),
+	Q.Text(Side + FVector2D(14.f, SideY + 50.f), bLit ? HolypawUiCopy::MapHop() : HolypawUiCopy::MapUnlit(),
 		bLit ? Pal.Mint : Pal.Muted, 0.75f, SideW - 28.f);
 
-	Q.Text(Side + FVector2D(14.f, 204.f), HolypawUiCopy::MapHere(), Pal.Powder, 0.75f, SideW - 28.f);
-	Q.Text(Side + FVector2D(14.f, 224.f), HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), Pal.Cream, 0.9f, SideW - 28.f);
+	Q.Text(Side + FVector2D(14.f, SideY + 74.f), HolypawUiCopy::MapHere(), Pal.Powder, 0.75f, SideW - 28.f);
+	Q.Text(Side + FVector2D(14.f, SideY + 94.f), HolypawUi::Ellipsize(HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), SideW - 28.f, 0.9f), Pal.Cream, 0.9f, SideW - 28.f);
 
-	Q.Text(Side + FVector2D(14.f, 254.f), TEXT("Lanterns"), Pal.Gold, 0.8f, SideW - 28.f);
+	Q.Text(Side + FVector2D(14.f, SideY + 122.f), HolypawUiCopy::Lanterns(), Pal.Gold, 0.8f, SideW - 28.f);
 	const TArray<EHolypawZone>& Travel = Pawn->GetUnlockedTravel();
-	const int32 Room = FMath::Max(3, FMath::FloorToInt((SideSize.Y - 280.f) / 22.f));
+	const float ListTop = SideY + 144.f;
+	const int32 Room = FMath::Max(3, FMath::FloorToInt((SideSize.Y - ListTop - 8.f) / 26.f));
 	const int32 Show = FMath::Min(Room, Travel.Num());
 	for (int32 I = 0; I < Show; ++I)
 	{
 		const bool Sel = Travel[I] == Selected;
-		Q.Text(Side + FVector2D(14.f, 276.f + I * 22.f),
-			HolypawUi::Ellipsize(FString::Printf(TEXT("%s %s  %d"), Sel ? TEXT(">") : TEXT(" "),
-				HolypawCatalog::ZoneDisplayName(Travel[I]), Pawn->GetCityHearts(Travel[I])), SideW - 28.f, 0.75f),
-			Sel ? Pal.Gold : Pal.Cream, 0.75f, SideW - 28.f);
+		const FVector2D Row = Side + FVector2D(10.f, ListTop + I * 26.f);
+		const FVector2D RowSize(SideW - 20.f, 24.f);
+		if (Sel)
+		{
+			Q.Fill(Row, RowSize, Pal.Select);
+			Q.Frame(Row, RowSize, Pal.Gold, 1.3f);
+		}
+		Q.Icon(Row + FVector2D(4.f, 4.f), 16.f, EHolypawUiIcon::Lantern, Sel ? Pal.Gold : Pal.Powder);
+		Q.Text(Row + FVector2D(24.f, 4.f),
+			HolypawUi::Ellipsize(HolypawCatalog::ZoneDisplayName(Travel[I]), SideW - 70.f, 0.75f),
+			Sel ? Pal.Gold : Pal.Cream, 0.75f, SideW - 68.f);
+		const int32 H = Pawn->GetCityHearts(Travel[I]);
+		if (H > 0)
+		{
+			Q.Icon(Row + FVector2D(RowSize.X - 28.f, 5.f), 12.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(H));
+			Q.Text(Row + FVector2D(RowSize.X - 14.f, 4.f), FString::FromInt(H), Pal.Cream, 0.7f, 16.f);
+		}
 	}
 
 	Q.Footer(Origin, Panel, HolypawUiCopy::MapBlurb().ToString());

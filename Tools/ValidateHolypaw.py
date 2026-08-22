@@ -281,6 +281,8 @@ PAUSEW = (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").read_text() if (ROO
 TALKW = (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").exists() else ""
 SHOPW = (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").exists() else ""
 PLAYW = (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").exists() else ""
+JOURNALW = (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").exists() else ""
+CODEXW = (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").exists() else ""
 
 if "DashRect" not in THEME or "CornerKnots" not in THEME:
     errors.append("UI theme missing stitched panel chrome")
@@ -288,6 +290,12 @@ if "TextBlock" not in THEME or "WrapLines" not in THEME:
     errors.append("UI theme missing wrapped text")
 if "Ellipsize" not in THEME:
     errors.append("UI theme missing ellipsize")
+if "ChipRow" not in THEME or "MeasureChip" not in THEME:
+    errors.append("UI theme missing flowing chip row")
+if "Toast" not in THEME or "Meter" not in THEME:
+    errors.append("UI theme missing toast/meter")
+if "KeyWidth" not in THEME:
+    errors.append("UI theme missing measured keycaps")
 if "DrawIcon" not in ICONS or "EHolypawUiIcon::Heart" not in ICONS or "EHolypawUiIcon::Lantern" not in ICONS:
     errors.append("UI icons missing stitched heart/lantern glyphs")
 if 'NSLOCTEXT("HolypawUI"' not in COPY:
@@ -333,6 +341,24 @@ if "GetPeakCenter" not in (ROOT / "Source/Holypaw/HolypawWorldBuilder.h").read_t
     errors.append("world missing GetPeakCenter for map pins")
 if "Paused" not in PAUSEW:
     errors.append("pause widget missing paused title")
+if "ChipRow" not in TITLEW or "ChipRow" not in PAUSEW or "ChipRow" not in SHOPW:
+    errors.append("title/pause/shop missing flowing chip rows")
+if "ChipRow" not in MAPW or "ChipRow" not in JOURNALW:
+    errors.append("map/journal missing flowing chip rows")
+if 'TEXT("Lanterns")' in MAPW:
+    errors.append("map still invents leftover Lanterns string")
+if "HomePin" not in MAPW or "PeakPin" not in MAPW:
+    errors.append("map missing loc Home/Peak pins")
+if 'TEXT("Fluffy Party")' in BATTLEW or 'TEXT("Pockets")' in BATTLEW:
+    errors.append("battle overlay still invents leftover party/pocket titles")
+if "Recruits %d" in JOURNALW or "Talk 4 takes a job" in JOURNALW:
+    errors.append("journal still invents leftover recruit/errand strings")
+if "Seen %d" in CODEXW or 'TEXT("fell")' in CODEXW:
+    errors.append("codex still invents leftover seen/fell strings")
+if "Quiet line at" in TALKW:
+    errors.append("talk still invents leftover quiet-line strings")
+if "NeedAp" not in SHOPW:
+    errors.append("shop missing can't-afford copy")
 
 if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
     errors.append("missing procedural audio")

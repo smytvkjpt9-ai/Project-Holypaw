@@ -41,6 +41,15 @@ namespace HolypawUi
 
 	FLinearColor HeartsHeat(int32 Hearts);
 	FLinearColor WithAlpha(FLinearColor C, float A);
+	float TextWidth(const FString& S, float Scale);
+	float KeyWidth(const FString& Key);
+
+	struct FChipSpec
+	{
+		EHolypawUiIcon Icon = EHolypawUiIcon::None;
+		FString Label;
+		FLinearColor Accent = FLinearColor::White;
+	};
 
 	struct FPaint
 	{
@@ -62,15 +71,19 @@ namespace HolypawUi
 		void Panel(FVector2D Pos, FVector2D Size, FLinearColor Fill = FLinearColor::Transparent) const;
 		void SoftShadow(FVector2D Pos, FVector2D Size) const;
 		void Chip(FVector2D Pos, FVector2D Size, EHolypawUiIcon Icon, const FString& Label, FLinearColor Accent) const;
-		void Keycap(FVector2D Pos, const FString& Key) const;
+		float MeasureChip(const FString& Label, float Height = 32.f) const;
+		float ChipRow(FVector2D Pos, float MaxW, const TArray<FChipSpec>& Chips, float Height = 32.f) const;
+		float Keycap(FVector2D Pos, const FString& Key) const;
 		void Bar(FVector2D Pos, FVector2D Size, float Pct, FLinearColor FillColor, FLinearColor Back = FLinearColor::Transparent) const;
+		void Meter(FVector2D Pos, FVector2D Size, float Pct, const FString& Label, FLinearColor FillColor) const;
 		void Icon(FVector2D Pos, float Size, EHolypawUiIcon Id, FLinearColor Color) const;
 		void HeartRow(FVector2D Pos, int32 Hearts, float Size = 15.f, int32 MaxShow = 5) const;
 		void Rule(FVector2D Pos, float Width, FLinearColor Color) const;
-		void Caption(FVector2D Pos, EHolypawUiIcon Icon, const FString& Title, FLinearColor Accent) const;
+		void Caption(FVector2D Pos, EHolypawUiIcon Icon, const FString& Title, FLinearColor Accent, float MaxW = 640.f) const;
 		void Footer(FVector2D PanelPos, FVector2D PanelSize, const FString& Hint) const;
+		void Toast(FVector2D CanvasSize, float Y, const FString& Msg) const;
 		void VerbRow(FVector2D Pos, float Width, const FString& Key, EHolypawUiIcon Icon, const FString& Label) const;
-		void SlotCard(FVector2D Pos, FVector2D Size, bool bSelected, const FString& Title, const FString& Body) const;
+		void SlotCard(FVector2D Pos, FVector2D Size, bool bSelected, const FString& Title, const FString& Body, const FString& Key = FString()) const;
 	};
 
 	FVector2D Centered(FVector2D Canvas, FVector2D Panel);
