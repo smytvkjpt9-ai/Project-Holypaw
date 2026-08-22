@@ -38,6 +38,14 @@ void UHolypawGameInstance::LoadOrCreateSettings()
 	{
 		Settings = Cast<UHolypawSettingsSave>(UGameplayStatics::CreateSaveGameObject(UHolypawSettingsSave::StaticClass()));
 	}
+	if (Settings)
+	{
+		if (Settings->MasterVolume <= 0.f) { Settings->MasterVolume = 1.f; }
+		if (Settings->MusicVolume <= 0.f) { Settings->MusicVolume = 0.85f; }
+		if (Settings->SfxVolume <= 0.f) { Settings->SfxVolume = 1.f; }
+		if (Settings->AmbientVolume <= 0.f) { Settings->AmbientVolume = 0.7f; }
+		if (Settings->UiVolume <= 0.f) { Settings->UiVolume = 0.8f; }
+	}
 }
 
 void UHolypawGameInstance::SaveSettings()
@@ -164,7 +172,7 @@ void UHolypawGameInstance::KeepWave(USoundWaveProcedural* Wave)
 		return;
 	}
 	LiveWaves.Add(Wave);
-	if (LiveWaves.Num() > 24)
+	if (LiveWaves.Num() > 48)
 	{
 		LiveWaves.RemoveAt(0);
 	}

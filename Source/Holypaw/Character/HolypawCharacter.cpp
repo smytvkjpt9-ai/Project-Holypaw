@@ -881,6 +881,7 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 		SeenVillains.Add(Enemy->VillainId);
 		Toast(FString::Printf(TEXT("Codex: %s logged. Cute, but so rude."), *Enemy->DisplayName.ToString()));
 	}
+	HolypawAudio::SetCombat(this, true, Enemy->IsBoss(), Enemy->bPhaseTwo);
 }
 
 void AHolypawCharacter::PlayerBattleAttack(FName Kind)
@@ -904,6 +905,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		if (FMath::FRand() < Chance)
 		{
 			BattleLog = TEXT("You scampered away!");
+			PlayCue(TEXT("Flee"));
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.7f, false);
 		}
 		else
@@ -911,6 +913,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 			BattleLog = E->bBlocksFlee
 				? FString::Printf(TEXT("%s blocks the path. No escape."), *E->DisplayName.ToString())
 				: TEXT("Blocked! No escape.");
+			PlayCue(TEXT("UiDeny"));
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.7f, false);
 		}
 		return;
@@ -939,6 +942,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 				? FString::Printf(TEXT("Seam Guard + stitch %d stuffing."), Stitch)
 				: FString::Printf(TEXT("You guard your seams and stitch %d."), Stitch);
 		}
+		HolypawAudio::PlayAbility(this, Kind, false, false);
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.55f, false);
 		return;
 	}
@@ -955,6 +959,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		if (Kind == TEXT("lullaby"))
 		{
 			BattleLog = TEXT("You sing a dedicated Lullaby.");
+			HolypawAudio::PlayAbility(this, Kind, false, false);
 			if (FMath::FRand() < 0.62f || HolypawBattleDirector::RollLullaby())
 			{
 				BattleLog += TEXT(" They snooze a turn.");
@@ -970,6 +975,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		PoisonTurns = 0;
 		HymnShield = 2;
 		BattleLog = FString::Printf(TEXT("Hymn mends %d stuffing, clears poison, and raises a shield."), Heal);
+		HolypawAudio::PlayAbility(this, Kind, false, false);
 		if (HolypawBattleDirector::RollLullaby())
 		{
 			BattleLog += TEXT(" Lullaby — they snooze a turn.");
@@ -1192,11 +1198,12 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	E->PulseHit();
 	LastDamageDealt = Dmg;
 	DamagePopupTime = 0.9f;
-	PlayCue(TEXT("BattleHit"));
+	HolypawAudio::PlayAbility(this, Kind, bCrit, Outgoing.bStaggered);
 	if (E->TryEnterPhaseTwo())
 	{
 		BattleLog += TEXT(" ");
 		BattleLog += E->GetPhaseLine();
+		HolypawAudio::SetCombat(this, true, E->IsBoss(), true);
 	}
 	if (E->HP <= 0)
 	{
@@ -1224,6 +1231,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 			: Def.DefeatLine;
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
 		PlayCue(TEXT("BattleWin"));
+		HolypawAudio::NotifyVictory(this);
 		return;
 	}
 
@@ -1244,6 +1252,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 			}
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
 			PlayCue(TEXT("BattleWin"));
+			HolypawAudio::NotifyVictory(this);
 			return;
 		}
 	}
@@ -1355,6 +1364,7 @@ void AHolypawCharacter::ResumePlayerTurn()
 
 void AHolypawCharacter::FailAndWakeAtCottage()
 {
+	PlayCue(TEXT("BattleLose"));
 	EndBattle();
 	HP = HPMax;
 	AHolypawWorldBuilder* B = nullptr;
@@ -1372,6 +1382,7 @@ void AHolypawCharacter::FailAndWakeAtCottage()
 
 void AHolypawCharacter::EndBattle()
 {
+	HolypawAudio::SetCombat(this, false, false, false);
 	GetWorldTimerManager().ClearTimer(BattleTimer);
 	BattleEnemy = nullptr;
 	Mode = EHolypawPawnMode::Play;
@@ -1470,6 +1481,7 @@ bool AHolypawCharacter::UseShrine(const EHolypawShrineKind Kind)
 			Affection->AddFP(8);
 		}
 		QuickSave(false);
+		PlayCue(TEXT("Inn"));
 		Toast(TEXT("Spire Inn tucks you in. HP full, cocoa on the nightstand. Saved."));
 		return true;
 	case EHolypawShrineKind::Chapel:
@@ -1477,7 +1489,7 @@ bool AHolypawCharacter::UseShrine(const EHolypawShrineKind Kind)
 		{
 			Affection->MiracleCharge = Affection->MiracleMax;
 		}
-		PlayCue(TEXT("Miracle"));
+		PlayCue(TEXT("Chapel"));
 		Toast(TEXT("Bear Chapel hymn fills the Miracle bar."));
 		return true;
 	case EHolypawShrineKind::Workshop:
@@ -1495,7 +1507,7 @@ bool AHolypawCharacter::UseShrine(const EHolypawShrineKind Kind)
 		{
 			Affection->AddFP(4);
 		}
-		PlayCue(TEXT("Miracle"));
+		PlayCue(TEXT("Fountain"));
 		Toast(TEXT("Fountain wish: +4 FP. The plaza pretends it was always this round."));
 		return true;
 	case EHolypawShrineKind::Crate:
@@ -1508,7 +1520,7 @@ bool AHolypawCharacter::UseShrine(const EHolypawShrineKind Kind)
 		{
 			Toast(TEXT("Harbor crate: stuffing dust. Try again later."));
 		}
-		PlayCue(TEXT("Shop"));
+		PlayCue(TEXT("Pickup"));
 		return true;
 	default:
 		return false;
@@ -1654,6 +1666,7 @@ void AHolypawCharacter::SetPanel(bool& Flag)
 	{
 		Flag = true;
 		Mode = EHolypawPawnMode::UI;
+		PlayCue(TEXT("UiOpen"));
 		if (APlayerController* PC = Cast<APlayerController>(GetController()))
 		{
 			PC->bShowMouseCursor = true;
@@ -1829,6 +1842,7 @@ void AHolypawCharacter::Jump()
 		return;
 	}
 	HolypawAnim::PlayJump(TeddyAnim);
+	HolypawAudio::NotifyJumped(this);
 	Super::Jump();
 }
 
@@ -2270,6 +2284,7 @@ void AHolypawCharacter::TitleSelectSlot(int32 Index)
 	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
 	{
 		GI->TitleCursor = FMath::Clamp(Index, 0, UHolypawGameInstance::SlotCount - 1);
+		PlayCue(TEXT("UiMove"));
 		Toast(FString::Printf(TEXT("Slot %d  %s"), GI->TitleCursor + 1, *GI->SlotSummary(GI->TitleCursor)));
 	}
 }
@@ -2284,10 +2299,12 @@ void AHolypawCharacter::TitleConfirm()
 	}
 	if (GI->SlotOccupied(GI->TitleCursor))
 	{
+		PlayCue(TEXT("UiConfirm"));
 		TitleLoad();
 	}
 	else
 	{
+		PlayCue(TEXT("UiConfirm"));
 		TitleNewGame();
 	}
 }
@@ -2382,6 +2399,7 @@ void AHolypawCharacter::CycleMute()
 	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
 	{
 		GI->CycleMute();
+		HolypawAudio::ApplyMute(this);
 		Toast(GI->Settings && GI->Settings->bMuted ? TEXT("Mute ON") : TEXT("Mute OFF"));
 	}
 }

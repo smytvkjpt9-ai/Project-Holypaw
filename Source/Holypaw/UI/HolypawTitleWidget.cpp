@@ -62,7 +62,7 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 		if (GI && GI->Settings)
 		{
 			PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 460.f),
-				GI->Settings->bMuted ? TEXT("Audio  MUTED  (temp stingers later)") : TEXT("Audio  ON  (drop WAVs on cue IDs later)"),
+				GI->Settings->bMuted ? TEXT("Audio  MUTED") : TEXT("Audio  ON  ·  music / ambient / combat buses"),
 				FLinearColor(1.f, 0.85f, 0.55f), 1.0f);
 		}
 		return Layer + 3;
