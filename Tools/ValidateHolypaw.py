@@ -10,6 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 TYPES = (ROOT / "Source/Holypaw/HolypawTypes.h").read_text()
 VILLAINS = (ROOT / "Source/Holypaw/HolypawVillainCatalog.cpp").read_text()
 WORLD = (ROOT / "Source/Holypaw/HolypawWorldBuilder.cpp").read_text()
+CITIES = (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").exists() else ""
 SKILLS = (ROOT / "Source/Holypaw/HolypawSkillCatalog.cpp").read_text()
 MISSIONS = (ROOT / "Source/Holypaw/HolypawMissionCatalog.cpp").read_text()
 CHAR = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
@@ -283,6 +284,10 @@ if not (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").exists():
     errors.append("missing HolypawDialogueVM.cpp")
 if not (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").exists():
     errors.append("missing HolypawBattleDirector.cpp")
+if not (ROOT / "Source/Holypaw/Combat/HolypawAbilityCatalog.cpp").exists():
+    errors.append("missing HolypawAbilityCatalog.cpp")
+if not (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").exists():
+    errors.append("missing HolypawLivingCities.cpp")
 for needle, blob, label in (
     ("PlaceShrine", WORLD, "world"),
     ("TickClockLighting", WORLD, "world"),
@@ -338,6 +343,26 @@ for needle, blob, label in (
     ("RollLullaby", (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").exists() else "", "battle director"),
     ("ApplyTalkVerb", CHAR, "character"),
     ("ApplyOutgoing", CHAR, "character"),
+    ("ApplyIncoming", CHAR, "character"),
+    ("BuildQuiltlandDistricts", CITIES, "living cities"),
+    ("BuildDustMesaDistricts", CITIES, "living cities"),
+    ("BuildClockhavenDistricts", CITIES, "living cities"),
+    ("BuildVelvetSeineDistricts", CITIES, "living cities"),
+    ("BuildMarbleForumDistricts", CITIES, "living cities"),
+    ("BuildIvorySpireDistricts", CITIES, "living cities"),
+    ("BuildSandHymnDistricts", CITIES, "living cities"),
+    ("BuildCapePlushDistricts", CITIES, "living cities"),
+    ("BuildSavannahBellDistricts", CITIES, "living cities"),
+    ("pinePatch", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("clockCog", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("columnHat", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("acaciaBell", (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").read_text(), "items"),
+    ("teaCog", (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/HolypawQuestCatalog.cpp").exists() else "", "quests"),
+    ("Hat Mender", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("Fog Usher", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("LineC", (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").read_text() if (ROOT / "Source/Holypaw/Narrative/HolypawDialogueVM.cpp").exists() else "", "dialogue VM"),
+    ("FindAbility", (ROOT / "Source/Holypaw/Combat/HolypawAbilityCatalog.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawAbilityCatalog.cpp").exists() else "", "ability catalog"),
+    ("FleeChance", (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBattleDirector.cpp").exists() else "", "battle director"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

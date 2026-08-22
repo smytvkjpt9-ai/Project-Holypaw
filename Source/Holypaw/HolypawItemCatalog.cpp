@@ -33,6 +33,15 @@ namespace HolypawCatalog
 			Add(TEXT("fogTea"), TEXT("Fog Tea"), TEXT("Mossgate rain steeped in a cup. Fog Baker believes a bear (talk 3)."), 0, 0, 4);
 			Add(TEXT("palmClap"), TEXT("Palm Clap"), TEXT("A Palma Dusk token that claps when you glow. Palm Singer wants the duet (talk 3)."), 0, 0, 0);
 			Add(TEXT("cherryThread"), TEXT("Cherry Thread"), TEXT("Pink loom yarn that can wrap a rumor. Loom Weaver will finish the wrap (talk 3)."), 0, 0, 0);
+			Add(TEXT("pinePatch"), TEXT("Pine Patch"), TEXT("A Quiltland square that remembers fingers. Quilt Ranger files it as forestry (talk 3)."), 0, 0, 0);
+			Add(TEXT("lostBead"), TEXT("Lost Bead"), TEXT("Dust Mesa canyon inventory. Mesa Guide stopped thinking it was sad (talk 3)."), 0, 0, 0);
+			Add(TEXT("clockCog"), TEXT("Clock Cog"), TEXT("A teatime gear that refuses to be identical. Bell Warden will ring it (talk 3)."), 0, 0, 0);
+			Add(TEXT("facelessBun"), TEXT("Faceless Bun"), TEXT("Velvet Seine pastry with no logo. Ribbon Baker calls that a blessing (talk 3)."), 0, 12, 0);
+			Add(TEXT("columnHat"), TEXT("Column Hat"), TEXT("Marble Forum millinery for stone. Column Sitter will wear it sitting (talk 3)."), 0, 0, 0);
+			Add(TEXT("ivoryForm"), TEXT("Lost Form"), TEXT("The mill franchise paperwork Ivory Clerk lost on purpose (talk 3)."), 0, 0, 0);
+			Add(TEXT("duneNote"), TEXT("Dune Note"), TEXT("Sand that hummed first. Sand Priest will hum it back (talk 3)."), 0, 0, 6);
+			Add(TEXT("capeShell"), TEXT("Cape Shell"), TEXT("Two oceans argued inside it. Cape Lookout files ships as opinions (talk 3)."), 0, 0, 0);
+			Add(TEXT("acaciaBell"), TEXT("Acacia Bell"), TEXT("Hung without a permit. Grass Bell will let the wind keep it (talk 3)."), 0, 0, 4);
 			return Out;
 		}();
 		return All;

@@ -223,8 +223,18 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			case EHolypawZone::DustMesa:
 			case EHolypawZone::Desert:
 			case EHolypawZone::SandHymn:
+			case EHolypawZone::IvorySpire:
+			case EHolypawZone::SavannahBell:
 				FogDensity = FMath::Max(0.01f, FogDensity - 0.006f);
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.92f, 0.78f, 0.5f), 0.35f);
+				break;
+			case EHolypawZone::Clockhaven:
+			case EHolypawZone::VelvetSeine:
+				FogDensity += 0.012f;
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.62f, 0.68f, 0.78f), 0.38f);
+				break;
+			case EHolypawZone::MarbleForum:
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.88f, 0.82f, 0.7f), 0.28f);
 				break;
 			default:
 				break;
@@ -286,6 +296,15 @@ void AHolypawWorldBuilder::GenerateWorld()
 	BuildMossgateDistricts();
 	BuildPalmaDuskDistricts();
 	BuildCherryLoomDistricts();
+	BuildQuiltlandDistricts();
+	BuildDustMesaDistricts();
+	BuildClockhavenDistricts();
+	BuildVelvetSeineDistricts();
+	BuildMarbleForumDistricts();
+	BuildIvorySpireDistricts();
+	BuildSandHymnDistricts();
+	BuildCapePlushDistricts();
+	BuildSavannahBellDistricts();
 	BuildSkyRift();
 	SpawnGameplayActors();
 	SpawnPlayerStart();
@@ -407,6 +426,15 @@ void AHolypawWorldBuilder::CacheCityCoords()
 	Mossgate = CityXY(EHolypawZone::Mossgate);
 	PalmaDusk = CityXY(EHolypawZone::PalmaDusk);
 	CherryLoom = CityXY(EHolypawZone::CherryLoom);
+	Quiltland = CityXY(EHolypawZone::Quiltland);
+	DustMesa = CityXY(EHolypawZone::DustMesa);
+	Clockhaven = CityXY(EHolypawZone::Clockhaven);
+	VelvetSeine = CityXY(EHolypawZone::VelvetSeine);
+	MarbleForum = CityXY(EHolypawZone::MarbleForum);
+	IvorySpire = CityXY(EHolypawZone::IvorySpire);
+	SandHymn = CityXY(EHolypawZone::SandHymn);
+	CapePlush = CityXY(EHolypawZone::CapePlush);
+	SavannahBell = CityXY(EHolypawZone::SavannahBell);
 }
 
 FVector2D AHolypawWorldBuilder::CityXY(EHolypawZone Zone) const
@@ -1429,14 +1457,24 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Tea Cart"), Mossgate + FVector2D(-680.f, 220.f), FLinearColor(0.72f, 0.58f, 0.4f));
 	SpawnHuman(TEXT("Gate Priest"), Mossgate + FVector2D(120.f, 920.f), FLinearColor(0.62f, 0.78f, 0.72f));
 	SpawnHuman(TEXT("Quilt Ranger"), CityXY(EHolypawZone::Quiltland) + FVector2D(80.f, -60.f), FLinearColor(0.42f, 0.58f, 0.4f));
+	SpawnHuman(TEXT("Patch Child"), Quiltland + FVector2D(-700.f, 260.f), FLinearColor(0.72f, 0.48f, 0.55f));
+	SpawnHuman(TEXT("Pine Priest"), Quiltland + FVector2D(100.f, 900.f), FLinearColor(0.48f, 0.62f, 0.42f));
 	SpawnHuman(TEXT("Mesa Guide"), CityXY(EHolypawZone::DustMesa) + FVector2D(40.f, 90.f), FLinearColor(0.85f, 0.6f, 0.35f));
+	SpawnHuman(TEXT("Bead Sifter"), DustMesa + FVector2D(-780.f, 180.f), FLinearColor(0.82f, 0.58f, 0.32f));
+	SpawnHuman(TEXT("Canyon Priest"), DustMesa + FVector2D(120.f, 860.f), FLinearColor(0.78f, 0.62f, 0.4f));
 	SpawnHuman(TEXT("Palm Singer"), CityXY(EHolypawZone::PalmaDusk) + FVector2D(-80.f, 40.f), FLinearColor(0.35f, 0.78f, 0.55f));
 	SpawnHuman(TEXT("Dusk Usher"), PalmaDusk + FVector2D(780.f, -160.f), FLinearColor(0.92f, 0.62f, 0.4f));
 	SpawnHuman(TEXT("Clap Kid"), PalmaDusk + FVector2D(-580.f, 100.f), FLinearColor(0.45f, 0.82f, 0.7f));
 	SpawnHuman(TEXT("Pier Priest"), PalmaDusk + FVector2D(100.f, 980.f), FLinearColor(0.55f, 0.7f, 0.78f));
 	SpawnHuman(TEXT("Ivory Clerk"), CityXY(EHolypawZone::IvorySpire) + FVector2D(60.f, -40.f), FLinearColor(0.9f, 0.86f, 0.75f));
+	SpawnHuman(TEXT("Stamp Kid"), IvorySpire + FVector2D(-740.f, 260.f), FLinearColor(0.88f, 0.78f, 0.62f));
+	SpawnHuman(TEXT("Spire Priest"), IvorySpire + FVector2D(110.f, 920.f), FLinearColor(0.92f, 0.88f, 0.8f));
 	SpawnHuman(TEXT("Sand Priest"), CityXY(EHolypawZone::SandHymn) + FVector2D(90.f, 20.f), FLinearColor(0.92f, 0.74f, 0.4f));
+	SpawnHuman(TEXT("Dune Child"), SandHymn + FVector2D(-700.f, 200.f), FLinearColor(0.95f, 0.78f, 0.48f));
+	SpawnHuman(TEXT("Shade Priest"), SandHymn + FVector2D(90.f, 880.f), FLinearColor(0.88f, 0.7f, 0.38f));
 	SpawnHuman(TEXT("Cape Lookout"), CityXY(EHolypawZone::CapePlush) + FVector2D(-50.f, 70.f), FLinearColor(0.55f, 0.45f, 0.7f));
+	SpawnHuman(TEXT("Shell Kid"), CapePlush + FVector2D(-660.f, 160.f), FLinearColor(0.62f, 0.52f, 0.78f));
+	SpawnHuman(TEXT("Spray Priest"), CapePlush + FVector2D(80.f, 840.f), FLinearColor(0.48f, 0.62f, 0.72f));
 	SpawnHuman(TEXT("Loom Weaver"), CityXY(EHolypawZone::CherryLoom) + FVector2D(140.f, -90.f), FLinearColor(0.92f, 0.5f, 0.6f));
 	SpawnHuman(TEXT("Cherry Priest"), CherryLoom + FVector2D(140.f, 940.f), FLinearColor(0.95f, 0.55f, 0.68f));
 	SpawnHuman(TEXT("Silk Child"), CherryLoom + FVector2D(760.f, -140.f), FLinearColor(0.88f, 0.62f, 0.78f));
@@ -1446,9 +1484,17 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Confetti Baker"), CityXY(EHolypawZone::CarnivalBahia) + FVector2D(120.f, -80.f), FLinearColor(0.95f, 0.5f, 0.4f));
 	SpawnHuman(TEXT("Wool Climber"), CityXY(EHolypawZone::AndesLoom) + FVector2D(-90.f, 70.f), FLinearColor(0.72f, 0.5f, 0.35f));
 	SpawnHuman(TEXT("Bell Warden"), CityXY(EHolypawZone::Clockhaven) + FVector2D(80.f, 40.f), FLinearColor(0.6f, 0.66f, 0.78f));
+	SpawnHuman(TEXT("Cog Priest"), Clockhaven + FVector2D(-760.f, 300.f), FLinearColor(0.58f, 0.62f, 0.74f));
+	SpawnHuman(TEXT("Fog Usher"), Clockhaven + FVector2D(140.f, 960.f), FLinearColor(0.7f, 0.74f, 0.82f));
 	SpawnHuman(TEXT("Ribbon Baker"), CityXY(EHolypawZone::VelvetSeine) + FVector2D(-60.f, -50.f), FLinearColor(0.82f, 0.55f, 0.74f));
+	SpawnHuman(TEXT("Pastry Kid"), VelvetSeine + FVector2D(-680.f, 220.f), FLinearColor(0.92f, 0.62f, 0.7f));
+	SpawnHuman(TEXT("River Priest"), VelvetSeine + FVector2D(80.f, 920.f), FLinearColor(0.78f, 0.52f, 0.68f));
 	SpawnHuman(TEXT("Column Sitter"), CityXY(EHolypawZone::MarbleForum) + FVector2D(70.f, 90.f), FLinearColor(0.9f, 0.84f, 0.7f));
+	SpawnHuman(TEXT("Hat Mender"), MarbleForum + FVector2D(-720.f, 240.f), FLinearColor(0.82f, 0.48f, 0.58f));
+	SpawnHuman(TEXT("Stone Priest"), MarbleForum + FVector2D(100.f, 880.f), FLinearColor(0.86f, 0.8f, 0.68f));
 	SpawnHuman(TEXT("Grass Bell"), CityXY(EHolypawZone::SavannahBell) + FVector2D(-40.f, 60.f), FLinearColor(0.88f, 0.72f, 0.35f));
+	SpawnHuman(TEXT("Acacia Kid"), SavannahBell + FVector2D(-720.f, 240.f), FLinearColor(0.9f, 0.68f, 0.32f));
+	SpawnHuman(TEXT("Wind Priest"), SavannahBell + FVector2D(100.f, 860.f), FLinearColor(0.82f, 0.7f, 0.4f));
 	SpawnHuman(TEXT("Delta Weaver"), CityXY(EHolypawZone::SilkDelta) + FVector2D(110.f, -70.f), FLinearColor(0.88f, 0.35f, 0.4f));
 	SpawnHuman(TEXT("Pepper Clerk"), CityXY(EHolypawZone::SpiceHarbor) + FVector2D(-80.f, 50.f), FLinearColor(0.92f, 0.58f, 0.25f));
 	SpawnHuman(TEXT("Reef Choir"), CityXY(EHolypawZone::CoralChoir) + FVector2D(50.f, -40.f), FLinearColor(0.35f, 0.78f, 0.82f));
@@ -1582,6 +1628,15 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	PlaceSign(Mossgate + FVector2D(-40.f, 120.f), NSLOCTEXT("Holypaw", "VSignMoss", "Fog warning  |  Night Thread in the rain, Quiltland further north"));
 	PlaceSign(PalmaDusk + FVector2D(60.f, 160.f), NSLOCTEXT("Holypaw", "VSignPalm", "Pier warning  |  Salt Crabs pinch. Cape Plush if the water argues"));
 	PlaceSign(CherryLoom + FVector2D(-60.f, 140.f), NSLOCTEXT("Holypaw", "VSignCherry", "Isle warning  |  Void Rats on the west walk. Globe Trek ends when the wrap holds"));
+	PlaceSign(Quiltland + FVector2D(40.f, 80.f), NSLOCTEXT("Holypaw", "VSignQuilt", "Woods warning  |  patch the pines, then Dust Mesa if you like beige inventory"));
+	PlaceSign(DustMesa + FVector2D(20.f, 80.f), NSLOCTEXT("Holypaw", "VSignMesa", "Canyon warning  |  mill intern cacti. Andes Loom further south"));
+	PlaceSign(Clockhaven + FVector2D(40.f, 100.f), NSLOCTEXT("Holypaw", "VSignClock", "Fog warning  |  Ribbon Enforcers on the cobbles. Tea Inn if they win"));
+	PlaceSign(VelvetSeine + FVector2D(-20.f, 80.f), NSLOCTEXT("Holypaw", "VSignSeine", "River warning  |  Gold Snippers. Pastry is still a valid government"));
+	PlaceSign(MarbleForum + FVector2D(40.f, 80.f), NSLOCTEXT("Holypaw", "VSignForum", "Stone warning  |  Tinsel Golems. Sit converted anyway"));
+	PlaceSign(IvorySpire + FVector2D(40.f, 80.f), NSLOCTEXT("Holypaw", "VSignIvory", "Shore warning  |  mill wanted a franchise. The form is lost on purpose"));
+	PlaceSign(SandHymn + FVector2D(20.f, 80.f), NSLOCTEXT("Holypaw", "VSignHymn", "Dune warning  |  hum at noon. Cape Plush if the water argues"));
+	PlaceSign(CapePlush + FVector2D(20.f, 80.f), NSLOCTEXT("Holypaw", "VSignCape", "Cape warning  |  Harbor Hooks. Two oceans, one bear"));
+	PlaceSign(SavannahBell + FVector2D(20.f, 80.f), NSLOCTEXT("Holypaw", "VSignSav", "Grass warning  |  Scarecrow Hounds. Bells hung without a permit"));
 	BuildPolyMill();
 }
 

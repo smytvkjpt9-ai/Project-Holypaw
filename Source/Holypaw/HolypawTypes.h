@@ -422,7 +422,37 @@ struct HOLYPAW_API FHolypawTalkDef
 	FString LineB;
 
 	UPROPERTY()
+	FString LineC;
+
+	UPROPERTY()
+	int32 FaithNeed = 0;
+
+	UPROPERTY()
 	FString Hint;
+};
+
+USTRUCT(BlueprintType)
+struct HOLYPAW_API FHolypawAbilityDef
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Id;
+
+	UPROPERTY()
+	FText DisplayName;
+
+	UPROPERTY()
+	FText Description;
+
+	UPROPERTY()
+	int32 FpCost = 0;
+
+	UPROPERTY()
+	int32 Slot = 0;
+
+	UPROPERTY()
+	int32 Stitch = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -579,4 +609,6 @@ namespace HolypawCatalog
 	const TArray<FHolypawQuestDef>& GetQuests();
 	const FHolypawQuestDef* FindQuest(FName Id);
 	const FHolypawQuestDef* FindQuestByGiver(const FString& Speaker);
+	const TArray<FHolypawAbilityDef>& GetAbilities();
+	const FHolypawAbilityDef* FindAbility(FName Id);
 }

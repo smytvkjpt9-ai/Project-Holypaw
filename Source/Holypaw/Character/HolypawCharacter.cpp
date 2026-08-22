@@ -673,11 +673,8 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 
 	if (Kind == TEXT("flee"))
 	{
-		float Chance = 0.55f + (Skills->HasSkill(TEXT("haloStep")) ? 0.15f : 0.f);
-		if (E->bBlocksFlee || E->IsBoss())
-		{
-			Chance = 0.12f + (Skills->HasSkill(TEXT("haloStep")) ? 0.08f : 0.f);
-		}
+		const float Chance = HolypawBattleDirector::FleeChance(
+			Skills->HasSkill(TEXT("haloStep")), E->bBlocksFlee, E->IsBoss());
 		if (FMath::FRand() < Chance)
 		{
 			BattleLog = TEXT("You scampered away!");
@@ -696,7 +693,7 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	if (Kind == TEXT("guard"))
 	{
 		bGuarding = true;
-		const int32 Stitch = 4;
+		const int32 Stitch = FMath::Max(4, HolypawBattleDirector::AbilityStitch(TEXT("guard")));
 		HP = FMath::Min(HPMax, HP + Stitch);
 		BattleLog = Skills->HasSkill(TEXT("seamGuard"))
 			? FString::Printf(TEXT("Seam Guard + stitch %d stuffing."), Stitch)
@@ -707,10 +704,10 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 
 	if (Kind == TEXT("hymn"))
 	{
-		const int32 Cost = 8;
+		const int32 Cost = FMath::Max(8, HolypawBattleDirector::AbilityFpCost(TEXT("hymn")));
 		if (!Affection->SpendFP(Cost))
 		{
-			BattleLog = TEXT("Need 8 FP for a Hymn!");
+			BattleLog = FString::Printf(TEXT("Need %d FP for a Hymn!"), Cost);
 			bBattleBusy = false;
 			return;
 		}
@@ -750,9 +747,10 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	}
 	else if (Kind == TEXT("beam"))
 	{
-		if (!Affection->SpendFP(12))
+		const int32 Cost = FMath::Max(12, HolypawBattleDirector::AbilityFpCost(TEXT("beam")));
+		if (!Affection->SpendFP(Cost))
 		{
-			BattleLog = TEXT("Need 12 FP!");
+			BattleLog = FString::Printf(TEXT("Need %d FP!"), Cost);
 			bBattleBusy = false;
 			return;
 		}
@@ -851,101 +849,57 @@ void AHolypawCharacter::EnemyBattleSwing()
 
 	++BattleTurn;
 	int32 Dmg = En->Attack + FMath::RandRange(0, 3);
-	FString Extra;
 	const FString Verb = En->GetDef().AttackLine.IsEmpty() ? TEXT("shreds stuffing") : En->GetDef().AttackLine;
 
-	if (bEnemyStaggered)
+	HolypawBattleDirector::FIncomingRequest Req;
+	Req.BaseDamage = Dmg;
+	Req.Special = En->Special;
+	Req.Rank = En->Rank;
+	Req.EnemyAttack = En->Attack;
+	Req.EnemyHP = En->HP;
+	Req.EnemyHPMax = En->HPMax;
+	Req.bPhaseTwo = En->bPhaseTwo;
+	Req.BattleTurn = BattleTurn;
+	Req.bStaggered = bEnemyStaggered;
+	Req.bGuarding = bGuarding;
+	Req.bSeamGuard = Skills->HasSkill(TEXT("seamGuard"));
+	Req.HymnShield = HymnShield;
+	Req.bFaithArmor = Skills->HasSkill(TEXT("faithArmor"));
+	Req.bFluffShield = Skills->HasSkill(TEXT("fluffShield"));
+	Req.PlayerFP = Affection ? Affection->FP : 0;
+	Req.MiracleCharge = Affection ? Affection->MiracleCharge : 0.f;
+	const HolypawBattleDirector::FIncomingResult In = HolypawBattleDirector::ApplyIncoming(Req);
+	Dmg = In.Damage;
+	if (In.bClearStagger)
 	{
-		Dmg = FMath::Max(1, Dmg / 2);
-		Extra = TEXT("  Staggers. Special fumbles.");
 		bEnemyStaggered = false;
 	}
-	else
+	if (In.FpDrain > 0 && Affection)
 	{
-		switch (En->Special)
-		{
-		case EVillainSpecial::DrainFaith:
-		{
-			const int32 Drain = FMath::Min(6, Affection->FP);
-			if (Drain > 0)
-			{
-				Affection->SpendFP(Drain);
-				Extra = FString::Printf(TEXT("  -%d FP."), Drain);
-			}
-			break;
-		}
-		case EVillainSpecial::StealMiracle:
-		{
-			const float Stolen = FMath::Min(10.f, Affection->MiracleCharge);
-			Affection->MiracleCharge = FMath::Max(0.f, Affection->MiracleCharge - Stolen);
-			Extra = TEXT("  Miracle Charge nipped.");
-			break;
-		}
-		case EVillainSpecial::DoubleStrike:
-			Dmg += En->Attack / 2 + FMath::RandRange(0, 2);
-			Extra = TEXT("  Twice!");
-			break;
-		case EVillainSpecial::FrostBite:
-			Dmg += 2;
-			FrostTurns = FMath::Max(FrostTurns, 3);
-			Extra = TEXT("  Seams go numb. (frost)");
-			break;
-		case EVillainSpecial::PoisonThread:
-			Dmg += 3;
-			PoisonTurns = FMath::Max(PoisonTurns, 3);
-			Extra = TEXT("  Poison thread itches.");
-			break;
-		case EVillainSpecial::Rage:
-			if (En->HP * 2 <= En->HPMax)
-			{
-				Dmg = FMath::FloorToInt(Dmg * 1.5f);
-				Extra = TEXT("  RAGE.");
-			}
-			break;
-		case EVillainSpecial::ThreadCut:
-			bPartyCut = true;
-			Extra = TEXT("  Party ribbons snipped.");
-			break;
-		case EVillainSpecial::FaithBurn:
-			Dmg += FMath::Max(0, Affection->FP / 8);
-			Extra = TEXT("  Faith flares against you.");
-			break;
-		default:
-			break;
-		}
+		Affection->SpendFP(In.FpDrain);
 	}
-
-	if (En->Rank == EVillainRank::WorldBoss && BattleTurn >= 4)
+	if (In.MiracleStolen > 0.f && Affection)
 	{
-		Dmg += 4;
-		Extra += TEXT("  The air unravels.");
+		Affection->MiracleCharge = FMath::Max(0.f, Affection->MiracleCharge - In.MiracleStolen);
 	}
-	if (En->bPhaseTwo)
+	if (In.FrostTurns > 0)
 	{
-		Dmg += 2 + En->Attack / 5;
-		Extra += TEXT("  Phase two.");
+		FrostTurns = FMath::Max(FrostTurns, In.FrostTurns);
 	}
-
-	if (Skills->HasSkill(TEXT("faithArmor")))
+	if (In.PoisonTurns > 0)
 	{
-		Dmg = FMath::Max(1, Dmg - 2);
+		PoisonTurns = FMath::Max(PoisonTurns, In.PoisonTurns);
 	}
-	if (Skills->HasSkill(TEXT("fluffShield")))
+	if (In.bPartyCut)
 	{
-		Dmg = FMath::Max(1, Dmg - 3);
+		bPartyCut = true;
 	}
-	if (bGuarding)
+	if (In.bClearGuard)
 	{
-		Dmg = HolypawBattle::ScaleForGuard(Dmg, Skills->HasSkill(TEXT("seamGuard")));
 		bGuarding = false;
-		Extra += TEXT("  Guarded.");
 	}
-	if (HymnShield > 0)
-	{
-		Dmg = HolypawBattle::ScaleForHymnShield(Dmg);
-		--HymnShield;
-		Extra += TEXT("  Hymn shield.");
-	}
+	HymnShield = In.HymnShieldLeft;
+	const FString Extra = In.Extra;
 	HP -= Dmg;
 	LastDamageTaken = Dmg;
 	HurtPulse = 1.f;
@@ -1378,7 +1332,7 @@ TArray<FString> AHolypawCharacter::GetJournalLines() const
 	}
 	if (Shown == 0)
 	{
-		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Park, Ribbon, Tidewell, farms, fen, snow, Globe Trek."));
+		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Home Sewn, Old World, Sand Belt, Globe Trek."));
 	}
 	return Lines;
 }
@@ -2224,6 +2178,7 @@ bool AHolypawCharacter::StartTalk(AHugHuman* Human)
 	TalkBody = Talk ? Talk->Line : Human->GetBelieverLine();
 	TalkHint = Talk ? Talk->Hint : TEXT("Find a gold lantern.");
 	bTalkSecond = false;
+	bTalkThird = false;
 	SetPanel(bTalkOpen);
 	PlayCue(TEXT("Talk"));
 	return true;
@@ -2259,6 +2214,8 @@ void AHolypawCharacter::ApplyTalkVerb(uint8 Verb)
 	State.TalkHint = TalkHint;
 	State.QuestActive = QuestActive;
 	State.QuestDone = QuestDone;
+	State.bTalkThird = bTalkThird;
+	State.PlayerFP = Affection ? Affection->FP : 0;
 	const HolypawDialogue::FTalkOutcome O = HolypawDialogue::Run(
 		static_cast<HolypawDialogue::ETalkVerb>(Verb), State, [this](FName Id)
 	{
@@ -2273,6 +2230,7 @@ void AHolypawCharacter::ApplyTalkVerb(uint8 Verb)
 		TalkBody = O.TalkBody;
 	}
 	bTalkSecond = O.bTalkSecond;
+	bTalkThird = O.bTalkThird;
 	if (O.bConsumeItem && !ConsumeItem(O.NeedItem, O.NeedCount))
 	{
 		Toast(TEXT("Pockets argued. Try again."));
@@ -2322,6 +2280,15 @@ TArray<FString> AHolypawCharacter::GetTalkLines() const
 	Lines.Add(TalkSpeaker);
 	Lines.Add(TalkBody);
 	Lines.Add(TEXT("1  keep listening    2  ask the way    3  turn in    4  take job"));
+	if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(TalkSpeaker))
+	{
+		if (!Talk->LineC.IsEmpty())
+		{
+			Lines.Add(Talk->FaithNeed > 0
+				? FString::Printf(TEXT("Quiet line at %d FP. Keep listening."), Talk->FaithNeed)
+				: TEXT("They have a third thought if you keep listening."));
+		}
+	}
 	if (const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(TalkSpeaker))
 	{
 		if (QuestDone.Contains(Q->Id))

@@ -49,10 +49,35 @@ namespace HolypawDialogue
 				O.TalkBody = State.TalkBody;
 			}
 			O.bTalkSecond = true;
+			O.bTalkThird = false;
 			return O;
+		}
+		if (!State.bTalkThird)
+		{
+			if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(State.Speaker))
+			{
+				if (!Talk->LineC.IsEmpty() && State.PlayerFP >= Talk->FaithNeed)
+				{
+					O.TalkBody = Talk->LineC;
+					O.bTalkSecond = true;
+					O.bTalkThird = true;
+					return O;
+				}
+				if (!Talk->LineC.IsEmpty() && State.PlayerFP < Talk->FaithNeed)
+				{
+					O.Toast = FString::Printf(TEXT("They almost say it. Need %d FP for the quiet line."), Talk->FaithNeed);
+					O.bTalkSecond = true;
+					O.bTalkThird = State.bTalkThird;
+					O.TalkBody = State.TalkBody;
+					O.Cue = TEXT("Talk");
+					return O;
+				}
+			}
 		}
 		O.bCloseTalk = true;
 		O.Cue = NAME_None;
+		O.bTalkSecond = State.bTalkSecond;
+		O.bTalkThird = State.bTalkThird;
 		return O;
 	}
 
@@ -65,6 +90,7 @@ namespace HolypawDialogue
 			? TEXT("Lanterns. Tab. E. The globe shrinks.")
 			: State.TalkHint;
 		O.bTalkSecond = State.bTalkSecond;
+		O.bTalkThird = State.bTalkThird;
 		O.TalkBody = State.TalkBody;
 		return O;
 	}
@@ -74,6 +100,7 @@ namespace HolypawDialogue
 		FTalkOutcome O;
 		O.bHandled = true;
 		O.bTalkSecond = State.bTalkSecond;
+		O.bTalkThird = State.bTalkThird;
 		O.TalkBody = State.TalkBody;
 		bool bAny = false;
 		for (const FHolypawQuestDef& Q : HolypawCatalog::GetQuests())
@@ -122,6 +149,7 @@ namespace HolypawDialogue
 		FTalkOutcome O;
 		O.bHandled = true;
 		O.bTalkSecond = State.bTalkSecond;
+		O.bTalkThird = State.bTalkThird;
 		O.TalkBody = State.TalkBody;
 		const FHolypawQuestDef* Q = HolypawCatalog::FindQuestByGiver(State.Speaker);
 		if (!Q)

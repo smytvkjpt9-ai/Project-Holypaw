@@ -106,6 +106,15 @@ protected:
 	void BuildMossgateDistricts();
 	void BuildPalmaDuskDistricts();
 	void BuildCherryLoomDistricts();
+	void BuildQuiltlandDistricts();
+	void BuildDustMesaDistricts();
+	void BuildClockhavenDistricts();
+	void BuildVelvetSeineDistricts();
+	void BuildMarbleForumDistricts();
+	void BuildIvorySpireDistricts();
+	void BuildSandHymnDistricts();
+	void BuildCapePlushDistricts();
+	void BuildSavannahBellDistricts();
 	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();
@@ -150,6 +159,15 @@ protected:
 	FVector2D Mossgate = FVector2D(-86000.f, 18000.f);
 	FVector2D PalmaDusk = FVector2D(12000.f, -72000.f);
 	FVector2D CherryLoom = FVector2D(104000.f, 10000.f);
+	FVector2D Quiltland = FVector2D(-62000.f, 38000.f);
+	FVector2D DustMesa = FVector2D(-48000.f, -52000.f);
+	FVector2D Clockhaven = FVector2D(50000.f, 34000.f);
+	FVector2D VelvetSeine = FVector2D(56000.f, 22000.f);
+	FVector2D MarbleForum = FVector2D(62000.f, 8000.f);
+	FVector2D IvorySpire = FVector2D(58000.f, -40000.f);
+	FVector2D SandHymn = FVector2D(32000.f, -58000.f);
+	FVector2D CapePlush = FVector2D(18000.f, -98000.f);
+	FVector2D SavannahBell = FVector2D(44000.f, -80000.f);
 	FVector2D PeakCenter = FVector2D(2000.f, 16000.f);
 
 	int32 GridN = 168;

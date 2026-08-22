@@ -313,6 +313,7 @@ protected:
 	FString TalkBody;
 	FString TalkHint;
 	bool bTalkSecond = false;
+	bool bTalkThird = false;
 	int32 LastDamageDealt = 0;
 	int32 LastDamageTaken = 0;
 	float DamagePopupTime = 0.f;

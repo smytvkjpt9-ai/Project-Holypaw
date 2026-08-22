@@ -43,15 +43,15 @@ AAA is not a line-count trophy. It is:
 
 ## 2. Why the current game is not AAA
 
-The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening, 3-slot save, lantern travel, shops, talk errands, day/night, shrines, a thin dialogue VM, and a thin battle director. **Nine cities** have named districts (Ribbon, Tidewell, Hearthfold, Emberfen, Snowveil, Lantern Angeles, Mossgate, Palma Dusk, Cherry Loom).
+The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overlay, three 6-node skill trees, hug conversion juice, cottage → Ribbon opening, 3-slot save, lantern travel, shops, talk errands, day/night, shrines, a dialogue VM (including Faith-gated third lines), a battle director (incoming + outgoing), and an ability catalog. **Eighteen cities** have named districts.
 
 It is still not a store-page title:
 
-- **17 cities** remain kits with one NPC each — no interiors, schedules, or local events.
-- Dialogue VM is listen / hint / turn-in / accept only. No skill-check nodes, cinematics, or 650 speakers.
-- Combat director is lullaby / hit-stop / outgoing mods. Not 80 abilities or 12 authored boss scripts.
+- **8 cities** remain kits (Carnival Bahia, Andes Loom, Silk Delta, Spice Harbor, Coral Choir, Aurora Borough, Tundra Parish, Felt Ice Camp) — no interiors or schedules yet.
+- Dialogue VM is listen / hint / turn-in / accept plus a Faith-gated LineC. Not 650 speakers or cinematics.
+- Combat director covers specials, lullaby, hit-stop, flee, and a 12-entry ability table. Not 80 abilities or 12 authored boss scripts.
 - `AHolypawCharacter` still owns HUD, hug, miracle, map, and battle flow.
-- World is one actor generating the globe in one shot (no streaming ring).
+- World generates in one shot (city dressers now split to `Cities/HolypawLivingCities.cpp`). No streaming ring.
 - This VM cannot sculpt Nanite, record WAV, or ship a Shipping `.exe`. Those stay on the user's PC.
 
 The 200k-line rewrite **splits that god class**, **fills the remaining globe with play**, and **ships systems**.

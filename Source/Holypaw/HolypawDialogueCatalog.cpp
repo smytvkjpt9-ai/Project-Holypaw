@@ -7,12 +7,14 @@ namespace HolypawCatalog
 		static const TArray<FHolypawTalkDef> All = []()
 		{
 			TArray<FHolypawTalkDef> Out;
-			auto Add = [&](const TCHAR* Who, const TCHAR* A, const TCHAR* B, const TCHAR* Hint)
+			auto Add = [&](const TCHAR* Who, const TCHAR* A, const TCHAR* B, const TCHAR* Hint, const TCHAR* C = TEXT(""), int32 FaithNeed = 0)
 			{
 				FHolypawTalkDef T;
 				T.Speaker = Who;
 				T.Line = A;
 				T.LineB = B;
+				T.LineC = C;
+				T.FaithNeed = FaithNeed;
 				T.Hint = Hint;
 				Out.Add(T);
 			};
@@ -210,12 +212,29 @@ namespace HolypawCatalog
 				TEXT("Choir north of the gate. Gold roof in the tea."));
 			Add(TEXT("Quilt Ranger"),
 				TEXT("I patch pines. You patch people. Union pending."),
-				TEXT("Bring a ribbon. The trees like accessories."),
-				TEXT("Dust Mesa is a long south-west of beige."));
+				TEXT("Patch Walk hid a pine square. Key 4. Key 3 when the woods remember fingers."),
+				TEXT("Quiltland lantern. Pine Inn. Dust Mesa is a long south-west of beige."),
+				TEXT("If you have enough Faith I will admit the trees converted first."), 12);
+			Add(TEXT("Patch Child"),
+				TEXT("I tied a ribbon to a pine. The pine clapped. Forestry."),
+				TEXT("Squares on the walk. Ranger files them. Ribbon Font wishes."),
+				TEXT("Patch Walk west. Then the chapel if the needles sing."));
+			Add(TEXT("Pine Priest"),
+				TEXT("I dunk hymns in sap. The mill dunks nothing and calls it a brand."),
+				TEXT("Pine Chapel fills Miracle Charge. Night Thread still works the rain south."),
+				TEXT("Choir north of the gate. Gold roof in the needles."));
 			Add(TEXT("Mesa Guide"),
 				TEXT("Canyons full of lost beads. I used to think that was sad. Now it's inventory."),
-				TEXT("Don't trust identical cacti. They're mill interns."),
-				TEXT("Palma Dusk if you want palms that clap."));
+				TEXT("Canyon Walk dropped a bead. Key 4. Don't trust identical cacti. They're mill interns."),
+				TEXT("Dust Mesa lantern. Bead Inn. Palma Dusk if you want palms that clap."));
+			Add(TEXT("Bead Sifter"),
+				TEXT("I sift beige until a round thought falls out. Occupied hazard."),
+				TEXT("The Guide wants the round one. Intern cacti pinch."),
+				TEXT("Canyon west. Then shade stoop if the sun argues."));
+			Add(TEXT("Canyon Priest"),
+				TEXT("Dust Choir dries clap mid-air. I call that punctuation."),
+				TEXT("Dust Chapel. Then Andes Loom if you like wool dyed in weather."),
+				TEXT("North of the rim. Gold-on-sand. Interns south."));
 			Add(TEXT("Palm Singer"),
 				TEXT("We clap at hymns. You clap at humans. Collaboration."),
 				TEXT("Clap Pier dropped a token. Key 4. Key 3 when it claps back in your paw."),
@@ -234,16 +253,41 @@ namespace HolypawCatalog
 				TEXT("Choir north. Chapel gold-on-mint. Cape Plush if the water argues."));
 			Add(TEXT("Ivory Clerk"),
 				TEXT("Old stone, new stuffing. I stamped your coup. It is legal because I said so."),
-				TEXT("North-shore spire. The mill wanted a franchise. I lost the form."),
-				TEXT("Lantern here hops you off the beige."));
+				TEXT("Lost Form Walk hid the mill franchise. Key 4. Key 3 so I can lose it again."),
+				TEXT("Ivory Spire lantern. Ivory Inn. Spice Harbor if you like sneezing politically."),
+				TEXT("Quietly: I lost the form because beige cannot be notarized."), 14);
+			Add(TEXT("Stamp Kid"),
+				TEXT("I stamp VOID in gold. They fired the last clerk who did that. I clapped."),
+				TEXT("Shelves of paper. Clerk wants the round one. Notary Font wishes."),
+				TEXT("Archive west. Then the needle if you like tall opinions."));
+			Add(TEXT("Spire Priest"),
+				TEXT("I baptize stamps. The mill baptizes logos. Different religions."),
+				TEXT("Ivory Chapel fills Miracle Charge. The franchise drowned in triplicate."),
+				TEXT("Choir north. Gold cap on white stone."));
 			Add(TEXT("Sand Priest"),
 				TEXT("Dunes that hum at noon. I hummed back. They converted first."),
-				TEXT("Bring a cocoa button. Deserts respect chocolate theology."),
-				TEXT("Cape Plush south if you like argumentative water."));
+				TEXT("Hum Walk dropped a note. Key 4. Cocoa optional. Theology mandatory."),
+				TEXT("Sand Hymn lantern. Dune Inn. Cape Plush south if you like argumentative water."));
+			Add(TEXT("Dune Child"),
+				TEXT("The sand copies you if you glow. I glowed. We are a choir of grit now."),
+				TEXT("Note on the walk. Priest files it as weather. Noon Font wishes."),
+				TEXT("Hum Walk west. Ripples, gold, one round pickup."));
+			Add(TEXT("Shade Priest"),
+				TEXT("I dunk hymns in noon. They dry into policy."),
+				TEXT("Dune Chapel. Then the cape if two oceans want a vote."),
+				TEXT("Choir north. Gold roof, dry clap."));
 			Add(TEXT("Cape Lookout"),
 				TEXT("Two oceans, one bear. The math checks out."),
-				TEXT("I used to scan for ships. Now I scan for remaining opinions."),
-				TEXT("Coral Choir if you can stand being serenaded by reef."));
+				TEXT("Argument Cliff hid a shell. Key 4. I scan for remaining opinions."),
+				TEXT("Cape Plush lantern. Cape Inn. Coral Choir if you can stand being serenaded by reef."));
+			Add(TEXT("Shell Kid"),
+				TEXT("I hold a shell to my ear. It argues. Improvement."),
+				TEXT("Cliff steps. Lookout wants the polite one. Cape Font wishes."),
+				TEXT("Cliff west. Then savannah if the grass is louder."));
+			Add(TEXT("Spray Priest"),
+				TEXT("I baptize nothing. Spray does it for me. Efficient."),
+				TEXT("Spray Chapel fills Miracle Charge. Harbor Hooks pinch. Bring a party."),
+				TEXT("Choir north. Salt on the gold roof."));
 			Add(TEXT("Loom Weaver"),
 				TEXT("Cherry thread can wrap a moon. We wrapped a mayor instead. More useful."),
 				TEXT("Loom Walk dropped a thread. Key 4. Key 3 when the wrap is in your paw. Globe Trek ends when it holds."),
@@ -278,20 +322,53 @@ namespace HolypawCatalog
 				TEXT("Carnival Bahia if you need noise."));
 			Add(TEXT("Bell Warden"),
 				TEXT("Clockhaven teatime bells. I rang one for your coup. The fog applauded on delay."),
-				TEXT("Velvet Seine bakes blessings. Marble Forum wears tiny hats."),
-				TEXT("Old World hops: Clockhaven, Seine, Forum."));
+				TEXT("Cog Walk dropped a gear that refuses to be identical. Key 4. Key 3 when it ticks."),
+				TEXT("Clockhaven lantern. Tea Inn. Old World hops: Clockhaven, Seine, Forum."),
+				TEXT("Between bells: the mill asked to franchise teatime. I lost the kettle."), 12);
+			Add(TEXT("Cog Priest"),
+				TEXT("I bless gears so they stay lumpy. Identical clocks are a crime of taste."),
+				TEXT("Towers on the walk. Warden files the round cog. Tea Font wishes."),
+				TEXT("Cog Walk west. Hats gold, jobs cancelled for identical time."));
+			Add(TEXT("Fog Usher"),
+				TEXT("I seat converted tourists in fog. Same chairs. Better plot. Delay included."),
+				TEXT("Fog Chapel fills Miracle Charge. Ribbon Enforcers on the cobbles. Bring a party."),
+				TEXT("Choir north. Wet wool hymns. Velvet Seine if you need pastry."));
 			Add(TEXT("Ribbon Baker"),
 				TEXT("Strangers get pastry. You got a city. Fair trade."),
-				TEXT("The mill asked for a logo. I gave them a bun with no face."),
-				TEXT("Marble Forum columns. Sit. Convert. Repeat."));
+				TEXT("Blessing Walk hid a bun with no face. Key 4. The mill asked for a logo."),
+				TEXT("Velvet Seine lantern. Pastry Inn. Marble Forum columns. Sit. Convert. Repeat."));
+			Add(TEXT("Pastry Kid"),
+				TEXT("I eat the ones with faces so the faceless ones can be policy."),
+				TEXT("Oven west. Baker wants the blank bun. Butter Font wishes."),
+				TEXT("Blessing Walk. Then the quay if the river blesses you."));
+			Add(TEXT("River Priest"),
+				TEXT("I dunk hymns in butter. The mill cannot franchise that sentence."),
+				TEXT("Velvet Chapel. Gold Snippers on the ribbon. Don't mill this river."),
+				TEXT("Choir north. Flaky hymns. Forum if the stone gets smug."));
 			Add(TEXT("Column Sitter"),
 				TEXT("I have sat on this column for nine years. I will sit converted. Growth."),
-				TEXT("Hats for columns. Hats for bears. Hats for mill executives as they leave."),
-				TEXT("Lantern home whenever the stone gets smug."));
+				TEXT("Column Walk dropped a tiny hat. Key 4. I will wear it without standing."),
+				TEXT("Marble Forum lantern. Column Inn. Hats for mill executives as they leave."));
+			Add(TEXT("Hat Mender"),
+				TEXT("I mend hats for stone so the stone can quit being serious."),
+				TEXT("Tiny hats on columns. Sitter files millinery. Latin Font wishes."),
+				TEXT("Column Walk west. Then sit notch if your legs agree."));
+			Add(TEXT("Stone Priest"),
+				TEXT("Stone Choir echoes clap until it becomes law. I call that acoustics."),
+				TEXT("Stone Chapel fills Miracle Charge. Tinsel Golems. Sit anyway."),
+				TEXT("Choir north. Gold-on-cream. Ivory if you need a stamp."));
 			Add(TEXT("Grass Bell"),
 				TEXT("Bells hung on acacia. Wind does hymns without a permit."),
-				TEXT("Savannah does not need polyester. It has gold already."),
-				TEXT("Sand Belt lanterns: Palma, Ivory, Hymn, Cape, here."));
+				TEXT("Acacia Walk dropped a bell. Key 4. Savannah does not need polyester. It has gold already."),
+				TEXT("Savannah Bell lantern. Grass Inn. Sand Belt lanterns: Palma, Ivory, Hymn, Cape, here."));
+			Add(TEXT("Acacia Kid"),
+				TEXT("I rang a bell. The grass converted. Unemployment never looked so gold."),
+				TEXT("Trunks, crowns, hung bells. Grass Bell wants the unlicensed one."),
+				TEXT("Acacia Walk west. Then wind notch if the weather is louder."));
+			Add(TEXT("Wind Priest"),
+				TEXT("I baptize nothing. Wind dunks the hymn. I file the permit as lost."),
+				TEXT("Wind Chapel. Scarecrow Hounds still work. Unstuff them kindly."),
+				TEXT("Choir north. Gold roof, gold grass, no beige."));
 			Add(TEXT("Delta Weaver"),
 				TEXT("Thread enough to wrap a moon. We wrapped a factory rumor instead."),
 				TEXT("Spice Harbor pepper docks if you like sneezing politically."),

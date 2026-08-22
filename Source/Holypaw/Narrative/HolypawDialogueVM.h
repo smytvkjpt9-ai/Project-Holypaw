@@ -27,6 +27,8 @@ namespace HolypawDialogue
 		FString TalkHint;
 		TArray<FName> QuestActive;
 		TArray<FName> QuestDone;
+		bool bTalkThird = false;
+		int32 PlayerFP = 0;
 	};
 
 	struct FTalkOutcome
@@ -34,6 +36,7 @@ namespace HolypawDialogue
 		bool bHandled = false;
 		bool bCloseTalk = false;
 		bool bTalkSecond = false;
+		bool bTalkThird = false;
 		FString TalkBody;
 		FString Toast;
 		FName Cue;

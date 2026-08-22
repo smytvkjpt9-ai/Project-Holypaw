@@ -90,6 +90,51 @@ namespace HolypawCatalog
 				TEXT("Loom Weaver"), TEXT("Loom Weaver"), TEXT("cherryThread"), 1, 18, 10, 8.f,
 				TEXT("Thread enough to wrap a mayor. Fetch it. Globe Trek ends when the wrap holds."),
 				TEXT("Weaver wraps the rumor shut. Cherry Isle claps in pink."));
+			Add(TEXT("pineSquare"), TEXT("Pine patch"),
+				TEXT("Pocket a pine patch on Quiltland's Patch Walk and give it to the Quilt Ranger."),
+				TEXT("Quilt Ranger"), TEXT("Quilt Ranger"), TEXT("pinePatch"), 1, 14, 8, 6.f,
+				TEXT("A square that remembers fingers. Key 4. Key 3 when the pines agree."),
+				TEXT("Ranger stitches the woods shut against beige. Mossgate can stay damp."));
+			Add(TEXT("canyonBead"), TEXT("Canyon bead"),
+				TEXT("Find a lost bead on Dust Mesa's Canyon Walk and give it to the Mesa Guide."),
+				TEXT("Mesa Guide"), TEXT("Mesa Guide"), TEXT("lostBead"), 1, 14, 8, 0.f,
+				TEXT("Canyons full of lost beads. Fetch one. I used to think that was sad."),
+				TEXT("Guide pockets the bead. Inventory, not tragedy. The mill intern cacti sulk."));
+			Add(TEXT("teaCog"), TEXT("Teatime cog"),
+				TEXT("Pick a clock cog on Clockhaven's Cog Walk and give it to the Bell Warden."),
+				TEXT("Bell Warden"), TEXT("Bell Warden"), TEXT("clockCog"), 1, 16, 8, 8.f,
+				TEXT("A gear that refuses to be identical. Key 4. I will ring it until the fog claps."),
+				TEXT("Warden rings the cog. Teatime applauds on delay. Velvet Seine can smell it."));
+			Add(TEXT("blessingBun"), TEXT("Faceless bun"),
+				TEXT("Take the faceless bun from Velvet Seine's Blessing Walk to the Ribbon Baker."),
+				TEXT("Ribbon Baker"), TEXT("Ribbon Baker"), TEXT("facelessBun"), 1, 14, 8, 6.f,
+				TEXT("The mill asked for a logo. Bring the bun with no face. Fair trade."),
+				TEXT("Baker blesses a stranger with pastry. You already got a city."));
+			Add(TEXT("sitHat"), TEXT("Column hat"),
+				TEXT("Pocket a column hat on Marble Forum's Column Walk and give it to the Column Sitter."),
+				TEXT("Column Sitter"), TEXT("Column Sitter"), TEXT("columnHat"), 1, 14, 8, 4.f,
+				TEXT("Nine years sitting. Bring a hat. I will sit converted and millinery."),
+				TEXT("Sitter wears the hat without standing. Growth."));
+			Add(TEXT("lostFranchise"), TEXT("Lost form"),
+				TEXT("Find the lost form on Ivory Spire's Lost Form Walk and give it to the Ivory Clerk."),
+				TEXT("Ivory Clerk"), TEXT("Ivory Clerk"), TEXT("ivoryForm"), 1, 16, 8, 0.f,
+				TEXT("The mill wanted a franchise. I lost the form. Fetch it so I can lose it again."),
+				TEXT("Clerk stamps the form VOID in gold. The coup is legal because they said so."));
+			Add(TEXT("noonHum"), TEXT("Dune note"),
+				TEXT("Pick a dune note on Sand Hymn's Hum Walk and give it to the Sand Priest."),
+				TEXT("Sand Priest"), TEXT("Sand Priest"), TEXT("duneNote"), 1, 14, 8, 10.f,
+				TEXT("The dunes hummed first. Bring the note. Cocoa optional, recommended."),
+				TEXT("Priest hums it back. The desert converts at noon on purpose."));
+			Add(TEXT("twoOceans"), TEXT("Cape shell"),
+				TEXT("Take a cape shell from Argument Cliff to the Cape Lookout."),
+				TEXT("Cape Lookout"), TEXT("Cape Lookout"), TEXT("capeShell"), 1, 16, 8, 6.f,
+				TEXT("Two oceans argued inside this. Key 4. I scan for remaining opinions."),
+				TEXT("Lookout files the shell as weather. The math still checks out: two oceans, one bear."));
+			Add(TEXT("windPermit"), TEXT("Acacia bell"),
+				TEXT("Pick an acacia bell on Savannah Bell's Acacia Walk and give it to Grass Bell."),
+				TEXT("Grass Bell"), TEXT("Grass Bell"), TEXT("acaciaBell"), 1, 14, 8, 8.f,
+				TEXT("Hung without a permit. Fetch it. Wind does hymns anyway."),
+				TEXT("Grass Bell lets the weather keep the permit. Gold already lives here."));
 			return Out;
 		}();
 		return All;
