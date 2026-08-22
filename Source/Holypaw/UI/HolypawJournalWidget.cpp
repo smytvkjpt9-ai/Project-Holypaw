@@ -4,7 +4,7 @@
 #include "UI/HolypawUiCopy.h"
 #include "Character/HolypawCharacter.h"
 #include "Components/MissionComponent.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 
 void UHolypawJournalWidget::NativeConstruct()
 {

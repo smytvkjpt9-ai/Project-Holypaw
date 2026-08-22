@@ -1,4 +1,5 @@
 #include "Components/MissionComponent.h"
+#include "HolypawCatalog.h"
 #include "Character/HolypawCharacter.h"
 
 UHolypawMissionComponent::UHolypawMissionComponent()

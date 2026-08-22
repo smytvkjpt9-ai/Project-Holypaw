@@ -20,14 +20,14 @@ This cloud repo is source + a runtime world builder, not a double-click `.exe`. 
 
 ### The “missing module” dialog is not the error
 
-If Unreal says **“The following modules are missing or built with a different engine version: Holypaw. Would you like to rebuild them now?”** and you click **Yes**, then it just says it failed — that popup never shows the C++ / UHT line. The live rebuild log is discarded when the compile fails.
+If Unreal says **“The following modules are missing or built with a different engine version: Holypaw”** or **“The game module 'Holypaw' could not be found”**, the `Holypaw` DLL was never built. Those popups never show the C++ / UHT line. The live rebuild log is discarded when the compile fails.
 
 Do **not** keep clicking Yes. Compile from Visual Studio (or the script below) so the first `error C` / `Error:` line is on screen.
 
 1. Install **Unreal Engine 5.8** via the Epic Launcher (Windows recommended).
 2. Install **Visual Studio 2022** with the **Game Development with C++** workload, plus a Windows 10/11 SDK. Without that toolchain the editor rebuild fails with no message. On Mac, install Xcode.
-3. Right-click `Holypaw.uproject` → **Generate Visual Studio project files** (or Xcode on Mac).
-4. Open `Holypaw.sln` → set configuration **Development Editor** / **Win64** → build **HolypawEditor**. Or from a Developer Command Prompt:
+3. Right-click `Holypaw.uproject` → **Generate Visual Studio project files** (or Xcode on Mac), or run `Tools\GenerateProjectFiles.bat "C:\Program Files\Epic Games\UE_5.8"`.
+4. Open `Holypaw.sln` → set configuration **Development Editor** / **Win64** → build **HolypawEditor**. Opening the `.uproject` first will only produce “Holypaw could not be found” until this build succeeds. Or from a Developer Command Prompt:
 
    ```
    Tools\BuildHolypaw.bat "C:\Program Files\Epic Games\UE_5.8"
@@ -45,7 +45,7 @@ Do **not** keep clicking Yes. Compile from Visual Studio (or the script below) s
 7. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, walk inside for bed and kitchen, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or a walk-in **inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **clap, walk, and talk**. Stalls stay shuttered until a Heart opens them (**I** for pockets). Walk into a **chapel** to fill Miracle Charge. **Fountain** wishes grant FP. Three Hearts in Ribbon drop the mill banners; dusk then plays a hymn pad. The sun, fog, mill smog, and city music follow the clock. F6 mutes music, ambient, and combat buses. In battle, **Tab** flips the overflow command page.
 8. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). The plugin is **off** in `Holypaw.uproject` so a missing MCP install cannot block the editor. Turn it on locally if you want it.
 
-If a compile still fails, open `Saved/Logs` (newest `.log`) or the Visual Studio Error List and send the **first** `error C####` or `Error:` line — not the missing-module popup.
+If a compile still fails, open `Saved/Logs` (newest `.log`) or the Visual Studio Error List and send the **first** `error C####` or `Error:` line — not “module could not be found”.
 
 Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**. **ModelContextProtocol** is optional and disabled.
 

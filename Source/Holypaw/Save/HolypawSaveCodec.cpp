@@ -1,4 +1,5 @@
 #include "Save/HolypawSaveCodec.h"
+#include "HolypawCatalog.h"
 #include "Save/HolypawSaveGame.h"
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"

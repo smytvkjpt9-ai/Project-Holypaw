@@ -3,7 +3,7 @@
 #include "Rendering/DrawElements.h"
 #include "UI/HolypawUiCopy.h"
 #include "Character/HolypawCharacter.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 
 void UHolypawCodexWidget::NativeConstruct()
 {

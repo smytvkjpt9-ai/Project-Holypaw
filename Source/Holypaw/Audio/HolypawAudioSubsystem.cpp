@@ -2,7 +2,7 @@
 #include "Audio/HolypawAudioInternal.h"
 #include "Audio/HolypawAudioRig.h"
 #include "HolypawGameInstance.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 #include "Save/HolypawSaveGame.h"
 #include "Character/HolypawCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"

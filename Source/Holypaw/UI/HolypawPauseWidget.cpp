@@ -5,7 +5,7 @@
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveGame.h"
 #include "Character/HolypawCharacter.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 
 void UHolypawPauseWidget::NativeConstruct()
 {

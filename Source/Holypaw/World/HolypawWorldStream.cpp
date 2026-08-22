@@ -1,4 +1,5 @@
 #include "HolypawWorldBuilder.h"
+#include "HolypawCatalog.h"
 #include "Holypaw.h"
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveGame.h"

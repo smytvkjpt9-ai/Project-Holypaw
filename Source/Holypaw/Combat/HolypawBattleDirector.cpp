@@ -1,4 +1,5 @@
 #include "Combat/HolypawBattleDirector.h"
+#include "HolypawCatalog.h"
 #include "Combat/HolypawBattleMath.h"
 #include "Combat/HolypawBossScript.h"
 

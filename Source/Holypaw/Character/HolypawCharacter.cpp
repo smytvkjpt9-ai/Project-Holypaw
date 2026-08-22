@@ -1,4 +1,5 @@
 #include "Character/HolypawCharacter.h"
+#include "HolypawCatalog.h"
 #include "Components/AffectionComponent.h"
 #include "Components/SkillTreeComponent.h"
 #include "Components/PartyComponent.h"

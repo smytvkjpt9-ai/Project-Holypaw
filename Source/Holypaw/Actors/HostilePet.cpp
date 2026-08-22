@@ -1,4 +1,5 @@
 #include "Actors/HostilePet.h"
+#include "HolypawCatalog.h"
 #include "Character/HolypawCharacter.h"
 #include "Combat/HolypawBattleMath.h"
 #include "Look/HolypawLook.h"

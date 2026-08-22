@@ -8,6 +8,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 TYPES = (ROOT / "Source/Holypaw/HolypawTypes.h").read_text()
+CATALOG_H = (ROOT / "Source/Holypaw/HolypawCatalog.h").read_text() if (ROOT / "Source/Holypaw/HolypawCatalog.h").exists() else ""
 VILLAINS = (ROOT / "Source/Holypaw/HolypawVillainCatalog.cpp").read_text()
 WORLD = (ROOT / "Source/Holypaw/HolypawWorldBuilder.cpp").read_text()
 CITIES = (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawLivingCities.cpp").exists() else ""
@@ -119,7 +120,7 @@ if missing_city_zones:
     errors.append(f"atlas city not in EHolypawZone {missing_city_zones}")
 
 for zone in city_adds:
-    if f"case EHolypawZone::{zone}:" not in TYPES:
+    if f"case EHolypawZone::{zone}:" not in CATALOG_H:
         errors.append(f"ZoneDisplayName missing {zone}")
     if f"case EHolypawZone::{zone}:" not in ATLAS:
         errors.append(f"ZoneTerrainColor missing {zone}")
@@ -763,9 +764,15 @@ for name in (
     if "TUniquePtr<" not in text:
         errors.append(f"{name} should pimpl motion with TUniquePtr")
 
+if not (ROOT / "Source/Holypaw/HolypawCatalog.h").exists():
+    errors.append("missing HolypawCatalog.h — catalog API must stay out of the UHT types header")
+if "namespace HolypawCatalog" in TYPES:
+    errors.append("HolypawTypes.h still contains HolypawCatalog — UHT will fail the Holypaw module")
 targets = (ROOT / "Source/Holypaw.Target.cs").read_text() + (ROOT / "Source/HolypawEditor.Target.cs").read_text()
-if "EngineIncludeOrderVersion.Oldest" not in targets:
-    errors.append("Target.cs should use EngineIncludeOrderVersion.Oldest so 5.8 IWYU Latest does not fail the live rebuild")
+if "EngineIncludeOrderVersion.Oldest" in targets:
+    errors.append("Target.cs must not pin EngineIncludeOrderVersion.Oldest — 5.8 UBT can reject that enum and then the editor says Holypaw could not be found")
+if "EngineIncludeOrderVersion.Latest" not in targets:
+    errors.append("Target.cs should use EngineIncludeOrderVersion.Latest (always present on 5.8)")
 uproject = (ROOT / "Holypaw.uproject").read_text()
 if '"ModelContextProtocol"' in uproject and re.search(
     r'"Name":\s*"ModelContextProtocol"[\s\S]*?"Enabled":\s*true', uproject

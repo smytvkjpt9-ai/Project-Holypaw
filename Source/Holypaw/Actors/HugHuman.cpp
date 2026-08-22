@@ -3,7 +3,7 @@
 #include "Look/HolypawLook.h"
 #include "Components/StaticMeshComponent.h"
 #include "HolypawGameInstance.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 #include "AI/HolypawSchedule.h"
 #include "Faith/HolypawFaithSim.h"
 #include "Anim/HolypawProcAnim.h"

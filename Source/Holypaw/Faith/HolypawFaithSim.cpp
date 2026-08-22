@@ -1,4 +1,5 @@
 #include "Faith/HolypawFaithSim.h"
+#include "HolypawCatalog.h"
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
 #include "HolypawWorldBuilder.h"

@@ -1,4 +1,5 @@
 #include "Components/SkillTreeComponent.h"
+#include "HolypawCatalog.h"
 
 USkillTreeComponent::USkillTreeComponent()
 {

@@ -1,4 +1,5 @@
 #include "Narrative/HolypawDialogueVM.h"
+#include "HolypawCatalog.h"
 
 namespace HolypawDialogue
 {

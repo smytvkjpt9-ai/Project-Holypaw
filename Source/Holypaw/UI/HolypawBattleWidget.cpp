@@ -7,7 +7,7 @@
 #include "Components/SkillTreeComponent.h"
 #include "Components/PartyComponent.h"
 #include "Actors/HostilePet.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 
 void UHolypawBattleWidget::NativeConstruct()
 {

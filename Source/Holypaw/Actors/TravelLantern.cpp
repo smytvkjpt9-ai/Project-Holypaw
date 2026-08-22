@@ -1,7 +1,7 @@
 #include "Actors/TravelLantern.h"
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 

@@ -4,7 +4,7 @@
 #include "UI/HolypawUiCopy.h"
 #include "Character/HolypawCharacter.h"
 #include "HolypawWorldBuilder.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 #include "EngineUtils.h"
 
 void UHolypawMapWidget::NativeConstruct()

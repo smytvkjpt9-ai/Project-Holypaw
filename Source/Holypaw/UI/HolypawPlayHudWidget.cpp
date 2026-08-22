@@ -5,7 +5,7 @@
 #include "Character/HolypawCharacter.h"
 #include "Components/AffectionComponent.h"
 #include "Components/MissionComponent.h"
-#include "HolypawTypes.h"
+#include "HolypawCatalog.h"
 
 void UHolypawPlayHudWidget::NativeConstruct()
 {
