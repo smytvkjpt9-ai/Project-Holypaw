@@ -154,6 +154,7 @@ namespace HolypawSaveCodec
 		Pawn->SetUnlockedTravel(In.UnlockedTravel);
 		Pawn->SetInventory(In.Inventory);
 		Pawn->SetQuestState(In.QuestActive, In.QuestDone);
+		Pawn->PulseLivingWorld(true);
 
 		FVector Loc = In.Location;
 		if (Loc.IsNearlyZero())

@@ -307,7 +307,7 @@ Waves W8–W9 are where the ledger crosses 200k. Skipping them **fails the floor
 
 - [ ] New game → cottage porch → lanterns → Ribbon without falling through world
 - [ ] Save in Ribbon, load, still have Hearts and party
-- [ ] Hug conversion is still cute; believers clap; no extra AP
+- [x] Hug conversion is still cute; believers clap and walk; shops open; mill banners come down; dusk hymn; no extra AP
 - [ ] Battle 1–6 never stolen by mouse UI
 - [ ] 26 cities visitable; each has unique NPCs and at least one interior
 - [ ] Fast travel between lanterns after Hearts gate

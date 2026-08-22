@@ -107,6 +107,11 @@ int32 UHolypawPlayHudWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 	{
 		Q.Text(FVector2D(InfoX + 8.f, 70.f), HolypawUi::Ellipsize(Pawn->GetCompassLine(), Size.X - InfoX - 40.f, 0.75f), Pal.Powder, 0.75f, Size.X - InfoX - 36.f);
 	}
+	const FString Faith = Pawn->GetFaithLine();
+	if (!Faith.IsEmpty())
+	{
+		Q.Text(FVector2D(20.f, 92.f), HolypawUi::Ellipsize(Faith, Size.X * 0.42f, 0.72f), Pal.Heart, 0.72f, Size.X * 0.42f);
+	}
 
 	if (Pawn->GetToastAlpha() > 0.f)
 	{
