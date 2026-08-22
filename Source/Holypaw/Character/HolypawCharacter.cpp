@@ -15,6 +15,7 @@
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveCodec.h"
 #include "Audio/HolypawAudio.h"
+#include "Faith/HolypawFaithSim.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -325,8 +326,17 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 			if (GI->IsDusk() && !bHeardChoirHour)
 			{
 				bHeardChoirHour = true;
-				Toast(TEXT("Choir hour. Believers walk to chapels. Night they pile into inns."));
-				PlayCue(TEXT("Miracle"));
+				const bool bCity = HolypawCatalog::IsCityZone(CurrentZone);
+				const int32 Hearts = GetCityHearts(CurrentZone);
+				Toast(HolypawFaith::DuskLine(Hearts, bCity));
+				if (HolypawFaith::ChoirOwnsDusk(Hearts) && bCity)
+				{
+					PlayCue(TEXT("DuskHymn"));
+				}
+				else
+				{
+					PlayCue(TEXT("Talk"));
+				}
 			}
 			if (!GI->IsDusk())
 			{
@@ -461,7 +471,8 @@ TArray<FString> AHolypawCharacter::GetMapLines() const
 	}
 	Lines.Add(FString::Printf(TEXT("Villain Codex  %d seen  %d fell  / %d  (V)"),
 		SeenVillains.Num(), DefeatedVillains.Num(), GetCodexTotal()));
-	Lines.Add(FString::Printf(TEXT("City Hearts here  %d    Tab cycle lanterns  E travel"), GetCityHearts(CurrentZone)));
+	Lines.Add(GetFaithLine());
+	Lines.Add(HolypawFaith::BannerStateLine(GetCityHearts(CurrentZone)));
 	for (const FString& Line : GetTravelLines())
 	{
 		Lines.Add(Line);
@@ -1838,6 +1849,7 @@ void AHolypawCharacter::ResetForNewGame()
 	CityHearts.Reset();
 	UnlockedTravel.Reset();
 	UnlockTravel(EHolypawZone::ForestCottage);
+	PulseLivingWorld(true);
 	Inventory.Reset();
 	AddItem(TEXT("stuffingBun"), 1);
 	QuestActive.Reset();
@@ -1859,6 +1871,29 @@ void AHolypawCharacter::SetCodex(const TArray<EHolypawVillain>& Seen, const TArr
 void AHolypawCharacter::SetHeartRecords(const TArray<FHolypawHeartRecord>& Records)
 {
 	CityHearts = Records;
+	PulseLivingWorld(true);
+}
+
+void AHolypawCharacter::PulseLivingWorld(const bool bSnap)
+{
+	if (!GetWorld())
+	{
+		return;
+	}
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		if (bSnap)
+		{
+			It->SnapConversionLook();
+		}
+		It->TickConversionPulse(0.f);
+		break;
+	}
+}
+
+FString AHolypawCharacter::GetFaithLine() const
+{
+	return HolypawFaith::HudLine(CurrentZone, GetCityHearts(CurrentZone));
 }
 
 void AHolypawCharacter::SetUnlockedTravel(const TArray<EHolypawZone>& Zones)
@@ -1893,12 +1928,27 @@ void AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
 	{
 		Zone = CurrentZone;
 	}
+	const EHolypawFaithStage Before = HolypawFaith::StageForHearts(GetCityHearts(Zone));
 	for (FHolypawHeartRecord& Rec : CityHearts)
 	{
 		if (Rec.Zone == Zone)
 		{
 			Rec.Hearts += Amount;
 			UnlockTravel(Zone);
+			const EHolypawFaithStage After = HolypawFaith::StageForHearts(Rec.Hearts);
+			PulseLivingWorld();
+			if (After != Before)
+			{
+				Toast(HolypawFaith::StageToast(After, Zone));
+				if (HolypawFaith::ShopsOpen(Rec.Hearts) && !HolypawFaith::ShopsOpen(HolypawFaith::HeartsForStage(Before)))
+				{
+					PlayCue(TEXT("ShopOpen"));
+				}
+				else if (HolypawFaith::MillBannersDown(Rec.Hearts))
+				{
+					PlayCue(TEXT("BannerDown"));
+				}
+			}
 			return;
 		}
 	}
@@ -1907,6 +1957,13 @@ void AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
 	Rec.Hearts = Amount;
 	CityHearts.Add(Rec);
 	UnlockTravel(Zone);
+	PulseLivingWorld();
+	const EHolypawFaithStage After = HolypawFaith::StageForHearts(Rec.Hearts);
+	if (After != Before)
+	{
+		Toast(HolypawFaith::StageToast(After, Zone));
+		PlayCue(TEXT("ShopOpen"));
+	}
 }
 
 void AHolypawCharacter::OpenFastTravel(EHolypawZone FromZone)
@@ -2392,11 +2449,16 @@ void AHolypawCharacter::OpenShop()
 	{
 		return;
 	}
+	if (!HolypawFaith::ShopsOpen(GetCityHearts(CurrentZone)))
+	{
+		Toast(HolypawFaith::ShopClosedLine());
+		return;
+	}
 	SetPanel(bShopOpen);
 	PlayCue(TEXT("Shop"));
-	Toast(GetCityHearts(CurrentZone) >= 1
-		? TEXT("Hearts discount. The stall likes you.")
-		: TEXT("Faith stall. Convert locals for cheaper buns."));
+	Toast(HolypawFaith::MillBannersDown(GetCityHearts(CurrentZone))
+		? TEXT("Hearts discount. Mill banners are down. Buy something handmade.")
+		: TEXT("Hearts discount. The stall likes you."));
 }
 
 void AHolypawCharacter::BuyShopSlot(int32 Index)
@@ -2574,7 +2636,16 @@ TArray<FString> AHolypawCharacter::GetTalkLines() const
 TArray<FString> AHolypawCharacter::GetShopLines() const
 {
 	TArray<FString> Lines;
-	Lines.Add(GetCityHearts(CurrentZone) >= 1 ? TEXT("Faith stall  (Hearts discount)") : TEXT("Faith stall"));
+	const int32 Hearts = GetCityHearts(CurrentZone);
+	if (!HolypawFaith::ShopsOpen(Hearts))
+	{
+		Lines.Add(TEXT("Faith stall  (shutters down)"));
+		Lines.Add(HolypawFaith::ShopClosedLine());
+		return Lines;
+	}
+	Lines.Add(HolypawFaith::MillBannersDown(Hearts)
+		? TEXT("Faith stall  (Hearts discount · mill banners down)")
+		: TEXT("Faith stall  (Hearts discount)"));
 	Lines.Add(FString::Printf(TEXT("1  Faith jar     %d AP -> 8 FP"), ShopPrice(10)));
 	if (const FHolypawItemDef* Bun = HolypawCatalog::FindItem(TEXT("stuffingBun")))
 	{

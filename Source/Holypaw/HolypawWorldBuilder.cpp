@@ -1,6 +1,7 @@
 #include "HolypawWorldBuilder.h"
 #include "Holypaw.h"
 #include "HolypawGameInstance.h"
+#include "Faith/HolypawFaithSim.h"
 #include "Actors/WildFluffy.h"
 #include "Actors/HostilePet.h"
 #include "Actors/HugHuman.h"
@@ -115,6 +116,7 @@ void AHolypawWorldBuilder::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	TickClockLighting(DeltaSeconds);
 	TickWorldStream();
+	TickConversionPulse(DeltaSeconds);
 }
 
 void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
@@ -183,9 +185,20 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		if (Dist < 6200.f)
 		{
 			const float W = 1.f - Dist / 6200.f;
-			FogDensity += 0.034f * W;
-			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), W);
-			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), W * 0.45f);
+			int32 RibbonHearts = 0;
+			if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
+			{
+				RibbonHearts = Teddy->GetCityHearts(EHolypawZone::RibbonCity);
+			}
+			const float Smog = HolypawFaith::MillSmogScale(RibbonHearts);
+			FogDensity += 0.034f * W * Smog;
+			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), W * Smog);
+			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), W * 0.45f * Smog);
+			if (Hour >= 17.f && Hour < 20.f && HolypawFaith::DuskHymnUnlocked(RibbonHearts))
+			{
+				FogCol = FMath::Lerp(FogCol, FLinearColor(0.95f, 0.72f, 0.48f), 0.35f);
+				SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.62f, 0.42f), 0.22f);
+			}
 		}
 		if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
 		{
@@ -866,6 +879,7 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	const FVector2D Loft = Cloth + FVector2D(180.f, 160.f);
 	PlaceCube(FVector(Loft.X + 80.f, Loft.Y, SampleHeight(Loft.X, Loft.Y) + 50.f), FVector(0.9f, 0.45f, 0.35f), FLinearColor(0.55f, 0.42f, 0.62f), MakeName(TEXT("Loom")));
 	PlaceSign(RibbonCity + FVector2D(4700.f, -620.f), NSLOCTEXT("Holypaw", "MillProtest", "Handmade not polyester  |  clap, don't stamp"));
+	PlaceRibbonMillBanners();
 
 	for (int32 I = 0; I < 5; ++I)
 	{
@@ -1713,6 +1727,7 @@ void AHolypawWorldBuilder::BuildPolyMill()
 		FLinearColor(0.52f, 0.5f, 0.46f), MakeName(TEXT("PolyShed")));
 	PlaceSign(Mill + FVector2D(-480.f, 0.f),
 		NSLOCTEXT("Holypaw", "PolyMill", "POLY MILL  |  walk in  |  cheap polyester, identical smiles, no handmade soul"));
+	PlaceRibbonMillBanners();
 	PlaceShrine(Mill + FVector2D(40.f, -40.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "MillCrate", "Mill Scrap Crate"));
 	SpawnVillainAt(EHolypawVillain::RazorPetbot, Mill + FVector2D(600.f, 400.f));
 	SpawnVillainAt(EHolypawVillain::RibbonEnforcer, Mill + FVector2D(200.f, -500.f));

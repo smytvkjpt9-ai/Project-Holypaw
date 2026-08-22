@@ -141,6 +141,8 @@ public:
 	void UnlockTravel(EHolypawZone Zone);
 	int32 GetCityHearts(EHolypawZone Zone) const;
 	void AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	void PulseLivingWorld(bool bSnap = false);
+	FString GetFaithLine() const;
 	const TArray<FHolypawItemStack>& GetInventory() const { return Inventory; }
 	void SetInventory(const TArray<FHolypawItemStack>& Stacks);
 	int32 GetItemCount(FName Id) const;

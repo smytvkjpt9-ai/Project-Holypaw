@@ -27,8 +27,11 @@ public:
 	FVector HomeLocation = FVector::ZeroVector;
 	FVector ChapelGoal = FVector::ZeroVector;
 	FVector InnGoal = FVector::ZeroVector;
+	FVector PlazaGoal = FVector::ZeroVector;
+	FVector MarketGoal = FVector::ZeroVector;
 	bool bAnchorsReady = false;
 	float BounceT = 0.f;
+	float ClapBurst = 0.f;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
@@ -38,6 +41,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> ArmR;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Sash;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -50,6 +56,7 @@ public:
 	void ResetFaith();
 	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
 	bool IsKnelt() const { return bKnelt; }
+	bool IsClapping() const;
 	FString GetSkepticLine(int32 Pct) const;
 	FString GetBelieverLine() const;
 

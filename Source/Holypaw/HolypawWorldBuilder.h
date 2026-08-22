@@ -54,6 +54,11 @@ public:
 	void RequestDress(EHolypawZone Zone);
 	bool IsPlayerIndoors(const FVector& WorldPos) const;
 	void RefreshCityTheme();
+	void PlaceMillBanner(const FVector2D& XY, float Yaw = 0.f);
+	void PlaceRibbonMillBanners();
+	void TickConversionPulse(float DeltaSeconds);
+	void SnapConversionLook();
+	FString GetConversionLine() const;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProceduralMeshComponent> TerrainMesh;
@@ -221,7 +226,16 @@ protected:
 	TArray<EHolypawZone> DressedCities;
 	EHolypawZone ThemeZone = EHolypawZone::ForestCottage;
 	bool bThemeInterior = false;
+	bool bRibbonBannersPlaced = false;
+	bool bHymnPlaying = false;
+	FString ConversionLine;
 
 	UPROPERTY()
 	TObjectPtr<UAudioComponent> ThemeComp;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> HymnComp;
+
+	UPROPERTY()
+	TArray<TObjectPtr<class AHolypawMillBanner>> MillBanners;
 };

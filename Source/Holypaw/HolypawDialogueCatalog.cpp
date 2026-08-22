@@ -40,7 +40,7 @@ namespace HolypawCatalog
 				TEXT("North of the plaza the Silk Magistrate holds cheap court."));
 			Add(TEXT("Mayor"),
 				TEXT("Ribbon City hereby recognizes the Bear Faith as extremely reasonable. I did not take a bribe. I took a hug."),
-				TEXT("Hearts open shops. Convert my people and the lanterns get friendlier."),
+				TEXT("Hearts open shops. Convert my people and the mill banners come down. Dusk will hymn if you earn it."),
 				TEXT("Poly Mill sits east of town. Polyester, no soul, excellent to unstuff."));
 			Add(TEXT("Market Hawker"),
 				TEXT("Faith jars, ribbons, buns — not factory smiles. Touch anything handmade. Leave the polyester."),
@@ -48,7 +48,7 @@ namespace HolypawCatalog
 				TEXT("Cloth Quarter is west. Harbor Steps splash east."));
 			Add(TEXT("Cloth Dyer"),
 				TEXT("I dye banners the color of leftover sunset. The mill dyes everything beige and calls it efficiency."),
-				TEXT("Handmade thread remembers fingers. Cheap thread remembers meetings."),
+				TEXT("When Hearts stick, their mill ads sag, then fall. I hang rose ribbons on the empty poles."),
 				TEXT("Quiet Rows south of the plaza. People there convert softly."));
 			Add(TEXT("Harbor Kid"),
 				TEXT("I can skip a stone three times. I can skip a serious thought forever now."),
@@ -86,7 +86,7 @@ namespace HolypawCatalog
 				TEXT("Plaza fountain. E to wish. Inn east, chapel west, mill rude and further east."));
 			Add(TEXT("Mill Whistleblower"),
 				TEXT("I filed a complaint that polyester has no soul. They offered a coupon. I took a hymn."),
-				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap. Key 3 if you have some."),
+				TEXT("Three Hearts and our mill banners come down. I will clap. I will not stamp."),
 				TEXT("Poly Mill, grey hall, red stack. Walk in. Handmade not polyester — the sign is not subtle."),
 				TEXT("The hall is beige on purpose. Rippers in your party make the vats nervous."),
 				10);
@@ -97,7 +97,7 @@ namespace HolypawCatalog
 				TEXT("Night shift is just the beige getting darker. I stay. Someone has to be wrong here."),
 				12);
 			Add(TEXT("Shopkeep"),
-				TEXT("Walk in. Jars, buns, ribbons. I do not sell beige. I do not know how."),
+				TEXT("Shutters stay down until someone on this block believes. Convert them. Then I sell buns."),
 				TEXT("Hearts discount if you converted the block. I will pretend that is a coupon."),
 				TEXT("E on the rug. I is pockets. Night I sleep in the inn with the round people."));
 			Add(TEXT("Plaza Florist"),
