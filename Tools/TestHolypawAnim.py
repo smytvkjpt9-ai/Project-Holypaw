@@ -79,6 +79,7 @@ bow = parse_keys("BowKeys")
 spin = parse_keys("VictorySpinKeys")
 hop = parse_keys("VictoryHopKeys")
 party_hop = parse_keys("PartyHopKeys")
+party_land = parse_keys("PartyLandKeys")
 cele_spin = parse_keys("CelebrateSpinKeys")
 
 near(HugSeconds, 0.70, 0.001, "HugSeconds")
@@ -87,8 +88,20 @@ near(KneelSeconds, 0.72, 0.001, "KneelSeconds")
 near(VictorySeconds, 0.95, 0.001, "VictorySeconds")
 if HugLockSeconds >= HugSeconds:
     errors.append("hug lock must be shorter than the wrap clip so mash-protect is not the whole hug")
-if ConvertHoldSeconds < 0.4:
-    errors.append("convert hold is too short — wrap would release before the bow reads")
+if ConvertHoldSeconds < 0.69:
+    errors.append("convert hold must cover the bow-down (0.70s) so wrap does not let go early")
+if "S.HugAge = 0.48f" not in SOURCE:
+    errors.append("convert still snaps wrap off — need an authored release")
+if "bPendingVictory" not in SOURCE:
+    errors.append("victory must wait until wrap release finishes")
+if "HugAge = 0.28f" in SOURCE and "HugAge <= 0.f" in SOURCE:
+    errors.append("PlayConvert still skips reach on the converting hug")
+if "PartyLandKeys" not in SOURCE:
+    errors.append("party squash must be a land hit, not the whole grounded rest")
+if "BowDelay" not in SOURCE:
+    errors.append("human bow starts before wrap closes")
+if "HugStandOff" not in SOURCE and "HugStandOff" not in HEADER:
+    errors.append("teddy never steps in — hugs air")
 
 if reach:
     if sample(reach, 0.10) < 0.9:
@@ -176,6 +189,14 @@ if party_hop:
     if hops[0] > 0.05:
         errors.append("party hop should start on the ground")
 
+if party_land:
+    if sample(party_land, 0.10) > 0.2:
+        errors.append("party land squash is on during hang time")
+    if sample(party_land, 0.28) < 0.9:
+        errors.append("party land squash missing at touchdown")
+    if sample(party_land, 0.55) > 0.1:
+        errors.append("party stays squashed after the land")
+
 if cele_spin:
     near(sample(cele_spin, 0.0), 0.0, 1.0, "celebrate spin start")
     near(sample(cele_spin, 0.90), 360.0, 1.0, "celebrate spin end")
@@ -193,6 +214,10 @@ if "CelebrateConvert" not in char:
     errors.append("character missing convert victory hook")
 if "EvaluateParty" not in char:
     errors.append("character missing party trail poses")
+if "HugStandOff" not in char:
+    errors.append("character missing hug step-in")
+if "PlayHug(TeddyAnim" in char and "Human->GetActorLocation())" not in char:
+    errors.append("hug play does not pass a world target")
 if "PlayConvertBow" not in human:
     errors.append("human missing convert kneel bow")
 if "PlayWorshipKneel" not in human:

@@ -558,7 +558,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 		return true;
 	}
 	HugLock = HolypawAnim::HugLockSeconds;
-	HolypawAnim::PlayHug(TeddyAnim, Human->GetActorLocation() - GetActorLocation());
+	HolypawAnim::PlayHug(TeddyAnim, Human->GetActorLocation() - GetActorLocation(), Human->GetActorLocation());
 	Human->ReceiveHug(GetActorLocation());
 	PlayCue(TEXT("Hug"));
 
@@ -2107,10 +2107,22 @@ void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 	In.bInBattle = Mode == EHolypawPawnMode::Battle;
 	In.DeltaSeconds = DeltaSeconds;
 	HolypawAnim::TickTeddy(TeddyAnim, In);
-	if (HolypawAnim::IsWrapLocked(TeddyAnim) && !TeddyAnim.HugDir.IsNearlyZero())
+	if (HolypawAnim::IsHugging(TeddyAnim) && !TeddyAnim.HugDir.IsNearlyZero())
 	{
 		const FRotator Want(0.f, TeddyAnim.HugDir.Rotation().Yaw, 0.f);
 		SetActorRotation(FMath::RInterpTo(GetActorRotation(), Want, DeltaSeconds, 14.f));
+	}
+	if (HolypawAnim::IsHugging(TeddyAnim) && TeddyAnim.bHasHugTarget)
+	{
+		FVector Here = GetActorLocation();
+		FVector There = TeddyAnim.HugTarget;
+		There.Z = Here.Z;
+		const float Dist = FVector::Dist2D(Here, There);
+		if (Dist > HolypawAnim::HugStandOff)
+		{
+			const FVector Step = (There - Here).GetSafeNormal2D() * FMath::Min(Dist - HolypawAnim::HugStandOff, 520.f * DeltaSeconds);
+			AddActorWorldOffset(FVector(Step.X, Step.Y, 0.f));
+		}
 	}
 	HolypawAnim::ApplyTeddyPose(HolypawAnim::EvaluateTeddy(TeddyAnim, TeddyRest), TeddyParts());
 }

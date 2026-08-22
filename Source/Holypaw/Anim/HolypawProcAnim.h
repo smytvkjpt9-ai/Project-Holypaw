@@ -13,7 +13,8 @@ namespace HolypawAnim
 {
 	constexpr float HugLockSeconds = 0.32f;
 	constexpr float HugSeconds = 0.70f;
-	constexpr float ConvertHoldSeconds = 0.55f;
+	constexpr float ConvertHoldSeconds = 0.70f;
+	constexpr float HugStandOff = 96.f;
 	constexpr float BlinkCloseSeconds = 0.12f;
 	constexpr float KneelSeconds = 0.72f;
 	constexpr float ConvertBowSeconds = 1.20f;
@@ -74,6 +75,8 @@ namespace HolypawAnim
 	extern const int32 LandSquashKeyCount;
 	extern const FClipKey PartyHopKeys[5];
 	extern const int32 PartyHopKeyCount;
+	extern const FClipKey PartyLandKeys[5];
+	extern const int32 PartyLandKeyCount;
 	extern const FClipKey CelebrateSpinKeys[4];
 	extern const int32 CelebrateSpinKeyCount;
 
@@ -124,8 +127,11 @@ namespace HolypawAnim
 		float HugAge = 0.f;
 		bool bHugging = false;
 		bool bConvert = false;
+		bool bPendingVictory = false;
 		float ConvertT = 0.f;
 		FVector HugDir = FVector::ForwardVector;
+		FVector HugTarget = FVector::ZeroVector;
+		bool bHasHugTarget = false;
 		float VictoryT = 0.f;
 		float HurtT = 0.f;
 		float LandT = 0.f;
@@ -175,7 +181,9 @@ namespace HolypawAnim
 
 	void CaptureTeddyRest(FTeddyRest& Rest, const FTeddyParts& Parts);
 	void PlayHug(FTeddyState& S, const FVector& WorldToTarget);
+	void PlayHug(FTeddyState& S, const FVector& WorldToTarget, const FVector& WorldTarget);
 	void PlayConvert(FTeddyState& S);
+	bool IsHugging(const FTeddyState& S);
 	void PlayVictory(FTeddyState& S);
 	void PlayHurt(FTeddyState& S);
 	void PlayJump(FTeddyState& S);
@@ -207,6 +215,7 @@ namespace HolypawAnim
 		bool bBeliever = false;
 		float ConvertBurst = 0.f;
 		float HugYaw = 0.f;
+		float BowDelay = 0.f;
 	};
 
 	struct FHumanPose
