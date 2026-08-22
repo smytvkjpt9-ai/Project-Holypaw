@@ -39,8 +39,21 @@ namespace HolypawUiCopy
 	FText JobReady() { return NSLOCTEXT("HolypawUI", "JobReady", "Job"); }
 
 	FText ShopTitle() { return NSLOCTEXT("HolypawUI", "ShopTitle", "Faith stall"); }
-	FText ShopDiscount() { return NSLOCTEXT("HolypawUI", "ShopDiscount", "Hearts discount"); }
-	FText ShopFullPrice() { return NSLOCTEXT("HolypawUI", "ShopFullPrice", "Convert a local for cheaper hugs-in-a-jar."); }
+	FText ShopDiscount() { return NSLOCTEXT("HolypawUI", "ShopDiscount", "Hearts −2 AP"); }
+	FText ShopFullPrice() { return NSLOCTEXT("HolypawUI", "ShopFullPrice", "No Hearts yet"); }
+	FText Continue() { return NSLOCTEXT("HolypawUI", "Continue", "Continue"); }
+	FText NewCoup() { return NSLOCTEXT("HolypawUI", "NewCoup", "New coup"); }
+	FText LoadSlot() { return NSLOCTEXT("HolypawUI", "LoadSlot", "Load"); }
+	FText AudioOn() { return NSLOCTEXT("HolypawUI", "AudioOn", "Audio on"); }
+	FText HomeSewn() { return NSLOCTEXT("HolypawUI", "HomeSewn", "Cottage porch"); }
+	FText HeatCold() { return NSLOCTEXT("HolypawUI", "HeatCold", "0"); }
+	FText HeatWarm() { return NSLOCTEXT("HolypawUI", "HeatWarm", "warm"); }
+	FText HeatGlow() { return NSLOCTEXT("HolypawUI", "HeatGlow", "glowing"); }
+	FText CodexTitle() { return NSLOCTEXT("HolypawUI", "CodexTitle", "Villain Codex"); }
+	FText CodexUnseen() { return NSLOCTEXT("HolypawUI", "CodexUnseen", "Not yet met"); }
+	FText TabHint() { return NSLOCTEXT("HolypawUI", "TabHint", "Tab"); }
+	FText Owned() { return NSLOCTEXT("HolypawUI", "Owned", "owned"); }
+	FText Buy() { return NSLOCTEXT("HolypawUI", "Buy", "buy"); }
 	FText FaithJar() { return NSLOCTEXT("HolypawUI", "FaithJar", "Faith jar"); }
 	FText FaithJarBlurb() { return NSLOCTEXT("HolypawUI", "FaithJarBlurb", "Leftover hugs, bottled. +8 FP."); }
 	FText ShopFooter() { return NSLOCTEXT("HolypawUI", "ShopFooter", "1-4 buy   Esc close   I pockets"); }

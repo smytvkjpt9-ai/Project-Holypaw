@@ -47,6 +47,19 @@ namespace HolypawUiCopy
 	FText FaithJar();
 	FText FaithJarBlurb();
 	FText ShopFooter();
+	FText Continue();
+	FText NewCoup();
+	FText LoadSlot();
+	FText AudioOn();
+	FText HomeSewn();
+	FText HeatCold();
+	FText HeatWarm();
+	FText HeatGlow();
+	FText CodexTitle();
+	FText CodexUnseen();
+	FText TabHint();
+	FText Owned();
+	FText Buy();
 
 	FText BattleYou();
 	FText BattleVs();

@@ -24,29 +24,14 @@ int32 UHolypawTalkWidget::NativePaint(const FPaintArgs& Args, const FGeometry& A
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 
-	const FVector2D Panel(FMath::Min(Size.X - 72.f, 980.f), 280.f);
-	const FVector2D Origin((Size.X - Panel.X) * 0.5f, Size.Y - Panel.Y - 36.f);
+	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(1000.f, 340.f), 36.f);
+	const FVector2D Origin((Size.X - Panel.X) * 0.5f, Size.Y - Panel.Y - 28.f);
 	Q.Panel(Origin, Panel);
 
-	Q.Fill(Origin + FVector2D(20.f, 18.f), FVector2D(220.f, 44.f), Pal.Select);
-	Q.Icon(Origin + FVector2D(28.f, 24.f), 28.f, EHolypawUiIcon::Speech, Pal.Powder);
+	Q.Fill(Origin + FVector2D(20.f, 16.f), FVector2D(FMath::Min(240.f, Panel.X * 0.28f), 40.f), Pal.Select);
+	Q.Icon(Origin + FVector2D(28.f, 20.f), 26.f, EHolypawUiIcon::Speech, Pal.Powder);
 	const FString Speaker = Pawn->GetTalkSpeaker().IsEmpty() ? TEXT("Believer") : Pawn->GetTalkSpeaker();
-	Q.Text(Origin + FVector2D(64.f, 26.f), Speaker, Pal.Cream, 1.1f, 180.f);
-	Q.Text(Origin + FVector2D(252.f, 22.f), HolypawUiCopy::TalkTitle(), Pal.Gold, 0.85f, 200.f);
-
-	Q.Text(Origin + FVector2D(28.f, 74.f), Pawn->GetTalkBody(), Pal.Cream, 0.95f, Panel.X - 56.f);
-
-	if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(Speaker))
-	{
-		if (!Talk->LineC.IsEmpty())
-		{
-			Q.Text(Origin + FVector2D(28.f, 128.f),
-				Talk->FaithNeed > 0
-					? FString::Printf(TEXT("Quiet line at %d FP."), Talk->FaithNeed)
-					: HolypawUiCopy::QuietLine().ToString(),
-				Pal.Muted, 0.8f, 500.f);
-		}
-	}
+	Q.Text(Origin + FVector2D(60.f, 22.f), HolypawUi::Ellipsize(Speaker, 170.f, 1.05f), Pal.Cream, 1.05f, 180.f);
 
 	FString Errand;
 	FLinearColor ErrandCol = Pal.Muted;
@@ -59,24 +44,38 @@ int32 UHolypawTalkWidget::NativePaint(const FPaintArgs& Args, const FGeometry& A
 		}
 		else if (Pawn->GetQuestActive().Contains(Quest->Id))
 		{
-			Errand = Quest->Brief.ToString();
+			Errand = Quest->Title.ToString();
 			ErrandCol = Pal.Gold;
 		}
 		else
 		{
-			Errand = FString::Printf(TEXT("%s: %s"), *HolypawUiCopy::JobReady().ToString(), *Quest->Title.ToString());
+			Errand = Quest->Title.ToString();
 			ErrandCol = Pal.Rose;
 		}
 	}
 	if (!Errand.IsEmpty())
 	{
-		Q.Chip(Origin + FVector2D(Panel.X - 340.f, 18.f), FVector2D(312.f, 40.f), EHolypawUiIcon::Book, Errand, ErrandCol);
+		Q.Chip(Origin + FVector2D(Panel.X - 280.f, 16.f), FVector2D(256.f, 40.f), EHolypawUiIcon::Book, Errand, ErrandCol);
 	}
 
-	Q.VerbRow(Origin + FVector2D(24.f, 168.f), TEXT("1"), EHolypawUiIcon::Speech, HolypawUiCopy::Listen().ToString(), true);
-	Q.VerbRow(Origin + FVector2D(248.f, 168.f), TEXT("2"), EHolypawUiIcon::Lantern, HolypawUiCopy::AskWay().ToString(), false);
-	Q.VerbRow(Origin + FVector2D(472.f, 168.f), TEXT("3"), EHolypawUiIcon::Check, HolypawUiCopy::TurnIn().ToString(), false);
-	Q.VerbRow(Origin + FVector2D(696.f, 168.f), TEXT("4"), EHolypawUiIcon::Book, HolypawUiCopy::TakeJob().ToString(), false);
-	Q.Footer(Origin, Panel, TEXT("Esc closes. Keep listening for the third thought."));
+	Q.TextBlock(Origin + FVector2D(24.f, 68.f), Pawn->GetTalkBody(), Pal.Cream, 0.95f, Panel.X - 48.f, 4);
+	if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(Speaker))
+	{
+		if (!Talk->LineC.IsEmpty())
+		{
+			Q.Text(Origin + FVector2D(24.f, 148.f),
+				Talk->FaithNeed > 0
+					? FString::Printf(TEXT("Quiet line at %d FP."), Talk->FaithNeed)
+					: HolypawUiCopy::QuietLine().ToString(),
+				Pal.Muted, 0.75f, Panel.X - 48.f);
+		}
+	}
+
+	const float VerbW = (Panel.X - 56.f) / 4.f;
+	const float VerbY = Origin.Y + Panel.Y - 78.f;
+	Q.VerbRow(FVector2D(Origin.X + 20.f, VerbY), VerbW - 8.f, TEXT("1"), EHolypawUiIcon::Speech, HolypawUiCopy::Listen().ToString());
+	Q.VerbRow(FVector2D(Origin.X + 20.f + VerbW, VerbY), VerbW - 8.f, TEXT("2"), EHolypawUiIcon::Lantern, HolypawUiCopy::AskWay().ToString());
+	Q.VerbRow(FVector2D(Origin.X + 20.f + VerbW * 2.f, VerbY), VerbW - 8.f, TEXT("3"), EHolypawUiIcon::Check, HolypawUiCopy::TurnIn().ToString());
+	Q.VerbRow(FVector2D(Origin.X + 20.f + VerbW * 3.f, VerbY), VerbW - 8.f, TEXT("4"), EHolypawUiIcon::Book, HolypawUiCopy::TakeJob().ToString());
 	return Layer + 6;
 }

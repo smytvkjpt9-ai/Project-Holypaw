@@ -27,34 +27,36 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(Pawn);
 
 	Q.Fill(FVector2D::ZeroVector, Size, Pal.Dim);
-	Q.Fill(FVector2D(0.f, Size.Y * 0.18f), FVector2D(Size.X, Size.Y * 0.08f), HolypawUi::WithAlpha(Pal.Rose, 0.18f));
-	Q.Fill(FVector2D(0.f, Size.Y * 0.74f), FVector2D(Size.X, Size.Y * 0.06f), HolypawUi::WithAlpha(Pal.Gold, 0.12f));
+	Q.Fill(FVector2D(0.f, Size.Y * 0.16f), FVector2D(Size.X, 10.f), HolypawUi::WithAlpha(Pal.Rose, 0.35f));
+	Q.Fill(FVector2D(0.f, Size.Y * 0.78f), FVector2D(Size.X, 8.f), HolypawUi::WithAlpha(Pal.Gold, 0.28f));
 
-	const FVector2D Panel(840.f, FMath::Clamp(Size.Y - 120.f, 520.f, 640.f));
+	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(820.f, 560.f), 40.f);
 	const FVector2D Origin = HolypawUi::Centered(Size, Panel);
 	Q.Panel(Origin, Panel);
-	Q.Caption(Origin + FVector2D(36.f, 28.f), EHolypawUiIcon::Teddy, HolypawUiCopy::GameTitle().ToString(), Pal.Rose);
-	Q.Text(Origin + FVector2D(36.f, 68.f), HolypawUiCopy::Tagline(), Pal.Powder, 0.95f, 760.f);
+	Q.Caption(Origin + FVector2D(32.f, 24.f), EHolypawUiIcon::Teddy, HolypawUiCopy::GameTitle().ToString(), Pal.Rose);
+	Q.TextBlock(Origin + FVector2D(32.f, 64.f), HolypawUiCopy::Tagline().ToString(), Pal.Powder, 0.9f, Panel.X - 64.f, 2);
 
 	const int32 Cursor = GI ? GI->TitleCursor : 0;
 	for (int32 I = 0; I < UHolypawGameInstance::SlotCount; ++I)
 	{
 		const bool Sel = (I == Cursor);
-		const FString Title = FString::Printf(TEXT("Slot %d"), I + 1);
-		const FString Body = GI ? GI->SlotSummary(I) : HolypawUiCopy::EmptyPorch().ToString();
-		Q.SlotCard(Origin + FVector2D(48.f, 118.f + I * 92.f), FVector2D(744.f, 80.f), Sel, Title, Body);
-		Q.Keycap(Origin + FVector2D(760.f, 146.f + I * 92.f), FString::FromInt(I + 1));
+		const FVector2D Card = Origin + FVector2D(40.f, 118.f + I * 88.f);
+		Q.SlotCard(Card, FVector2D(Panel.X - 80.f, 76.f), Sel,
+			FString::Printf(TEXT("Slot %d"), I + 1),
+			GI ? GI->SlotSummary(I) : HolypawUiCopy::EmptyPorch().ToString());
+		Q.Keycap(Card + FVector2D(Panel.X - 128.f, 26.f), FString::FromInt(I + 1));
 	}
 
-	Q.Icon(Origin + FVector2D(36.f, Panel.Y - 88.f), 22.f, EHolypawUiIcon::Heart, Pal.Heart);
-	Q.Text(Origin + FVector2D(66.f, Panel.Y - 84.f), HolypawUiCopy::SlotHint(), Pal.Cream, 0.9f, 720.f);
+	const float ActionY = Origin.Y + Panel.Y - 78.f;
+	Q.Chip(FVector2D(Origin.X + 32.f, ActionY), FVector2D(170.f, 32.f), EHolypawUiIcon::Paw, HolypawUiCopy::Continue().ToString(), Pal.Gold);
+	Q.Chip(FVector2D(Origin.X + 210.f, ActionY), FVector2D(150.f, 32.f), EHolypawUiIcon::Teddy, HolypawUiCopy::NewCoup().ToString(), Pal.Rose);
+	Q.Chip(FVector2D(Origin.X + 368.f, ActionY), FVector2D(130.f, 32.f), EHolypawUiIcon::Save, HolypawUiCopy::LoadSlot().ToString(), Pal.Mint);
 	if (GI && GI->Settings)
 	{
 		const bool bMuted = GI->Settings->bMuted;
-		Q.Icon(Origin + FVector2D(36.f, Panel.Y - 52.f), 18.f, EHolypawUiIcon::Mute, bMuted ? Pal.Danger : Pal.Mint);
-		Q.Text(Origin + FVector2D(66.f, Panel.Y - 50.f),
-			bMuted ? HolypawUiCopy::TitleMuteOn() : HolypawUiCopy::TitleMuteOff(),
-			bMuted ? Pal.Danger : Pal.Mint, 0.85f, 400.f);
+		Q.Chip(FVector2D(Origin.X + 506.f, ActionY), FVector2D(140.f, 32.f), EHolypawUiIcon::Mute,
+			bMuted ? HolypawUiCopy::TitleMuteOn().ToString() : HolypawUiCopy::TitleMuteOff().ToString(),
+			bMuted ? Pal.Danger : Pal.Mint);
 	}
 	return Layer + 6;
 }

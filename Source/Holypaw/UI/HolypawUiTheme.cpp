@@ -43,7 +43,82 @@ namespace HolypawUi
 
 	FVector2D Centered(FVector2D Canvas, FVector2D Panel)
 	{
-		return FVector2D((Canvas.X - Panel.X) * 0.5f, FMath::Max(24.f, (Canvas.Y - Panel.Y) * 0.42f));
+		return FVector2D((Canvas.X - Panel.X) * 0.5f, FMath::Max(16.f, (Canvas.Y - Panel.Y) * 0.5f));
+	}
+
+	FVector2D Fit(FVector2D Canvas, FVector2D Desired, float Margin)
+	{
+		return FVector2D(
+			FMath::Min(Desired.X, FMath::Max(280.f, Canvas.X - Margin * 2.f)),
+			FMath::Min(Desired.Y, FMath::Max(220.f, Canvas.Y - Margin * 2.f)));
+	}
+
+	static float ApproxCharW(float Scale)
+	{
+		return FMath::Max(6.4f, 16.f * Scale * 0.54f);
+	}
+
+	int32 WrapLines(const FString& S, float MaxW, float Scale, int32 MaxLines, TArray<FString>& OutLines)
+	{
+		OutLines.Reset();
+		if (S.IsEmpty() || MaxLines <= 0)
+		{
+			return 0;
+		}
+		const int32 MaxChars = FMath::Max(8, FMath::FloorToInt(MaxW / ApproxCharW(Scale)));
+		TArray<FString> Words;
+		S.ParseIntoArray(Words, TEXT(" "), true);
+		if (Words.Num() == 0)
+		{
+			OutLines.Add(S.Left(MaxChars));
+			return 1;
+		}
+		FString Line;
+		for (int32 I = 0; I < Words.Num(); ++I)
+		{
+			FString Word = Words[I];
+			if (Word.Len() > MaxChars)
+			{
+				Word = Word.Left(MaxChars - 1) + TEXT("…");
+			}
+			const FString Next = Line.IsEmpty() ? Word : Line + TEXT(" ") + Word;
+			if (Next.Len() > MaxChars && !Line.IsEmpty())
+			{
+				OutLines.Add(Line);
+				Line = Word;
+				if (OutLines.Num() == MaxLines)
+				{
+					break;
+				}
+			}
+			else
+			{
+				Line = Next;
+			}
+		}
+		if (OutLines.Num() < MaxLines && !Line.IsEmpty())
+		{
+			OutLines.Add(Line);
+		}
+		else if (OutLines.Num() == MaxLines && !Line.IsEmpty() && OutLines.Last() != Line)
+		{
+			FString& Last = OutLines.Last();
+			if (!Last.EndsWith(TEXT("…")))
+			{
+				Last = Ellipsize(Last, MaxW, Scale);
+			}
+		}
+		return OutLines.Num();
+	}
+
+	FString Ellipsize(const FString& S, float MaxW, float Scale)
+	{
+		const int32 MaxChars = FMath::Max(4, FMath::FloorToInt(MaxW / ApproxCharW(Scale)));
+		if (S.Len() <= MaxChars)
+		{
+			return S;
+		}
+		return S.Left(MaxChars - 1) + TEXT("…");
 	}
 
 	FVector2D FPaint::Canvas() const
@@ -71,6 +146,18 @@ namespace HolypawUi
 	void FPaint::Text(FVector2D Pos, const FText& T, FLinearColor Color, float Scale, float MaxW) const
 	{
 		Text(Pos, T.ToString(), Color, Scale, MaxW);
+	}
+
+	float FPaint::TextBlock(FVector2D Pos, const FString& S, FLinearColor Color, float Scale, float MaxW, int32 MaxLines) const
+	{
+		TArray<FString> Lines;
+		WrapLines(S, MaxW, Scale, MaxLines, Lines);
+		const float Step = 18.f * FMath::Max(0.75f, Scale);
+		for (int32 I = 0; I < Lines.Num(); ++I)
+		{
+			Text(Pos + FVector2D(0.f, I * Step), Lines[I], Color, Scale, MaxW);
+		}
+		return Lines.Num() * Step;
 	}
 
 	void FPaint::Line(FVector2D A, FVector2D B, FLinearColor Color, float Thickness) const
@@ -156,20 +243,29 @@ namespace HolypawUi
 		CornerKnots(Pos, Size, P.Rose);
 	}
 
+	void FPaint::Frame(FVector2D Pos, FVector2D Size, FLinearColor Color, float Thickness) const
+	{
+		Fill(Pos, FVector2D(Size.X, Thickness), Color);
+		Fill(Pos + FVector2D(0.f, Size.Y - Thickness), FVector2D(Size.X, Thickness), Color);
+		Fill(Pos, FVector2D(Thickness, Size.Y), Color);
+		Fill(Pos + FVector2D(Size.X - Thickness, 0.f), FVector2D(Thickness, Size.Y), Color);
+	}
+
 	void FPaint::Chip(FVector2D Pos, FVector2D Size, EHolypawUiIcon IconId, const FString& Label, FLinearColor Accent) const
 	{
 		Fill(Pos, Size, Colors().FeltInner);
-		DashRect(Pos + FVector2D(3.f, 3.f), Size - FVector2D(6.f, 6.f), Accent, 1.3f, 6.f);
+		Frame(Pos, Size, Accent, 1.6f);
 		const float IconSize = FMath::Min(Size.Y - 10.f, 22.f);
 		Icon(Pos + FVector2D(8.f, (Size.Y - IconSize) * 0.5f), IconSize, IconId, Accent);
-		Text(Pos + FVector2D(8.f + IconSize + 8.f, Size.Y * 0.28f), Label, Colors().Cream, 0.85f, Size.X - 40.f);
+		Text(Pos + FVector2D(8.f + IconSize + 8.f, Size.Y * 0.28f), Ellipsize(Label, Size.X - IconSize - 24.f, 0.85f), Colors().Cream, 0.85f, Size.X - 40.f);
 	}
 
 	void FPaint::Keycap(FVector2D Pos, const FString& Key) const
 	{
-		Fill(Pos, FVector2D(28.f, 22.f), Colors().Ink);
-		Fill(Pos + FVector2D(1.f, 1.f), FVector2D(26.f, 20.f), Colors().Gold);
-		Text(Pos + FVector2D(7.f, 2.f), Key, Colors().Ink, 0.8f, 40.f);
+		const float W = FMath::Max(28.f, 14.f + Key.Len() * 8.5f);
+		Fill(Pos, FVector2D(W, 22.f), Colors().Ink);
+		Fill(Pos + FVector2D(1.f, 1.f), FVector2D(W - 2.f, 20.f), Colors().Gold);
+		Text(Pos + FVector2D(6.f, 2.f), Key, Colors().Ink, 0.78f, W);
 	}
 
 	void FPaint::Bar(FVector2D Pos, FVector2D Size, float Pct, FLinearColor FillColor, FLinearColor Back) const
@@ -182,9 +278,9 @@ namespace HolypawUi
 		Fill(Pos, Size, Back);
 		if (Pct > 0.01f)
 		{
-			Fill(Pos, FVector2D(Size.X * Pct, Size.Y), FillColor);
+			Fill(Pos, FVector2D(FMath::Max(3.f, Size.X * Pct), Size.Y), FillColor);
 		}
-		DashRect(Pos, Size, WithAlpha(Colors().Cream, 0.55f), 1.1f, 5.f);
+		Frame(Pos, Size, WithAlpha(Colors().Cream, 0.45f), 1.4f);
 	}
 
 	void FPaint::Icon(FVector2D Pos, float Size, EHolypawUiIcon Id, FLinearColor Color) const
@@ -194,11 +290,16 @@ namespace HolypawUi
 
 	void FPaint::HeartRow(FVector2D Pos, int32 Hearts, float Size, int32 MaxShow) const
 	{
-		const int32 Show = FMath::Clamp(Hearts, 0, MaxShow);
-		for (int32 I = 0; I < MaxShow; ++I)
+		if (Hearts <= 0)
 		{
-			const FLinearColor C = I < Show ? HeartsHeat(Hearts) : WithAlpha(Colors().Powder, 0.28f);
-			Icon(Pos + FVector2D(I * (Size + 4.f), 0.f), Size, EHolypawUiIcon::Heart, C);
+			Icon(Pos, Size, EHolypawUiIcon::Heart, WithAlpha(Colors().Powder, 0.35f));
+			Text(Pos + FVector2D(Size + 6.f, 0.f), TEXT("0"), Colors().Muted, 0.8f, 40.f);
+			return;
+		}
+		const int32 Show = FMath::Clamp(Hearts, 1, MaxShow);
+		for (int32 I = 0; I < Show; ++I)
+		{
+			Icon(Pos + FVector2D(I * (Size + 4.f), 0.f), Size, EHolypawUiIcon::Heart, HeartsHeat(Hearts));
 		}
 		if (Hearts > MaxShow)
 		{
@@ -223,13 +324,14 @@ namespace HolypawUi
 		Text(PanelPos + FVector2D(28.f, PanelSize.Y - 42.f), Hint, Colors().Muted, 0.85f, PanelSize.X - 50.f);
 	}
 
-	void FPaint::VerbRow(FVector2D Pos, const FString& Key, EHolypawUiIcon IconId, const FString& Label, bool bHot) const
+	void FPaint::VerbRow(FVector2D Pos, float Width, const FString& Key, EHolypawUiIcon IconId, const FString& Label) const
 	{
-		Fill(Pos, FVector2D(210.f, 40.f), bHot ? Colors().Select : Colors().Idle);
-		DashRect(Pos + FVector2D(3.f, 3.f), FVector2D(204.f, 34.f), bHot ? Colors().Gold : Colors().Muted, 1.2f, 5.f);
-		Keycap(Pos + FVector2D(8.f, 9.f), Key);
-		Icon(Pos + FVector2D(44.f, 8.f), 24.f, IconId, bHot ? Colors().Gold : Colors().Powder);
-		Text(Pos + FVector2D(74.f, 10.f), Label, Colors().Cream, 0.9f, 130.f);
+		const float W = FMath::Max(120.f, Width);
+		Fill(Pos, FVector2D(W, 44.f), Colors().Idle);
+		Frame(Pos, FVector2D(W, 44.f), Colors().Gold, 1.5f);
+		Keycap(Pos + FVector2D(8.f, 11.f), Key);
+		Icon(Pos + FVector2D(48.f, 10.f), 24.f, IconId, IconTint(IconId));
+		Text(Pos + FVector2D(78.f, 12.f), Ellipsize(Label, W - 90.f, 0.88f), Colors().Cream, 0.88f, W - 86.f);
 	}
 
 	void FPaint::SlotCard(FVector2D Pos, FVector2D Size, bool bSelected, const FString& Title, const FString& Body) const

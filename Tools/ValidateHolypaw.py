@@ -265,6 +265,7 @@ UI_SUITE = (
     "Source/Holypaw/UI/HolypawTalkWidget.cpp",
     "Source/Holypaw/UI/HolypawShopWidget.cpp",
     "Source/Holypaw/UI/HolypawPlayHudWidget.cpp",
+    "Source/Holypaw/UI/HolypawCodexWidget.cpp",
 )
 for path in UI_SUITE:
     if not (ROOT / path).exists():
@@ -283,6 +284,10 @@ PLAYW = (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").read_text() if (RO
 
 if "DashRect" not in THEME or "CornerKnots" not in THEME:
     errors.append("UI theme missing stitched panel chrome")
+if "TextBlock" not in THEME or "WrapLines" not in THEME:
+    errors.append("UI theme missing wrapped text")
+if "Ellipsize" not in THEME:
+    errors.append("UI theme missing ellipsize")
 if "DrawIcon" not in ICONS or "EHolypawUiIcon::Heart" not in ICONS or "EHolypawUiIcon::Lantern" not in ICONS:
     errors.append("UI icons missing stitched heart/lantern glyphs")
 if 'NSLOCTEXT("HolypawUI"' not in COPY:
@@ -305,7 +310,9 @@ if "UHolypawShopWidget" not in HUD:
     errors.append("HUD missing shop overlay")
 if "UHolypawPlayHudWidget" not in HUD:
     errors.append("HUD missing play HUD overlay")
-for leftover in ("Survey Map", "Bear Faith Journal", "Testimony", "Faith stall"):
+if "UHolypawCodexWidget" not in HUD:
+    errors.append("HUD missing codex overlay")
+for leftover in ("Survey Map", "Bear Faith Journal", "Testimony", "Faith stall", "Villain Codex"):
     if leftover in HUD:
         errors.append(f"HUD still dumping leftover '{leftover}' strings")
 if "IconForAbility" not in BATTLEW:
@@ -314,8 +321,12 @@ if "VerbRow" not in TALKW:
     errors.append("talk overlay missing verb row")
 if "ShopDiscount" not in SHOPW and "Hearts discount" not in SHOPW:
     errors.append("shop overlay missing Hearts discount")
-if "Miracle" not in PLAYW:
+if "MiracleCharge" not in PLAYW:
     errors.append("play HUD missing Miracle bar")
+if "TextBlock" not in TALKW or "TextBlock" not in (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").read_text():
+    errors.append("talk/journal missing wrapped body copy")
+if "LandTint" not in MAPW:
+    errors.append("map widget missing continent tint")
 if "GetTalkSpeaker" not in (ROOT / "Source/Holypaw/Character/HolypawCharacter.h").read_text():
     errors.append("character missing GetTalkSpeaker for talk surface")
 if "GetPeakCenter" not in (ROOT / "Source/Holypaw/HolypawWorldBuilder.h").read_text():

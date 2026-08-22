@@ -26,73 +26,78 @@ int32 UHolypawPlayHudWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 
-	Q.Chip(FVector2D(20.f, 16.f), FVector2D(280.f, 36.f), EHolypawUiIcon::MapPin,
-		HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), Pal.Powder);
-	Q.Chip(FVector2D(308.f, 16.f), FVector2D(240.f, 36.f), EHolypawUiIcon::Teddy,
-		HolypawUiCopy::PlayTitle().ToString(), Pal.Rose);
-
-	if (!Pawn->GetClockLine().IsEmpty())
+	const bool bBusyOverlay = Pawn->IsMapOpen() || Pawn->IsJournalOpen() || Pawn->IsTalkOpen() || Pawn->IsShopOpen()
+		|| Pawn->IsSkillsOpen() || Pawn->IsPartyOpen() || Pawn->IsCodexOpen() || Pawn->IsInventoryOpen();
+	if (Pawn->Mode == EHolypawPawnMode::Battle || bBusyOverlay)
 	{
-		Q.Chip(FVector2D(Size.X - 220.f, 16.f), FVector2D(200.f, 36.f), EHolypawUiIcon::Halo,
-			Pawn->GetClockLine(), Pal.Gold);
+		if (Pawn->GetToastAlpha() > 0.f)
+		{
+			Q.Fill(FVector2D(Size.X * 0.5f - 260.f, 16.f), FVector2D(520.f, 36.f), Pal.Felt);
+			Q.Frame(FVector2D(Size.X * 0.5f - 260.f, 16.f), FVector2D(520.f, 36.f), Pal.Gold, 1.4f);
+			Q.Icon(FVector2D(Size.X * 0.5f - 248.f, 20.f), 20.f, EHolypawUiIcon::Halo, Pal.Gold);
+			Q.Text(FVector2D(Size.X * 0.5f - 220.f, 22.f), HolypawUi::Ellipsize(Pawn->GetToast(), 480.f, 0.85f), Pal.Cream, 0.85f, 480.f);
+		}
+		return Layer + 4;
 	}
+
+	const FVector2D Bar(Size.X - 32.f, 56.f);
+	const FVector2D BarPos(16.f, 14.f);
+	Q.Fill(BarPos, Bar, Pal.Felt);
+	Q.Frame(BarPos, Bar, Pal.Rose, 1.6f);
+
+	Q.Icon(BarPos + FVector2D(10.f, 16.f), 22.f, EHolypawUiIcon::MapPin, Pal.Powder);
+	Q.Text(BarPos + FVector2D(36.f, 16.f), HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), Pal.Cream, 0.95f, 180.f);
 
 	const int32 Hearts = Pawn->Story ? Pawn->Story->Converts : 0;
 	const int32 CityH = Pawn->GetCityHearts(Pawn->CurrentZone);
-	Q.Chip(FVector2D(20.f, 60.f), FVector2D(150.f, 34.f), EHolypawUiIcon::Heart,
-		FString::Printf(TEXT("%s %d"), *HolypawUiCopy::Hearts().ToString(), Hearts), Pal.Heart);
-	Q.Chip(FVector2D(178.f, 60.f), FVector2D(130.f, 34.f), EHolypawUiIcon::Coin,
-		FString::Printf(TEXT("AP %d"), Pawn->Affection->AP), Pal.Gold);
-	Q.Chip(FVector2D(316.f, 60.f), FVector2D(130.f, 34.f), EHolypawUiIcon::Jar,
-		FString::Printf(TEXT("FP %d"), Pawn->Affection->FP), Pal.Powder);
-	Q.Chip(FVector2D(454.f, 60.f), FVector2D(160.f, 34.f), EHolypawUiIcon::Health,
-		FString::Printf(TEXT("HP %d/%d"), Pawn->HP, Pawn->HPMax), Pal.HpFill);
-	Q.Chip(FVector2D(622.f, 60.f), FVector2D(150.f, 34.f), EHolypawUiIcon::Heart,
-		FString::Printf(TEXT("%s %d"), *HolypawUiCopy::CityHearts().ToString(), CityH), HolypawUi::HeartsHeat(CityH));
+	float X = BarPos.X + 230.f;
+	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Heart, Pal.Heart);
+	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Hearts), Pal.Cream, 0.95f, 50.f);
+	X += 78.f;
+	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Coin, Pal.Gold);
+	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Pawn->Affection->AP), Pal.Cream, 0.95f, 50.f);
+	X += 78.f;
+	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 20.f, EHolypawUiIcon::Jar, Pal.Powder);
+	Q.Text(FVector2D(X + 24.f, BarPos.Y + 16.f), FString::FromInt(Pawn->Affection->FP), Pal.Cream, 0.95f, 50.f);
+	X += 86.f;
+	Q.Bar(FVector2D(X, BarPos.Y + 20.f), FVector2D(160.f, 12.f),
+		Pawn->HPMax > 0 ? float(Pawn->HP) / float(Pawn->HPMax) : 0.f, Pal.HpFill);
+	Q.Text(FVector2D(X + 168.f, BarPos.Y + 16.f), FString::Printf(TEXT("%d/%d"), Pawn->HP, Pawn->HPMax), Pal.Cream, 0.8f, 80.f);
+	X += 260.f;
+	Q.Icon(FVector2D(X, BarPos.Y + 16.f), 18.f, EHolypawUiIcon::Heart, HolypawUi::HeartsHeat(CityH));
+	Q.Text(FVector2D(X + 22.f, BarPos.Y + 16.f), FString::Printf(TEXT("%s %d"), *HolypawUiCopy::CityHearts().ToString(), CityH), Pal.Cream, 0.8f, 80.f);
+
+	if (!Pawn->GetClockLine().IsEmpty())
+	{
+		Q.Text(BarPos + FVector2D(Bar.X - 150.f, 16.f), Pawn->GetClockLine(), Pal.Gold, 0.85f, 140.f);
+	}
 
 	const float Pct = Pawn->Affection->MiracleMax > 0.f ? Pawn->Affection->MiracleCharge / Pawn->Affection->MiracleMax : 0.f;
-	Q.Icon(FVector2D(20.f, 104.f), 20.f, EHolypawUiIcon::Halo, Pal.Miracle);
-	Q.Text(FVector2D(46.f, 104.f),
-		FString::Printf(TEXT("%s  %d / %d"), *HolypawUiCopy::Miracle().ToString(),
-			FMath::FloorToInt(Pawn->Affection->MiracleCharge), FMath::FloorToInt(Pawn->Affection->MiracleMax)),
-		Pal.Gold, 0.85f, 280.f);
-	Q.Bar(FVector2D(20.f, 128.f), FVector2D(280.f, 12.f), Pct, Pal.Miracle);
-
-	const bool bBusyOverlay = Pawn->IsMapOpen() || Pawn->IsJournalOpen() || Pawn->IsTalkOpen() || Pawn->IsShopOpen()
-		|| Pawn->IsSkillsOpen() || Pawn->IsPartyOpen() || Pawn->IsCodexOpen() || Pawn->IsInventoryOpen()
-		|| Pawn->Mode == EHolypawPawnMode::Battle;
-	if (Pawn->Mode == EHolypawPawnMode::Play && !bBusyOverlay)
+	Q.Icon(FVector2D(20.f, 78.f), 16.f, EHolypawUiIcon::Halo, Pal.Miracle);
+	Q.Bar(FVector2D(42.f, 82.f), FVector2D(220.f, 8.f), Pct, Pal.Miracle);
+	if (Pawn->Story)
 	{
-		if (!Pawn->GetCompassLine().IsEmpty())
-		{
-			Q.Chip(FVector2D(20.f, 150.f), FVector2D(420.f, 32.f), EHolypawUiIcon::Lantern, Pawn->GetCompassLine(), Pal.Powder);
-		}
-		if (Pawn->Story)
-		{
-			Q.Chip(FVector2D(20.f, 188.f), FVector2D(420.f, 32.f), EHolypawUiIcon::Book,
-				Pawn->Story->GetCurrent().Title.ToString(), Pal.Gold);
-		}
+		Q.Icon(FVector2D(276.f, 76.f), 16.f, EHolypawUiIcon::Book, Pal.Gold);
+		Q.Text(FVector2D(296.f, 76.f), HolypawUi::Ellipsize(Pawn->Story->GetCurrent().Title.ToString(), 280.f, 0.8f), Pal.Gold, 0.8f, 280.f);
+	}
+	if (!Pawn->GetCompassLine().IsEmpty())
+	{
+		Q.Text(FVector2D(20.f, 98.f), HolypawUi::Ellipsize(Pawn->GetCompassLine(), 420.f, 0.75f), Pal.Powder, 0.75f, 420.f);
+	}
+
+	if (Pawn->GetToastAlpha() > 0.f)
+	{
+		Q.Fill(FVector2D(Size.X * 0.5f - 260.f, 118.f), FVector2D(520.f, 36.f), Pal.Felt);
+		Q.Frame(FVector2D(Size.X * 0.5f - 260.f, 118.f), FVector2D(520.f, 36.f), Pal.Gold, 1.4f);
+		Q.Icon(FVector2D(Size.X * 0.5f - 248.f, 122.f), 20.f, EHolypawUiIcon::Halo, Pal.Gold);
+		Q.Text(FVector2D(Size.X * 0.5f - 220.f, 124.f), HolypawUi::Ellipsize(Pawn->GetToast(), 480.f, 0.85f), Pal.Cream, 0.85f, 480.f);
 	}
 
 	if (!Pawn->GetPrompt().IsEmpty())
 	{
 		const FString Prompt = Pawn->GetPrompt().ToString();
-		Q.Chip(FVector2D(Size.X * 0.5f - 220.f, Size.Y - 128.f), FVector2D(440.f, 40.f),
+		Q.Chip(FVector2D(Size.X * 0.5f - 200.f, Size.Y - 86.f), FVector2D(400.f, 36.f),
 			EHolypawUiIcon::Key, Prompt, Pal.Rose);
-	}
-
-	if (Pawn->GetToastAlpha() > 0.f)
-	{
-		Q.Fill(FVector2D(Size.X * 0.5f - 280.f, 210.f), FVector2D(560.f, 44.f), Pal.Felt);
-		Q.DashRect(FVector2D(Size.X * 0.5f - 274.f, 216.f), FVector2D(548.f, 32.f), Pal.Gold, 1.3f, 6.f);
-		Q.Icon(FVector2D(Size.X * 0.5f - 262.f, 218.f), 22.f, EHolypawUiIcon::Halo, Pal.Gold);
-		Q.Text(FVector2D(Size.X * 0.5f - 232.f, 220.f), Pawn->GetToast(), Pal.Cream, 0.95f, 500.f);
-	}
-
-	if (Pawn->Mode == EHolypawPawnMode::Play && !bBusyOverlay)
-	{
-		Q.Fill(FVector2D(Size.X - 640.f, Size.Y - 40.f), FVector2D(620.f, 28.f), HolypawUi::WithAlpha(Pal.Felt, 0.7f));
-		Q.Text(FVector2D(Size.X - 628.f, Size.Y - 36.f), HolypawUiCopy::Legend(), Pal.Muted, 0.7f, 600.f);
 	}
 
 	return Layer + 4;

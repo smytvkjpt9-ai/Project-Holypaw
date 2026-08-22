@@ -28,11 +28,11 @@ int32 UHolypawPauseWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(Pawn);
 
 	Q.Fill(FVector2D::ZeroVector, Size, Pal.Dim);
-	const FVector2D Panel(620.f, 460.f);
+	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(600.f, 470.f), 36.f);
 	const FVector2D Origin = HolypawUi::Centered(Size, Panel);
 	Q.Panel(Origin, Panel);
-	Q.Caption(Origin + FVector2D(32.f, 28.f), EHolypawUiIcon::Pause, HolypawUiCopy::Paused().ToString(), Pal.Rose);
-	Q.Text(Origin + FVector2D(32.f, 72.f), HolypawUiCopy::PauseBlurb(), Pal.Powder, 0.95f, 540.f);
+	Q.Caption(Origin + FVector2D(28.f, 22.f), EHolypawUiIcon::Pause, HolypawUiCopy::Paused().ToString(), Pal.Rose);
+	Q.TextBlock(Origin + FVector2D(28.f, 64.f), HolypawUiCopy::PauseBlurb().ToString(), Pal.Powder, 0.9f, Panel.X - 56.f, 2);
 
 	struct FRow
 	{
@@ -41,30 +41,30 @@ int32 UHolypawPauseWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 		FText Label;
 	};
 	const FRow Rows[4] = {
-		{TEXT("Ent"), EHolypawUiIcon::Paw, HolypawUiCopy::Resume()},
+		{TEXT("Enter"), EHolypawUiIcon::Paw, HolypawUiCopy::Resume()},
 		{TEXT("F5"), EHolypawUiIcon::Save, HolypawUiCopy::SaveSlot()},
 		{TEXT("F6"), EHolypawUiIcon::Mute, HolypawUiCopy::Mute()},
 		{TEXT("F8"), EHolypawUiIcon::Teddy, HolypawUiCopy::BackToTitle()},
 	};
 	for (int32 I = 0; I < 4; ++I)
 	{
-		const FVector2D RowPos = Origin + FVector2D(48.f, 126.f + I * 58.f);
-		Q.Fill(RowPos, FVector2D(524.f, 50.f), Pal.Idle);
-		Q.DashRect(RowPos + FVector2D(4.f, 4.f), FVector2D(516.f, 42.f), I == 0 ? Pal.Gold : Pal.Rose, 1.3f, 6.f);
+		const FVector2D RowPos = Origin + FVector2D(40.f, 120.f + I * 58.f);
+		Q.Fill(RowPos, FVector2D(Panel.X - 80.f, 50.f), Pal.Idle);
+		Q.Frame(RowPos, FVector2D(Panel.X - 80.f, 50.f), Pal.Rose, 1.6f);
 		Q.Keycap(RowPos + FVector2D(12.f, 14.f), Rows[I].Key);
-		Q.Icon(RowPos + FVector2D(52.f, 10.f), 28.f, Rows[I].Icon, HolypawUi::IconTint(Rows[I].Icon));
-		Q.Text(RowPos + FVector2D(90.f, 14.f), Rows[I].Label, Pal.Cream, 1.05f, 400.f);
+		Q.Icon(RowPos + FVector2D(78.f, 11.f), 28.f, Rows[I].Icon, HolypawUi::IconTint(Rows[I].Icon));
+		Q.Text(RowPos + FVector2D(116.f, 14.f), Rows[I].Label, Pal.Cream, 1.05f, Panel.X - 220.f);
 	}
 
+	Q.Chip(Origin + FVector2D(28.f, Panel.Y - 52.f), FVector2D(200.f, 30.f), EHolypawUiIcon::MapPin,
+		HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), Pal.Powder);
+	Q.Chip(Origin + FVector2D(236.f, Panel.Y - 52.f), FVector2D(140.f, 30.f), EHolypawUiIcon::Heart,
+		FString::Printf(TEXT("%s %d"), *HolypawUiCopy::Hearts().ToString(), Pawn->Story ? Pawn->Story->Converts : 0), Pal.Heart);
 	if (GI && GI->Settings)
 	{
-		const FString Zone = HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone);
-		const int32 Hearts = Pawn->Story ? Pawn->Story->Converts : 0;
-		Q.Icon(Origin + FVector2D(40.f, Panel.Y - 48.f), 18.f, EHolypawUiIcon::Heart, Pal.Heart);
-		Q.Text(Origin + FVector2D(66.f, Panel.Y - 46.f),
-			FString::Printf(TEXT("%s   Hearts %d   %s"), *Zone, Hearts,
-				GI->Settings->bMuted ? TEXT("muted") : TEXT("audio on")),
-			Pal.Muted, 0.85f, 500.f);
+		Q.Chip(Origin + FVector2D(384.f, Panel.Y - 52.f), FVector2D(150.f, 30.f), EHolypawUiIcon::Mute,
+			GI->Settings->bMuted ? HolypawUiCopy::TitleMuteOn().ToString() : HolypawUiCopy::AudioOn().ToString(),
+			GI->Settings->bMuted ? Pal.Danger : Pal.Mint);
 	}
 	return Layer + 6;
 }
