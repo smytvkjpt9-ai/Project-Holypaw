@@ -43,8 +43,22 @@
     .party-slot {
       width: 52px; height: 52px; border-radius: 12px; border: 2px solid rgba(167,139,250,0.4);
       background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
+      font-size: 22px; position: relative;
     }
+    .party-slot .party-skill {
+      position: absolute; bottom: -5px; right: -5px; width: 18px; height: 18px;
+      border-radius: 999px; background: #1e1b4b; border: 1px solid #a78bfa;
+      font-size: 10px; display: flex; align-items: center; justify-content: center;
+    }
+    .nameplate {
+      position: absolute; pointer-events: none; transform: translate(-50%, -100%);
+      font-family: Fredoka, sans-serif; font-weight: 700; font-size: 11px;
+      color: #fff7ed; text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+      text-align: center; line-height: 1.15; opacity: 0; transition: opacity 0.18s;
+      white-space: nowrap;
+    }
+    .nameplate.show { opacity: 1; }
+    .nameplate .sub { display: block; font-size: 9px; color: #e9d5ff; font-weight: 600; }
     .zone-chip { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #c4b5fd; }
     .speech-bubble {
       position: absolute; pointer-events: none; transform: translate(-50%, -100%);
@@ -144,24 +158,23 @@
     </div>
   </div>
 
-  <!-- BATTLE -->
-  <div id="battleUI" class="hidden absolute inset-0 z-50 flex flex-col justify-end bg-gradient-to-b from-[#1a1035f0] via-[#120c28e8] to-[#080614f5]">
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div class="text-center px-4 w-full max-w-lg">
-        <div class="battle-stage mb-3">
-          <div id="bHeroPort" class="battle-portrait" style="background:radial-gradient(circle at 30% 20%,#fbcfe8,#9d174d)">🧸</div>
-          <div id="bEnemyPort" class="battle-portrait enemy" style="background:radial-gradient(circle at 30% 20%,#fda4af,#7f1d1d)">
-            <span id="bEnemyEmoji">⚔️</span>
-            <span class="mini-skill" id="bEnemySkillChip">Skill</span>
-          </div>
+  <!-- BATTLE: HUD only — the 3D fighters stay visible in the world -->
+  <div id="battleUI" class="hidden absolute inset-0 z-50 flex flex-col justify-between pointer-events-none bg-gradient-to-b from-[#12081e99] via-transparent to-[#080614f2]">
+    <div class="relative z-10 max-w-xl w-full mx-auto p-3 pointer-events-none">
+      <div class="panel rounded-2xl px-4 py-3 text-center">
+        <p class="font-display text-xl sm:text-2xl text-rose-300" id="bEnemyName">Hostile Pet</p>
+        <p class="text-xs text-rose-200/90 mt-0.5" id="bEnemySkill">Skill</p>
+        <div class="mt-2 h-2.5 rounded-full bg-black/40 overflow-hidden">
+          <div id="bEnemyBar" class="h-full bg-gradient-to-r from-rose-400 to-red-800 transition-all duration-300" style="width:100%"></div>
         </div>
-        <p class="font-display text-2xl sm:text-3xl text-rose-300" id="bEnemyName">Hostile Pet</p>
-        <p class="text-violet-200 text-sm mt-1" id="bHpLine">HP</p>
-        <p class="text-xs text-rose-200/90 mt-1" id="bEnemySkill">Skill</p>
-        <p class="text-xs text-violet-400 mt-2" id="bPartyLine"></p>
+        <p class="text-violet-100 text-xs mt-2" id="bHpLine">HP</p>
+        <div class="mt-1 h-2 rounded-full bg-black/40 overflow-hidden">
+          <div id="bHeroBar" class="h-full bg-gradient-to-r from-pink-300 to-violet-400 transition-all duration-300" style="width:100%"></div>
+        </div>
+        <p class="text-xs text-violet-400 mt-1.5" id="bPartyLine"></p>
       </div>
     </div>
-    <div class="relative z-10 max-w-xl w-full mx-auto p-4 space-y-3">
+    <div class="relative z-10 max-w-xl w-full mx-auto p-4 space-y-3 pointer-events-auto">
       <div class="panel rounded-xl p-3 min-h-[3rem]"><p id="bLog" class="text-violet-100 text-sm"></p></div>
       <div class="grid grid-cols-2 gap-2">
         <button data-atk="slap" class="btn rounded-xl py-3 font-display text-sm">Soft Slap</button>
@@ -241,7 +254,8 @@
 
   const battle = {
     enemy: null, turn: 'player', busy: false, log: '',
-    bleed: 0, guard: 0, weaken: 0, stunned: false
+    bleed: 0, guard: 0, weaken: 0, stunned: false,
+    lungeT: 0, lungeWho: null, heroHome: null, foeHome: null
   };
 
   // ═══════════════════════════════════════════════════════
@@ -306,43 +320,57 @@
     src.start();
   }
 
+  function syllables(text) {
+    const words = String(text || 'ah').match(/[a-zA-Z']+/g) || ['ah'];
+    return Math.max(2, Math.min(10, words.reduce((n, w) => n + Math.max(1, Math.ceil(w.length / 3)), 0)));
+  }
+
+  function babble(base, wave, n, gain = 0.11) {
+    for (let i = 0; i < n; i++) {
+      const f = base * (0.9 + Math.random() * 0.22);
+      tone(f, 0.05 + Math.random() * 0.045, wave, gain * (0.75 + Math.random() * 0.4), (Math.random() - 0.5) * 90, i * 0.058);
+    }
+  }
+
   const VOICES = {
-    bunny: () => { tone(920, 0.08, 'sine', 0.16, 80); tone(1180, 0.09, 'sine', 0.12, -40, 0.07); },
-    pup: () => { tone(220, 0.12, 'triangle', 0.2, -40); tone(180, 0.16, 'triangle', 0.18, -20, 0.12); },
-    duck: () => { tone(340, 0.14, 'square', 0.1, -120); tone(280, 0.12, 'square', 0.08, -80, 0.1); },
-    panda: () => { tone(140, 0.2, 'sine', 0.16, -20); tone(90, 0.22, 'triangle', 0.1, 0, 0.12); },
-    fox: () => { tone(640, 0.07, 'sawtooth', 0.08, 180); tone(880, 0.08, 'sawtooth', 0.07, 40, 0.06); },
-    dragon: () => { tone(90, 0.28, 'sawtooth', 0.12, 40); tone(520, 0.18, 'sine', 0.1, 80, 0.12); },
-    scrapdog: () => { tone(110, 0.18, 'sawtooth', 0.14, -30); noiseBurst(0.12, 0.08, 800); },
-    corpcat: () => { tone(740, 0.16, 'sawtooth', 0.07, -400); tone(1800, 0.08, 'square', 0.04, 0, 0.05); },
-    razorbot: () => { tone(880, 0.06, 'square', 0.08); tone(440, 0.08, 'square', 0.08, 0, 0.07); tone(1320, 0.05, 'square', 0.06, 0, 0.14); },
-    voidrat: () => { tone(210, 0.1, 'sawtooth', 0.1, 260); tone(70, 0.2, 'sine', 0.12, 0, 0.08); },
-    ripper: () => { tone(70, 0.28, 'sawtooth', 0.16, -20); noiseBurst(0.18, 0.1, 200); tone(160, 0.2, 'square', 0.08, 40, 0.1); },
-    child: () => { tone(640, 0.07, 'sine', 0.12, 80); tone(720, 0.08, 'sine', 0.1, 40, 0.06); },
-    parent: () => { tone(320, 0.12, 'triangle', 0.12, 20); tone(280, 0.14, 'triangle', 0.1, 0, 0.1); },
-    ranger: () => { tone(260, 0.1, 'triangle', 0.12); tone(390, 0.1, 'triangle', 0.1, 0, 0.09); },
-    shopkeep: () => { tone(480, 0.08, 'square', 0.07); tone(360, 0.1, 'square', 0.06, 0, 0.08); },
-    acolyte: () => { tone(520, 0.16, 'sine', 0.12, 60); tone(780, 0.2, 'sine', 0.1, 40, 0.1); },
+    bunny: n => babble(980, 'sine', n, 0.13),
+    pup: n => { babble(210, 'triangle', n, 0.16); tone(160, 0.12, 'triangle', 0.12, -30, n * 0.05); },
+    duck: n => babble(320, 'square', n, 0.08),
+    panda: n => babble(130, 'sine', n, 0.14),
+    fox: n => babble(720, 'sawtooth', n, 0.07),
+    dragon: n => { tone(90, 0.22, 'sawtooth', 0.12, 30); babble(480, 'sine', n, 0.09); },
+    scrapdog: n => { babble(120, 'sawtooth', n, 0.12); noiseBurst(0.1, 0.07, 700); },
+    corpcat: n => babble(780, 'sawtooth', n, 0.06),
+    razorbot: n => { for (let i = 0; i < n; i++) tone(440 * (1 + (i % 3) * 0.5), 0.05, 'square', 0.07, 0, i * 0.07); },
+    voidrat: n => babble(190, 'sawtooth', n, 0.1),
+    ripper: n => { tone(68, 0.26, 'sawtooth', 0.15, -16); noiseBurst(0.16, 0.09, 180); babble(150, 'square', n, 0.07); },
+    child: n => babble(680, 'sine', n, 0.11),
+    parent: n => babble(300, 'triangle', n, 0.11),
+    ranger: n => babble(270, 'triangle', n, 0.11),
+    shopkeep: n => babble(420, 'square', n, 0.07),
+    acolyte: n => babble(540, 'sine', n, 0.11),
     hug: () => { tone(520, 0.1, 'sine', 0.12, 80); tone(780, 0.14, 'sine', 0.1, 120, 0.08); },
     recruit: () => { tone(660, 0.08, 'sine', 0.12); tone(880, 0.1, 'sine', 0.1, 0, 0.07); tone(1100, 0.12, 'sine', 0.1, 0, 0.14); },
     hit: () => { tone(180, 0.08, 'square', 0.1, -80); noiseBurst(0.06, 0.07, 300); },
     miracle: () => { tone(392, 0.18, 'sine', 0.12, 80); tone(523, 0.2, 'sine', 0.1, 80, 0.1); tone(784, 0.28, 'sine', 0.1, 40, 0.22); }
   };
 
-  function playVoice(id) {
+  function playVoice(id, text) {
     resumeAudio();
     const fn = VOICES[id];
-    if (fn) fn();
+    if (!fn) return;
+    if (fn.length) fn(syllables(text));
+    else fn();
   }
 
-  function speakWords(text, pitch = 1, rate = 1) {
+  function speakWords(text, pitch = 1, rate = 1, interrupt = true) {
     try {
       if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
+      if (interrupt) window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.pitch = pitch;
       u.rate = rate;
-      u.volume = 0.78;
+      u.volume = 0.72;
       u.lang = 'en-US';
       window.speechSynthesis.speak(u);
     } catch (_) { /* some browsers block speech until a gesture */ }
@@ -351,16 +379,20 @@
   const bubbles = [];
   function speak(mesh, text, kind = 'npc', voiceId, spoken, pitch = 1, rate = 1) {
     if (!mesh) return;
-    playVoice(voiceId);
-    if (spoken) speakWords(spoken, pitch, rate);
+    playVoice(voiceId, text);
+    if (spoken) speakWords(spoken, pitch, rate, kind === 'villain' || kind === 'npc');
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      if (bubbles[i].mesh === mesh) { bubbles[i].el.remove(); bubbles.splice(i, 1); }
+    }
     const el = document.createElement('div');
     el.className = 'speech-bubble ' + kind;
     el.textContent = text;
     labelLayer.appendChild(el);
     const pos = mesh.position.clone();
     pos.y += 1.7;
-    bubbles.push({ el, mesh, life: 2.4, pos });
+    bubbles.push({ el, mesh, life: 2.5, pos });
     audio.lastTalk.set(mesh, state.time);
+    if (mesh.userData) mesh.userData.talkT = Math.max(mesh.userData.talkT || 0, 0.85);
   }
 
   function updateBubbles(dt) {
@@ -660,11 +692,21 @@
 
   function stampRig(root, parts) {
     const prev = root.userData || {};
+    const rest = {};
+    for (const [k, m] of Object.entries(parts)) {
+      if (m && m.isObject3D) {
+        rest[k] = { rot: m.rotation.clone(), pos: m.position.clone(), scl: m.scale.clone() };
+      }
+    }
     root.userData = Object.assign({
       phase: Math.random() * Math.PI * 2,
       t: 0,
-      gait: prev.gait || 'waddle',
-      hop: 0
+      gait: prev.gait || parts.gait || 'waddle',
+      hop: 0,
+      rest,
+      talkT: 0,
+      leanZ: 0,
+      leanX: 0
     }, parts);
     return root;
   }
@@ -676,7 +718,7 @@
     const dark = mat(0x1f140f);
     const pink = mat(0xf9a8d4);
     const cream = mat(0xfff1e6);
-    let body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR;
+    let body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, bunnyMouth;
 
     if (type.id === 'bunny') {
       body = addMesh(root, new THREE.SphereGeometry(0.30, 14, 12), fur, 0, 0.36, 0, 0, 0, 0, 1.05, 0.95, 1.15);
@@ -689,6 +731,9 @@
       addMesh(root, new THREE.SphereGeometry(0.035, 8, 8), pink, 0, 0.58, 0.32);
       addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, -0.07, 0.66, 0.28);
       addMesh(root, new THREE.SphereGeometry(0.03, 8, 8), dark, 0.07, 0.66, 0.28);
+      addMesh(root, new THREE.SphereGeometry(0.04, 6, 6), mat(0xf9a8d4, { transparent: true, opacity: 0.55 }), -0.1, 0.56, 0.24);
+      addMesh(root, new THREE.SphereGeometry(0.04, 6, 6), mat(0xf9a8d4, { transparent: true, opacity: 0.55 }), 0.1, 0.56, 0.24);
+      bunnyMouth = addMesh(root, new THREE.BoxGeometry(0.05, 0.012, 0.02), mat(0xbe185d), 0, 0.54, 0.32);
       legL = addMesh(root, new THREE.SphereGeometry(0.09, 8, 8), fur, -0.12, 0.1, 0.06);
       legR = addMesh(root, new THREE.SphereGeometry(0.09, 8, 8), fur, 0.12, 0.1, 0.06);
       root.userData.gait = 'hop';
@@ -774,7 +819,7 @@
     }
 
     root.scale.setScalar(scale);
-    return stampRig(root, { body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, kind: 'fluff', species: type.id });
+    return stampRig(root, { body, head, earL, earR, armL, armR, legL, legR, tail, wingL, wingR, mouth: type.id === 'bunny' ? bunnyMouth : null, kind: 'fluff', species: type.id });
   }
 
   function makeHostileMesh(type, scale = 1) {
@@ -867,7 +912,8 @@
       armR = addMesh(root, new THREE.BoxGeometry(0.08, 0.08, 0.55), mat(0xcbd5e1, { metalness: 0.95, roughness: 0.15 }), 0.5, 0.85, 0.18, 0.2, -0.3, -0.2);
       addMesh(armL, new THREE.BoxGeometry(0.02, 0.16, 0.18), mat(0xf8fafc, { metalness: 1, roughness: 0.1 }), 0, 0, 0.28);
       addMesh(armR, new THREE.BoxGeometry(0.02, 0.16, 0.18), mat(0xf8fafc, { metalness: 1, roughness: 0.1 }), 0, 0, 0.28);
-      extra = addMesh(root, new THREE.PlaneGeometry(0.7, 0.9), mat(0x3f0a12, { side: THREE.DoubleSide, transparent: true, opacity: 0.85 }), 0, 0.7, -0.28);
+      extra = addMesh(root, new THREE.BoxGeometry(0.62, 0.85, 0.08), mat(0x3f0a12, { roughness: 0.7 }), 0, 0.72, -0.32);
+      addMesh(root, new THREE.SphereGeometry(0.08, 8, 8), stitch, 0, 1.05, 0.28); // torn stuffing
       legL = addMesh(root, new THREE.BoxGeometry(0.16, 0.32, 0.2), hide, -0.16, 0.2, 0);
       legR = addMesh(root, new THREE.BoxGeometry(0.16, 0.32, 0.2), hide, 0.16, 0.2, 0);
       const lite = new THREE.PointLight(0xe11d48, 0.7, 6);
@@ -939,6 +985,9 @@
     const legR = addMesh(root, new THREE.BoxGeometry(0.14, 0.42, 0.16), pants, 0.1, 0.28, 0);
     addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), mat(0x1f2937), -0.07, 1.4, 0.16);
     addMesh(root, new THREE.SphereGeometry(0.03, 6, 6), mat(0x1f2937), 0.07, 1.4, 0.16);
+    const mouth = addMesh(root, new THREE.BoxGeometry(0.07, 0.016, 0.02), mat(0xbe123c), 0, 1.305, 0.176);
+    addMesh(root, new THREE.SphereGeometry(0.028, 6, 6), mat(0xf9a8d4, { transparent: true, opacity: 0.5 }), -0.09, 1.335, 0.145);
+    addMesh(root, new THREE.SphereGeometry(0.028, 6, 6), mat(0xf9a8d4, { transparent: true, opacity: 0.5 }), 0.09, 1.335, 0.145);
 
     if (def.id === 'child') {
       addMesh(root, new THREE.BoxGeometry(0.28, 0.22, 0.1), mat(0xf472b6), 0, 0.95, -0.18); // pack
@@ -959,7 +1008,7 @@
     root.scale.setScalar(def.scale);
     root.position.set(def.x, 0, def.z);
     scene.add(root);
-    stampRig(root, { body: torso, head, hair: hairM, armL, armR, legL, legR, gait: 'walk', kind: 'npc', species: def.id });
+    stampRig(root, { body: torso, head, hair: hairM, armL, armR, legL, legR, mouth, gait: 'walk', kind: 'npc', species: def.id });
     humans.push({
       name: def.name, title: def.title, id: def.id, def, mesh: root,
       hugged: false, convertProgress: 0, believer: false,
@@ -1042,40 +1091,65 @@
   // ═══════════════════════════════════════════════════════
   // ANIMATION RIGS
   // ═══════════════════════════════════════════════════════
+  function restOf(u, key) {
+    return u.rest && u.rest[key];
+  }
+
+  function applyRest(part, rest) {
+    if (!part || !rest) return false;
+    part.rotation.copy(rest.rot);
+    part.position.copy(rest.pos);
+    part.scale.copy(rest.scl);
+    return true;
+  }
+
   function animateRig(mesh, dt, moving, mood = 'idle') {
     const u = mesh.userData;
     if (!u) return;
     u.t = (u.t || 0) + dt;
+    if (u.talkT > 0) u.talkT -= dt;
+    const talking = mood === 'talk' || u.talkT > 0;
     const gait = u.gait || 'waddle';
     const speed = mood === 'chase' ? 11 : moving ? 8 : gait === 'glide' ? 3.2 : 2.4;
     u.phase = (u.phase || 0) + dt * speed;
     const p = u.phase;
-    const breathe = 1 + Math.sin(u.t * (moving ? 7 : 2.3)) * (mood === 'menace' ? 0.06 : 0.035);
-    if (u.body) u.body.scale.y = breathe;
+    const breathe = 1 + Math.sin(u.t * (moving ? 7 : 2.3)) * (mood === 'menace' ? 0.06 : 0.03);
+
+    if (u.body) {
+      applyRest(u.body, restOf(u, 'body'));
+      u.body.scale.y *= breathe;
+    }
 
     const swing = moving ? Math.sin(p) : Math.sin(u.t * 1.6) * 0.12;
-    const amp = moving ? (gait === 'stomp' ? 0.55 : gait === 'skitter' ? 0.7 : 0.45) : 0.06;
-    if (u.legL) u.legL.rotation.x = swing * amp;
-    if (u.legR) u.legR.rotation.x = -swing * amp;
-    if (u.armL) u.armL.rotation.x = -swing * amp * 0.85;
-    if (u.armR) u.armR.rotation.x = swing * amp * 0.85;
+    const amp = moving ? (gait === 'stomp' ? 0.55 : gait === 'skitter' ? 0.7 : 0.42) : 0.05;
+    if (u.legL) { applyRest(u.legL, restOf(u, 'legL')); u.legL.rotation.x += swing * amp; }
+    if (u.legR) { applyRest(u.legR, restOf(u, 'legR')); u.legR.rotation.x += -swing * amp; }
+    if (u.armL) { applyRest(u.armL, restOf(u, 'armL')); u.armL.rotation.x += -swing * amp * 0.85; }
+    if (u.armR) { applyRest(u.armR, restOf(u, 'armR')); u.armR.rotation.x += swing * amp * 0.85; }
 
     if (u.tail) {
-      u.tail.rotation.y = Math.sin(u.t * (moving ? 10 : 3.2)) * (gait === 'slink' ? 0.7 : 0.4);
-      u.tail.rotation.x = 0.15 + Math.sin(u.t * 2.1) * 0.12;
+      applyRest(u.tail, restOf(u, 'tail'));
+      u.tail.rotation.y += Math.sin(u.t * (moving ? 10 : 3.2)) * (gait === 'slink' ? 0.55 : 0.32);
+      u.tail.rotation.x += Math.sin(u.t * 2.1) * 0.1;
     }
-    if (u.earL) u.earL.rotation.z = (u.earL.userData.z0 ?? u.earL.rotation.z * 0) + 0.12 + Math.sin(u.t * 2.6) * 0.1;
-    if (u.earR) u.earR.rotation.z = -0.12 - Math.sin(u.t * 2.6 + 0.4) * 0.1;
-    if (u.wingL) u.wingL.rotation.z = 1.05 + Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.45 : 0.18);
-    if (u.wingR) u.wingR.rotation.z = -1.05 - Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.45 : 0.18);
+    if (u.earL) { applyRest(u.earL, restOf(u, 'earL')); u.earL.rotation.z += Math.sin(u.t * 2.6) * 0.09; }
+    if (u.earR) { applyRest(u.earR, restOf(u, 'earR')); u.earR.rotation.z += -Math.sin(u.t * 2.6 + 0.4) * 0.09; }
+    if (u.wingL) { applyRest(u.wingL, restOf(u, 'wingL')); u.wingL.rotation.z += Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.4 : 0.16); }
+    if (u.wingR) { applyRest(u.wingR, restOf(u, 'wingR')); u.wingR.rotation.z += -Math.sin(u.t * (moving ? 9 : 4)) * (moving ? 0.4 : 0.16); }
     if (u.head) {
-      u.head.rotation.y = Math.sin(u.t * (mood === 'talk' ? 14 : 1.4)) * (mood === 'talk' ? 0.12 : 0.08);
-      u.head.rotation.z = Math.sin(u.t * 1.1) * 0.05;
+      applyRest(u.head, restOf(u, 'head'));
+      u.head.rotation.y += Math.sin(u.t * (talking ? 14 : 1.4)) * (talking ? 0.12 : 0.07);
+      u.head.rotation.z += Math.sin(u.t * 1.1) * 0.04;
+    }
+    if (u.mouth) {
+      applyRest(u.mouth, restOf(u, 'mouth'));
+      if (talking) u.mouth.scale.y *= 1 + Math.abs(Math.sin(u.t * 20)) * 2.4;
     }
     if (u.extra && u.species === 'ripper') {
-      u.extra.rotation.y = Math.sin(u.t * 1.3) * 0.08;
+      applyRest(u.extra, restOf(u, 'extra'));
+      u.extra.rotation.y += Math.sin(u.t * 1.3) * 0.06;
     }
-    if (u.extra && u.species === 'razorbot') {
+    if (u.extra && u.species === 'razorbot' && u.extra.material) {
       u.extra.material.emissiveIntensity = 0.7 + Math.sin(u.t * 8) * 0.4;
     }
 
@@ -1085,12 +1159,12 @@
     else if (gait === 'skitter') hop = moving ? Math.abs(Math.sin(p * 2)) * 0.07 : 0.02;
     else hop = Math.abs(Math.sin(u.t * (moving ? 6 : 2))) * (moving ? 0.04 : 0.02);
 
-    if (gait === 'waddle' && moving) mesh.rotation.z = Math.sin(p) * 0.14;
-    else if (gait === 'menace') mesh.rotation.z = Math.sin(u.t * 2.2) * 0.03;
-    else mesh.rotation.z *= 0.85;
-
-    if (mood === 'chase') mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, 0.16, 0.12);
-    else mesh.rotation.x = THREE.MathUtils.lerp(mesh.rotation.x, 0, 0.12);
+    const wantZ = gait === 'waddle' && moving ? Math.sin(p) * 0.14 : gait === 'menace' ? Math.sin(u.t * 2.2) * 0.03 : 0;
+    const wantX = mood === 'chase' ? 0.16 : 0;
+    u.leanZ = THREE.MathUtils.lerp(u.leanZ || 0, wantZ, 0.18);
+    u.leanX = THREE.MathUtils.lerp(u.leanX || 0, wantX, 0.14);
+    mesh.rotation.z = u.leanZ;
+    mesh.rotation.x = u.leanX;
 
     u.hop = hop;
     if (mood !== 'lockY') mesh.position.y = hop;
@@ -1193,10 +1267,17 @@
       for (const f of wildFluffies) {
         if (f.recruited) continue;
         if (h.mesh.position.distanceTo(f.mesh.position) < 16) {
+          f.beaconT = 12;
           f.mesh.traverse(o => {
             if (o.isMesh && o.material && o.material.emissive) {
+              if (!o.userData.beaconed) {
+                o.material = o.material.clone();
+                o.userData.beaconed = true;
+                o.userData.baseEmissive = o.material.emissive.clone();
+                o.userData.baseEmit = o.material.emissiveIntensity || 0;
+              }
               o.material.emissive = new THREE.Color(0x6ee7b7);
-              o.material.emissiveIntensity = 0.35;
+              o.material.emissiveIntensity = 0.45;
             }
           });
         }
@@ -1218,12 +1299,13 @@
       h.believer = true;
       toast(`${h.name} believes! ${h.def.skill.name} blossoms.`);
       state.miracleCharge = Math.min(state.miracleMax, state.miracleCharge + 20);
-      h.mesh.traverse(o => {
-        if (o.isMesh && o.material && o.geometry?.type === 'BoxGeometry') {
-          o.material = o.material.clone();
-          o.material.color.set(0x7c3aed);
-        }
-      });
+      if (h.mesh.userData.body) {
+        const shirt = h.mesh.userData.body;
+        shirt.material = shirt.material.clone();
+        shirt.material.color.set(0x7c3aed);
+        shirt.material.emissive = new THREE.Color(0x5b21b6);
+        shirt.material.emissiveIntensity = 0.2;
+      }
       const halo = new THREE.Mesh(
         new THREE.TorusGeometry(0.2, 0.025, 8, 16),
         new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xfbbf24, emissiveIntensity: 0.6 })
@@ -1316,33 +1398,35 @@
     battle.guard = 0;
     battle.weaken = 0;
     battle.stunned = false;
+    battle.heroHome = bear.position.clone();
+    battle.foeHome = enemy.mesh.position.clone();
+    battle.lungeT = 0.36;
+    battle.lungeWho = 'foe';
     const skill = enemy.type.skill;
     const villain = enemy.type.villain;
     battle.log = villain
       ? `${enemy.type.name} unfolds scissor-arms. “${enemy.type.lines[0]}”`
       : `${enemy.type.emoji} ${enemy.type.name} lunges! (${skill.icon} ${skill.name})`;
     if (player.skills.fluffShield) battle.log += ' Fluff Shield braces you.';
+    document.getElementById('prompt').style.opacity = '0';
     document.getElementById('battleUI').classList.remove('hidden');
     document.getElementById('bEnemyName').textContent = `${enemy.type.emoji} ${enemy.type.name}`;
-    document.getElementById('bEnemyEmoji').textContent = enemy.type.emoji;
-    document.getElementById('bEnemySkillChip').textContent = skill.icon + ' ' + skill.name;
-    document.getElementById('bEnemySkill').textContent = skill.name + ' — ' + skill.desc;
-    document.getElementById('bEnemyPort').style.background = villain
-      ? 'radial-gradient(circle at 30% 20%,#fb7185,#4c0519)'
-      : 'radial-gradient(circle at 30% 20%,#fda4af,#7f1d1d)';
-    playVoice(enemy.type.id);
-    const line = enemy.type.lines[Math.floor(Math.random() * enemy.type.lines.length)];
+    document.getElementById('bEnemySkill').textContent = skill.icon + ' ' + skill.name + ' — ' + skill.desc;
+    const line = lineFor(enemy);
     speak(enemy.mesh, line, villain ? 'villain' : 'hostile', enemy.type.id,
       villain ? line : null, villain ? 0.35 : 1, villain ? 0.78 : 1);
-    pulsePortrait('bEnemyPort');
     syncBattle();
   }
 
-  function pulsePortrait(id) {
-    const el = document.getElementById(id);
-    el.classList.remove('strike');
-    void el.offsetWidth;
-    el.classList.add('strike');
+  function lineFor(enemy) {
+    return enemy.type.lines[Math.floor(Math.random() * enemy.type.lines.length)];
+  }
+
+  function startLunge(who, fxColor) {
+    battle.lungeT = 0.32;
+    battle.lungeWho = who;
+    const src = who === 'hero' ? bear.position : (battle.enemy && battle.enemy.mesh.position);
+    if (src) burst(src.clone().setY(0.9), fxColor, who === 'hero' ? 10 : 8);
   }
 
   function syncBattle() {
@@ -1358,6 +1442,8 @@
     document.getElementById('bHpLine').textContent =
       `Enemy ${Math.max(0, Math.ceil(e.hp))}/${e.hpMax} · You ${Math.max(0, Math.ceil(player.hp))}/${player.hpMax}`
       + (flags ? ' · ' + flags : '');
+    document.getElementById('bEnemyBar').style.width = `${Math.max(0, e.hp / e.hpMax) * 100}%`;
+    document.getElementById('bHeroBar').style.width = `${Math.max(0, player.hp / player.hpMax) * 100}%`;
     document.getElementById('bPartyLine').textContent =
       party.length
         ? 'Party: ' + party.map(p => `${p.emoji} ${p.skill.name}`).join(' · ')
@@ -1393,14 +1479,14 @@
       dmg = player.atk + Math.floor(Math.random() * 5) - battle.weaken;
       battle.log = `Soft Slap hits for ${Math.max(1, dmg)}!`;
       playVoice('hit');
-      pulsePortrait('bHeroPort');
+      startLunge('hero', 0xf9a8d4);
     } else if (kind === 'beam') {
       if (state.fp < 12) { battle.log = 'Need 12 FP!'; battle.busy = false; syncBattle(); return; }
       state.fp -= 12;
       dmg = Math.floor(player.atk * 2.2) + Math.floor(Math.random() * 6) - battle.weaken;
       battle.log = `Cuddle Beam deals ${Math.max(1, dmg)}!`;
       playVoice('miracle');
-      pulsePortrait('bHeroPort');
+      startLunge('hero', 0xfde68a);
       updateHUD();
     } else if (kind === 'party') {
       let mult = player.skills.partyBond ? 1.4 : 1;
@@ -1418,14 +1504,15 @@
         if (p.typeId === 'duck' && Math.random() < 0.35) { battle.stunned = true; notes.push(`${p.emoji} Squeak Splash stuns!`); }
         if (p.typeId === 'panda') { state.ap += 5; notes.push(`${p.emoji} Calm Ink +5 AP`); }
         if (p.typeId === 'dragon') { dmg += 10; notes.push(`${p.emoji} Velvet Roar +10`); }
-        playVoice(p.typeId);
+        playVoice(p.typeId, p.skill.name);
       }
       const base = party.reduce((s, p) => s + p.atk, 0) + 4;
       dmg += Math.floor(base * mult) + Math.floor(Math.random() * 5) - battle.weaken;
       battle.log = party.length
         ? `Party Assault! ${party.map(p => p.emoji).join('')} deal ${Math.max(1, dmg)}!` + (notes.length ? ' ' + notes.join(' ') : '')
         : `Lonely swipe for ${Math.max(1, dmg)}. Find fluffies!`;
-      pulsePortrait('bHeroPort');
+      startLunge('hero', 0x6ee7b7);
+      if (notes.length && battle.enemy) spawnFloat(battle.enemy.mesh.position.clone().setY(1.4), notes[0], '#fde68a');
       updateHUD();
     }
 
@@ -1459,7 +1546,8 @@
     let dmg = e.atk + Math.floor(Math.random() * 4);
     let note = `${e.type.name} shreds stuffing for`;
     if (useSkill) {
-      playVoice(e.type.id);
+      playVoice(e.type.id, e.type.skill.name);
+      spawnFloat(e.mesh.position.clone().setY(1.5), e.type.skill.icon + ' ' + e.type.skill.name, '#fda4af');
       const id = e.type.id;
       if (id === 'scrapdog') {
         battle.bleed = Math.max(battle.bleed, 2);
@@ -1496,7 +1584,7 @@
     if (battle.guard > 0) { dmg = Math.max(1, dmg - 3); battle.guard--; }
     player.hp -= dmg;
     battle.log = `${note} ${dmg}!`;
-    pulsePortrait('bEnemyPort');
+    startLunge('foe', useSkill ? 0xfb7185 : 0xf87171);
     syncBattle();
 
     if (player.hp <= 0) {
@@ -1541,7 +1629,14 @@
 
   function endBattle() {
     document.getElementById('battleUI').classList.add('hidden');
+    if (battle.heroHome) bear.position.set(battle.heroHome.x, 0, battle.heroHome.z);
+    if (battle.enemy && battle.foeHome && !battle.enemy.defeated) {
+      battle.enemy.mesh.position.set(battle.foeHome.x, 0, battle.foeHome.z);
+    }
     battle.enemy = null;
+    battle.heroHome = null;
+    battle.foeHome = null;
+    battle.lungeT = 0;
     state.mode = 'play';
     state.invuln = 1.8;
   }
@@ -1614,7 +1709,9 @@
     const slots = [];
     for (let i = 0; i < PARTY_MAX; i++) {
       const p = party[i];
-      slots.push(`<div class="party-slot">${p ? p.emoji : '·'}</div>`);
+      slots.push(p
+        ? `<div class="party-slot" title="${p.skill.name} — ${p.skill.desc}">${p.emoji}<span class="party-skill">${p.skill.icon}</span></div>`
+        : `<div class="party-slot">·</div>`);
     }
     el.innerHTML = slots.join('');
   }
@@ -1733,6 +1830,88 @@
   // ═══════════════════════════════════════════════════════
   const clock = new THREE.Clock();
 
+  function updateBattleCine(dt) {
+    const e = battle.enemy;
+    if (!e || !battle.heroHome || !battle.foeHome) return;
+    const hx = battle.heroHome.x, hz = battle.heroHome.z;
+    const fx = battle.foeHome.x, fz = battle.foeHome.z;
+    const dx = fx - hx, dz = fz - hz;
+    const len = Math.hypot(dx, dz) || 1;
+    const ux = dx / len, uz = dz / len;
+    if (battle.lungeT > 0) battle.lungeT -= dt;
+    const k = battle.lungeT > 0 ? Math.sin(Math.min(1, battle.lungeT / 0.32) * Math.PI) : 0;
+    const heroOff = battle.lungeWho === 'hero' ? k * 0.72 : 0;
+    const foeOff = battle.lungeWho === 'foe' ? k * 0.72 : 0;
+    bear.position.x = hx + ux * heroOff;
+    bear.position.z = hz + uz * heroOff;
+    bear.position.y = k * 0.08;
+    e.mesh.position.x = fx - ux * foeOff;
+    e.mesh.position.z = fz - uz * foeOff;
+    bear.rotation.y = Math.atan2(ux, uz);
+    e.mesh.rotation.y = Math.atan2(-ux, -uz);
+    animateRig(e.mesh, dt, foeOff > 0.05, e.type.villain ? 'menace' : 'chase');
+    if (heroOff > 0.05 && bear.userData.armL) {
+      bear.userData.armL.rotation.x = -k * 1.15;
+      bear.userData.armR.rotation.x = k * 0.7;
+    }
+    const midX = (hx + fx) * 0.5, midZ = (hz + fz) * 0.5;
+    const cam = new THREE.Vector3(midX - uz * 1.35, 2.45, midZ + 3.7);
+    camera.position.lerp(cam, 1 - Math.pow(0.012, dt));
+    camera.lookAt(midX, 0.95, midZ);
+  }
+
+  function plateFor(obj, title, sub, kind, height) {
+    if (!obj.plate) {
+      const el = document.createElement('div');
+      el.className = 'nameplate';
+      labelLayer.appendChild(el);
+      obj.plate = el;
+    }
+    obj.plate.innerHTML = `${title}<span class="sub">${sub}</span>`;
+    const pos = obj.mesh.position.clone();
+    pos.y += height;
+    const s = toScreen(pos);
+    obj.plate.style.left = s.x + 'px';
+    obj.plate.style.top = s.y + 'px';
+    const near = s.ok && bear.position.distanceTo(obj.mesh.position) < 8;
+    obj.plate.classList.toggle('show', near && (obj.mesh.visible !== false));
+    if (kind === 'hostile') obj.plate.style.color = '#fecaca';
+    if (kind === 'villain') obj.plate.style.color = '#fda4af';
+    if (kind === 'fluff') obj.plate.style.color = '#fbcfe8';
+  }
+
+  function updateNameplates() {
+    for (const f of wildFluffies) {
+      if (f.recruited) { if (f.plate) f.plate.classList.remove('show'); continue; }
+      plateFor(f, f.type.emoji + ' ' + f.type.name, f.type.skill.icon + ' ' + f.type.skill.name, 'fluff', 1.15);
+    }
+    for (const h of hostiles) {
+      if (h.defeated) { if (h.plate) h.plate.classList.remove('show'); continue; }
+      plateFor(h, h.type.emoji + ' ' + h.type.name, h.type.skill.icon + ' ' + h.type.skill.name,
+        h.type.villain ? 'villain' : 'hostile', h.type.villain ? 2.05 : 1.25);
+    }
+    for (const h of humans) {
+      plateFor(h, h.name, h.def.skill.name + (h.believer ? ' · believer' : ''), 'npc', 1.85);
+    }
+  }
+
+  function updateBeacons(dt) {
+    for (const f of wildFluffies) {
+      if (!f.beaconT || f.beaconT <= 0) continue;
+      f.beaconT -= dt;
+      const glow = Math.max(0, f.beaconT / 12) * 0.45;
+      f.mesh.traverse(o => {
+        if (o.isMesh && o.userData.beaconed && o.material) {
+          o.material.emissiveIntensity = glow;
+          if (f.beaconT <= 0 && o.userData.baseEmissive) {
+            o.material.emissive.copy(o.userData.baseEmissive);
+            o.material.emissiveIntensity = o.userData.baseEmit || 0;
+          }
+        }
+      });
+    }
+  }
+
   function update(dt) {
     state.time += dt;
     if (state.toastT > 0) {
@@ -1752,10 +1931,14 @@
       if (u.life <= 0) { scene.remove(p); particles.splice(i, 1); }
     }
 
-    if (state.mode === 'battle' || state.mode === 'ui') {
+    if (state.mode === 'ui') {
       updateFloaters(dt);
       updateBubbles(dt);
       return;
+    }
+
+    if (state.mode === 'battle') {
+      updateBattleCine(dt);
     }
 
     // Hug anim
@@ -1874,6 +2057,7 @@
     // Hostiles: wander + chase + collide
     for (const h of hostiles) {
       if (h.defeated) continue;
+      if (state.mode === 'battle' && battle.enemy === h) continue;
       const dist = bear.position.distanceTo(h.mesh.position);
       const chasing = dist < h.aggro && state.mode === 'play';
       const spd = h.type.speed || 2.8;
@@ -1933,28 +2117,33 @@
       }
     }
 
-    // Ambient chatter when the player is nearby
+    // Ambient chatter — SFX + bubble only (spoken lines reserved for hugs / villain)
     if (state.mode === 'play' && state.time >= audio.chatterAt) {
-      const f = nearest(wildFluffies, 5.5, x => !x.recruited);
-      const n = nearest(humans, 5.5);
+      const f = nearest(wildFluffies, 4.5, x => !x.recruited);
+      const n = nearest(humans, 4.5);
       const pick = Math.random();
-      if (n && pick < 0.5 && canTalk(n.mesh, 8)) {
+      if (n && pick < 0.4 && canTalk(n.mesh, 12)) {
         const line = n.believer ? 'The fluff chose me!' : n.def.lines[Math.floor(Math.random() * n.def.lines.length)];
-        speak(n.mesh, line, 'npc', n.id, line, n.def.pitch, n.def.rate);
-        audio.chatterAt = state.time + 5.5;
-      } else if (f && canTalk(f.mesh, 7)) {
+        speak(n.mesh, line, 'npc', n.id);
+        audio.chatterAt = state.time + 8;
+      } else if (f && canTalk(f.mesh, 10)) {
         const line = f.type.lines[Math.floor(Math.random() * f.type.lines.length)];
         speak(f.mesh, line, 'fluff', f.type.id);
-        audio.chatterAt = state.time + 4.5;
+        audio.chatterAt = state.time + 7;
       } else {
-        audio.chatterAt = state.time + 2;
+        audio.chatterAt = state.time + 3.5;
       }
     }
 
+    updateBeacons(dt);
+    updateNameplates();
+
     // Camera
-    const desired = bear.position.clone().add(camOffset);
-    camera.position.lerp(desired, 1 - Math.pow(0.002, dt));
-    camera.lookAt(bear.position.x, 1.1, bear.position.z);
+    if (state.mode !== 'battle') {
+      const desired = bear.position.clone().add(camOffset);
+      camera.position.lerp(desired, 1 - Math.pow(0.002, dt));
+      camera.lookAt(bear.position.x, 1.1, bear.position.z);
+    }
 
     // Day tint by zone
     const zc = ZONES[state.zone];
