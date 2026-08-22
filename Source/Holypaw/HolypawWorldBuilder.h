@@ -176,6 +176,21 @@ protected:
 	void DressChapelRoom(const FVector& Origin);
 	void DressWorkshopRoom(const FVector& Origin);
 	void DressCottageRooms(const FVector& Origin, float GroundZ);
+	void PlaceBed(const FVector& Origin, float Yaw, const FLinearColor& Quilt, const TCHAR* Tag);
+	void PlaceChair(const FVector& Origin, float Yaw);
+	void PlaceTable(const FVector& Origin, float Yaw);
+	void PlaceShelf(const FVector& Origin, float Yaw);
+	void PlaceRug(const FVector& Origin, const FLinearColor& Color, const FVector& Scale);
+	void PlaceHearth(const FVector& Origin);
+	void PlaceCrate(const FVector& Origin);
+	void PlacePlanter(const FVector& Origin);
+	void PlaceBench(const FVector& Origin, float Yaw);
+	void PlaceWell(const FVector& Origin);
+	void PlaceAwningStall(const FVector& Origin);
+	void PlaceCampKit(const FVector& Origin);
+	void PlaceYardFence(const FVector& Origin);
+	void PlaceClothesline(const FVector& Origin);
+	void DressCityPlaza(const FVector2D& Center, float Z);
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY);
@@ -184,8 +199,8 @@ protected:
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;
 	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
 
-	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
-	UStaticMeshComponent* PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
+	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot = FRotator::ZeroRotator, bool bBlock = true);
+	UStaticMeshComponent* PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot = FRotator::ZeroRotator, bool bBlock = true);
 	void ColorMesh(UStaticMeshComponent* Mesh, const FLinearColor& Color);
 	float SampleHeight(float X, float Y) const;
 	float HashRand(int32 X, int32 Y, int32 Salt = 0) const;

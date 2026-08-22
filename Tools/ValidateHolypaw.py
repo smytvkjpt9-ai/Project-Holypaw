@@ -454,6 +454,18 @@ if "Cloak" not in (ROOT / "Source/Holypaw/Actors/HostilePet.cpp").read_text():
     errors.append("villains missing cloak")
 if "Bangs" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
     errors.append("humans missing bangs")
+if "PlaceBed" not in INTERIOR:
+    errors.append("interior kit missing PlaceBed furniture")
+if "PlaceCampKit" not in INTERIOR:
+    errors.append("interior kit missing camp kit")
+if "PlaceAwningStall" not in INTERIOR:
+    errors.append("interior kit missing awning stall")
+if "DressCityPlaza" not in WORLD:
+    errors.append("towns missing plaza furniture")
+if "PlaceClothesline" not in WORLD:
+    errors.append("cottage yard missing clothesline")
+if "CottageHearth" not in INTERIOR:
+    errors.append("cottage missing hearth")
 
 if errors:
     print("FAIL")

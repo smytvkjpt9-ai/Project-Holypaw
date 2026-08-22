@@ -618,12 +618,12 @@ void AHolypawWorldBuilder::AddKit(UInstancedStaticMeshComponent* ISM, const FVec
 	ISM->AddInstance(FTransform(Rot, Loc, Scale), true);
 }
 
-UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name)
+UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot, const bool bBlock)
 {
-	return PlacePrimitive(CubeMesh, Loc, Scale, Color, Name);
+	return PlacePrimitive(CubeMesh, Loc, Scale, Color, Name, Rot, bBlock);
 }
 
-UStaticMeshComponent* AHolypawWorldBuilder::PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name)
+UStaticMeshComponent* AHolypawWorldBuilder::PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot, const bool bBlock)
 {
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this, Name);
 	if (!Comp || !Mesh) { return nullptr; }
@@ -632,9 +632,13 @@ UStaticMeshComponent* AHolypawWorldBuilder::PlacePrimitive(UStaticMesh* Mesh, co
 	Comp->CreationMethod = EComponentCreationMethod::Instance;
 	if (ShapeMat) { Comp->SetMaterial(0, ShapeMat); }
 	Comp->SetWorldLocation(Loc);
+	Comp->SetWorldRotation(Rot);
 	Comp->SetWorldScale3D(Scale);
-	Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	Comp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	Comp->SetCollisionEnabled(bBlock ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+	if (bBlock)
+	{
+		Comp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	}
 	Comp->SetCastShadow(true);
 	AddInstanceComponent(Comp);
 	Comp->RegisterComponent();
@@ -739,29 +743,37 @@ void AHolypawWorldBuilder::BuildCottage()
 {
 	const float Z = SampleHeight(CottageSpawn.X, CottageSpawn.Y);
 	CottageSpawn.Z = Z + 120.f;
-	DressCottageRooms(CottageSpawn, Z);
-	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y, Z + 340.f), FVector(7.4f, 6.0f, 1.6f), FLinearColor(0.55f, 0.28f, 0.28f), MakeName(TEXT("CottageRoof")));
+	DressCottageRooms(CottageSpawn, Z); // CottageDoor + knob on the east wall gap
+	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y - 130.f, Z + 390.f), FVector(7.6f, 3.4f, 0.22f), HolypawLook::Roof, MakeName(TEXT("CottageRoof")), FRotator(22.f, 0.f, 0.f));
+	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y + 130.f, Z + 390.f), FVector(7.6f, 3.4f, 0.22f), HolypawLook::Roof, MakeName(TEXT("CottageRoof")), FRotator(-22.f, 0.f, 0.f));
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 90.f), FVector(3.2f, 3.8f, 0.25f), FLinearColor(0.62f, 0.5f, 0.38f), MakeName(TEXT("Porch")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), FLinearColor(0.55f, 0.82f, 0.95f), MakeName(TEXT("Window")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), HolypawLook::Glass, MakeName(TEXT("WindowBack")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 96.f, Z + 175.f), FVector(0.55f, 0.05f, 0.55f), HolypawLook::GoldWarm, MakeName(TEXT("WindowPane")));
-	PlaceCube(FVector(CottageSpawn.X + 196.f, CottageSpawn.Y, Z + 86.f), FVector(0.12f, 0.72f, 1.35f), HolypawLook::Wood, MakeName(TEXT("CottageDoor")));
-	PlaceCube(FVector(CottageSpawn.X + 206.f, CottageSpawn.Y + 18.f, Z + 82.f), FVector(0.07f, 0.07f, 0.07f), HolypawLook::Gold, MakeName(TEXT("DoorKnob")));
-	PlaceCube(FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 220.f, Z + 70.f), FVector(1.2f, 1.2f, 1.4f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("Woodpile")));
 	PlaceCube(FVector(CottageSpawn.X - 80.f, CottageSpawn.Y, Z + 28.f), FVector(5.4f, 4.2f, 0.12f), FLinearColor(0.62f, 0.44f, 0.32f), MakeName(TEXT("CottageFloor")));
-	PlaceCube(FVector(CottageSpawn.X - 140.f, CottageSpawn.Y + 40.f, Z + 70.f), FVector(2.4f, 1.3f, 0.45f), FLinearColor(0.78f, 0.55f, 0.62f), MakeName(TEXT("CottageBed")));
-	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y + 40.f, Z + 95.f), FVector(0.7f, 1.1f, 0.28f), FLinearColor(0.95f, 0.88f, 0.92f), MakeName(TEXT("CottagePillow")));
-	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 85.f), FVector(1.1f, 1.1f, 0.9f), FLinearColor(0.55f, 0.38f, 0.28f), MakeName(TEXT("CottageTable")));
+	PlaceBed(FVector(CottageSpawn.X - 140.f, CottageSpawn.Y + 40.f, Z + 8.f), 0.f, HolypawLook::Rose, TEXT("CottageBed"));
+	PlaceTable(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 80.f, Z + 8.f), 0.f);
+	PlaceChair(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 20.f, Z + 8.f), 180.f);
+	PlaceChair(FVector(CottageSpawn.X - 20.f, CottageSpawn.Y + 80.f, Z + 8.f), 90.f);
 	PlaceCube(FVector(CottageSpawn.X + 1400.f, CottageSpawn.Y - 200.f, Z + 40.f), FVector(4.2f, 0.7f, 0.55f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("FallenTree")));
 	PlaceCube(FVector(CottageSpawn.X - 40.f, CottageSpawn.Y, Z + 280.f), FVector(4.2f, 3.4f, 0.16f), FLinearColor(0.68f, 0.5f, 0.4f), MakeName(TEXT("CottageLoft")));
-	PlaceCube(FVector(CottageSpawn.X - 90.f, CottageSpawn.Y - 40.f, Z + 310.f), FVector(1.4f, 0.7f, 0.5f), FLinearColor(0.55f, 0.4f, 0.32f), MakeName(TEXT("LoftTrunk")));
+	PlaceCrate(FVector(CottageSpawn.X - 90.f, CottageSpawn.Y - 40.f, Z + 280.f));
 	PlaceCube(FVector(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f, Z - 20.f), FVector(3.2f, 2.6f, 0.9f), FLinearColor(0.32f, 0.24f, 0.2f), MakeName(TEXT("CottageCellar")));
-	PlaceCube(FVector(CottageSpawn.X + 240.f, CottageSpawn.Y + 70.f, Z + 70.f), FVector(0.7f, 0.7f, 0.55f), FLinearColor(0.72f, 0.52f, 0.38f), MakeName(TEXT("PorchChair")));
+	PlaceChair(FVector(CottageSpawn.X + 250.f, CottageSpawn.Y + 70.f, Z + 90.f), -20.f);
+	PlaceChair(FVector(CottageSpawn.X + 250.f, CottageSpawn.Y - 70.f, Z + 90.f), 20.f);
+	PlaceCrate(FVector(CottageSpawn.X + 300.f, CottageSpawn.Y, Z + 90.f));
 	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y - 40.f, Z + 420.f), FVector(0.55f, 0.55f, 1.6f), FLinearColor(0.48f, 0.28f, 0.22f), MakeName(TEXT("CottageChimney")));
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y - 140.f, Z + 40.f), FVector(0.22f, 0.22f, 0.9f), HolypawLook::Wood, MakeName(TEXT("PorchPostA")));
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y + 140.f, Z + 40.f), FVector(0.22f, 0.22f, 0.9f), HolypawLook::Wood, MakeName(TEXT("PorchPostB")));
-	PlaceCube(FVector(CottageSpawn.X + 80.f, CottageSpawn.Y - 200.f, Z + 28.f), FVector(0.9f, 0.35f, 0.22f), HolypawLook::BloomPink, MakeName(TEXT("WindowBox")));
-	PlacePrimitive(SphereMesh, FVector(CottageSpawn.X + 80.f, CottageSpawn.Y - 200.f, Z + 48.f), FVector(0.35f, 0.22f, 0.22f), HolypawLook::Rose, MakeName(TEXT("WindowBloom")));
+	PlacePlanter(FVector(CottageSpawn.X + 80.f, CottageSpawn.Y - 200.f, Z));
+	PlacePlanter(FVector(CottageSpawn.X + 160.f, CottageSpawn.Y - 200.f, Z));
+	UStaticMesh* LogMesh = CylMesh ? CylMesh : CubeMesh;
+	PlacePrimitive(LogMesh, FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 220.f, Z + 22.f), FVector(0.22f, 0.22f, 0.85f), HolypawLook::Wood, MakeName(TEXT("Woodpile")), FRotator(0.f, 20.f, 88.f));
+	PlacePrimitive(LogMesh, FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 238.f, Z + 22.f), FVector(0.22f, 0.22f, 0.85f), HolypawLook::Wood, MakeName(TEXT("Woodpile")), FRotator(0.f, -10.f, 88.f));
+	PlacePrimitive(LogMesh, FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 228.f, Z + 42.f), FVector(0.20f, 0.20f, 0.75f), HolypawLook::Wood, MakeName(TEXT("Woodpile")), FRotator(0.f, 8.f, 88.f));
+	PlaceYardFence(FVector(CottageSpawn.X, CottageSpawn.Y, Z));
+	PlaceClothesline(FVector(CottageSpawn.X - 160.f, CottageSpawn.Y + 140.f, Z));
+	PlaceWell(FVector(CottageSpawn.X + 420.f, CottageSpawn.Y + 220.f, Z));
 	HolypawLook::SpawnGlow(GetWorld(), this, FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 160.f), HolypawLook::Lantern, 1800.f, 640.f);
 	PlacePickup(FVector2D(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f), TEXT("hymnSheet"), NSLOCTEXT("Holypaw", "HymnSheetPick", "cellar hymn sheet"));
 	PlacePickup(FVector2D(CottageSpawn.X + 260.f, CottageSpawn.Y - 40.f), TEXT("stuffedPostcard"), NSLOCTEXT("Holypaw", "PostcardPick", "porch postcard"));
@@ -820,6 +832,7 @@ void AHolypawWorldBuilder::BuildTown(const FHolypawCity& City)
 	const float SpireH = City.bTallSpire ? 18.f : 10.f;
 	PlaceCube(FVector(Center.X - 120.f, Center.Y + 140.f, Zc + SpireH * 50.f), FVector(2.2f, 2.2f, SpireH), City.Accent, MakeName(TEXT("Spire")));
 	PlaceCube(FVector(Center.X - 120.f, Center.Y + 140.f, Zc + SpireH * 100.f + 40.f), FVector(3.2f, 3.2f, 1.1f), FLinearColor(0.95f, 0.75f, 0.35f), MakeName(TEXT("SpireCap")));
+	DressCityPlaza(Center, Zc);
 
 	UInstancedStaticMeshComponent* Walls[3] = { WallRose.Get(), WallMint.Get(), WallGold.Get() };
 	for (int32 Row = -Rows; Row <= Rows; ++Row)
@@ -1341,10 +1354,7 @@ void AHolypawWorldBuilder::PlaceWaterSheet(float OriginX, float OriginY, int32 N
 void AHolypawWorldBuilder::PlaceCamp(const FVector2D& XY, const FText& Name)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	PlaceCube(FVector(XY.X, XY.Y, Z + 70.f), FVector(2.4f, 2.4f, 1.4f), FLinearColor(0.62f, 0.42f, 0.28f), MakeName(TEXT("Tent")));
-	PlaceCube(FVector(XY.X + 80.f, XY.Y, Z + 40.f), FVector(0.4f, 0.4f, 0.5f), FLinearColor(1.f, 0.55f, 0.2f), MakeName(TEXT("Fire")));
-	PlacePrimitive(SphereMesh, FVector(XY.X + 80.f, XY.Y, Z + 70.f), FVector(0.55f, 0.55f, 0.45f), FLinearColor(1.f, 0.62f, 0.22f), MakeName(TEXT("FireGlow")));
-	HolypawLook::SpawnGlow(GetWorld(), this, FVector(XY.X + 80.f, XY.Y, Z + 70.f), FLinearColor(1.f, 0.55f, 0.22f), 2200.f, 520.f);
+	PlaceCampKit(FVector(XY.X, XY.Y, Z));
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -1431,7 +1441,7 @@ FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
 void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	PlaceCube(FVector(XY.X, XY.Y, Z + 80.f), FVector(1.8f, 1.4f, 1.5f), FLinearColor(0.95f, 0.78f, 0.4f), MakeName(TEXT("Stall")));
+	PlaceAwningStall(FVector(XY.X, XY.Y, Z));
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -1446,6 +1456,8 @@ void AHolypawWorldBuilder::PlaceSign(const FVector2D& XY, const FText& Message)
 	const float Z = SampleHeight(XY.X, XY.Y);
 	PlaceCube(FVector(XY.X, XY.Y, Z + 70.f), FVector(0.16f, 0.16f, 1.4f), FLinearColor(0.4f, 0.3f, 0.2f), MakeName(TEXT("SignPole")));
 	PlaceCube(FVector(XY.X, XY.Y, Z + 150.f), FVector(1.1f, 0.12f, 0.7f), FLinearColor(0.72f, 0.58f, 0.4f), MakeName(TEXT("SignBoard")));
+	PlaceCube(FVector(XY.X, XY.Y, Z + 8.f), FVector(0.42f, 0.42f, 0.12f), HolypawLook::Wood, MakeName(TEXT("SignBase")));
+	PlaceCube(FVector(XY.X, XY.Y + 8.f, Z + 150.f), FVector(0.95f, 0.04f, 0.48f), HolypawLook::Cream, MakeName(TEXT("SignFace")), FRotator::ZeroRotator, false);
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
