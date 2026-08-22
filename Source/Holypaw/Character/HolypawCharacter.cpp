@@ -16,6 +16,7 @@
 #include "Save/HolypawSaveCodec.h"
 #include "Audio/HolypawAudio.h"
 #include "Faith/HolypawFaithSim.h"
+#include "Anim/HolypawProcAnim.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -182,17 +183,10 @@ void AHolypawCharacter::BeginPlay()
 	Colorize(Belly, FLinearColor(0.98f, 0.9f, 0.82f));
 	Colorize(EyeL, FLinearColor(0.12f, 0.1f, 0.12f));
 	Colorize(EyeR, FLinearColor(0.12f, 0.1f, 0.12f));
+	HolypawAnim::CaptureTeddyRest(TeddyRest, TeddyParts());
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	UnlockTravel(EHolypawZone::ForestCottage);
 	Mode = EHolypawPawnMode::Title;
-	if (BodyMesh) { BodyBase = BodyMesh->GetRelativeLocation(); }
-	if (HeadMesh) { HeadBase = HeadMesh->GetRelativeLocation(); }
-	if (EarL) { EarLBase = EarL->GetRelativeLocation(); EarLRot = EarL->GetRelativeRotation(); }
-	if (EarR) { EarRBase = EarR->GetRelativeLocation(); EarRRot = EarR->GetRelativeRotation(); }
-	if (PawL) { PawLBase = PawL->GetRelativeLocation(); PawLRot = PawL->GetRelativeRotation(); }
-	if (PawR) { PawRBase = PawR->GetRelativeLocation(); PawRRot = PawR->GetRelativeRotation(); }
-	if (EyeL) { EyeLScale = EyeL->GetRelativeScale3D(); }
-	if (EyeR) { EyeRScale = EyeR->GetRelativeScale3D(); }
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = false;
@@ -250,7 +244,7 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void AHolypawCharacter::MoveForward(float Value)
 {
-	if (Mode != EHolypawPawnMode::Play || FMath::IsNearlyZero(Value))
+	if (Mode != EHolypawPawnMode::Play || FMath::IsNearlyZero(Value) || HolypawAnim::IsWrapLocked(TeddyAnim))
 	{
 		return;
 	}
@@ -260,7 +254,7 @@ void AHolypawCharacter::MoveForward(float Value)
 
 void AHolypawCharacter::MoveRight(float Value)
 {
-	if (Mode != EHolypawPawnMode::Play || FMath::IsNearlyZero(Value))
+	if (Mode != EHolypawPawnMode::Play || FMath::IsNearlyZero(Value) || HolypawAnim::IsWrapLocked(TeddyAnim))
 	{
 		return;
 	}
@@ -303,14 +297,6 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	if (DamagePopupTime > 0.f)
 	{
 		DamagePopupTime -= DeltaSeconds;
-	}
-	if (HurtPulse > 0.f)
-	{
-		HurtPulse = FMath::Max(0.f, HurtPulse - DeltaSeconds * 3.f);
-	}
-	if (HugAnim > 0.f)
-	{
-		HugAnim = FMath::Max(0.f, HugAnim - DeltaSeconds * 2.2f);
 	}
 	TickProcAnim(DeltaSeconds);
 	if (SpringArm)
@@ -360,6 +346,7 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 
 void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 {
+	HolypawAnim::TickParty(PartyAnim, DeltaSeconds);
 	Trail.Insert(GetActorLocation(), 0);
 	if (Trail.Num() > 80)
 	{
@@ -405,14 +392,12 @@ void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 		{
 			continue;
 		}
-		const int32 Idx = FMath::Min(Trail.Num() - 1, (I + 1) * 10);
-		if (!Trail.IsValidIndex(Idx))
-		{
-			continue;
-		}
-		const FVector Target = Trail[Idx] + FVector(0.f, 0.f, 30.f);
-		const FVector NewLoc = FMath::VInterpTo(Comp->GetComponentLocation(), Target, DeltaSeconds, 8.f);
+		const HolypawAnim::FPartySlotPose Pose = HolypawAnim::EvaluateParty(
+			Trail, I, PartyAnim.Clock, PartyAnim.CelebrateT, GetActorLocation(), GetActorForwardVector());
+		const FVector NewLoc = FMath::VInterpTo(Comp->GetComponentLocation(), Pose.Location, DeltaSeconds, 10.f);
 		Comp->SetWorldLocation(NewLoc);
+		Comp->SetWorldScale3D(Pose.Scale);
+		Comp->SetWorldRotation(Pose.Rot);
 	}
 }
 
@@ -600,9 +585,9 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		return true;
 	}
-	HugLock = 0.28f;
-	HugAnim = 1.f;
-	Human->ReceiveHug();
+	HugLock = HolypawAnim::HugLockSeconds;
+	HolypawAnim::PlayHug(TeddyAnim, Human->GetActorLocation() - GetActorLocation(), Human->GetActorLocation());
+	Human->ReceiveHug(GetActorLocation());
 	PlayCue(TEXT("Hug"));
 
 	if (Human->bBeliever)
@@ -635,6 +620,8 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	if (Human->ConvertProgress >= 100.f)
 	{
 		Human->BecomeBeliever();
+		Human->PlayConvertBow();
+		CelebrateConvert();
 		Affection->AddMiracle(22.f);
 		const FString Pulse = AddCityHeart(HolypawFaith::CreditZone(Human, CurrentZone));
 		if (Story)
@@ -1131,7 +1118,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	const FString Extra = In.Extra;
 	HP -= Dmg;
 	LastDamageTaken = Dmg;
-	HurtPulse = 1.f;
+	HolypawAnim::PlayHurt(TeddyAnim);
 	PlayCue(TEXT("Hurt"));
 	BattleLog = En->DisplayName.ToString() + TEXT(" ") + Verb + FString::Printf(TEXT(" for %d!"), Dmg) + Extra;
 	if (HP <= 0)
@@ -1160,7 +1147,7 @@ void AHolypawCharacter::ResumePlayerTurn()
 	HP = FMath::Max(0, HP - Tick);
 	--PoisonTurns;
 	LastDamageTaken = Tick;
-	HurtPulse = 0.7f;
+	HolypawAnim::PlayHurt(TeddyAnim);
 	BattleLog = FString::Printf(TEXT("Poison thread nips %d stuffing. (%d left)"), Tick, PoisonTurns);
 	if (HP <= 0)
 	{
@@ -1254,6 +1241,8 @@ void AHolypawCharacter::GrantKillRewards(AHostilePet* Fallen)
 	{
 		Toast(FString::Printf(TEXT("%s unstuffed! +%d AP · +%d FP"), *Name, ApGain, FpGain));
 	}
+	HolypawAnim::PlayVictory(TeddyAnim);
+	HolypawAnim::PlayCelebrate(PartyAnim);
 }
 
 void AHolypawCharacter::RestFully()
@@ -1378,10 +1367,11 @@ void AHolypawCharacter::TryMiracle()
 		}
 		const bool bWasOpen = H->ConvertProgress < 100.f;
 		H->ConvertProgress = FMath::Min(100.f, H->ConvertProgress + Sermon);
-		H->ReceiveHug();
+		H->ReceiveHug(GetActorLocation());
 		if (bWasOpen && H->ConvertProgress >= 100.f)
 		{
 			H->BecomeBeliever();
+			H->PlayConvertBow();
 			++NewlyConvinced;
 			LastPulse = AddCityHeart(HolypawFaith::CreditZone(H, CurrentZone));
 			if (Story)
@@ -1406,6 +1396,15 @@ void AHolypawCharacter::TryMiracle()
 			}
 		}
 	}
+	if (NewlyConvinced > 0)
+	{
+		HolypawAnim::PlayConvert(TeddyAnim);
+	}
+	else
+	{
+		HolypawAnim::PlayVictory(TeddyAnim);
+	}
+	HolypawAnim::PlayCelebrate(PartyAnim);
 	FString MiracleToast = FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
 		FpGain, NewlyConvinced);
 	if (!LastPulse.IsEmpty())
@@ -1601,6 +1600,8 @@ void AHolypawCharacter::CompleteBearFaith()
 		}
 	}
 	HaloMesh->SetHiddenInGame(false);
+	HolypawAnim::PlayVictory(TeddyAnim);
+	HolypawAnim::PlayCelebrate(PartyAnim);
 	Toast(TEXT("Every human kneels. They were so easy. The Poly Mill can keep the polyester — you kept the people."));
 }
 
@@ -1632,6 +1633,7 @@ void AHolypawCharacter::Jump()
 	{
 		return;
 	}
+	HolypawAnim::PlayJump(TeddyAnim);
 	Super::Jump();
 }
 
@@ -2242,61 +2244,59 @@ void AHolypawCharacter::PlayCue(FName Cue)
 	HolypawAudio::PlayCue(this, Cue);
 }
 
+HolypawAnim::FTeddyParts AHolypawCharacter::TeddyParts()
+{
+	HolypawAnim::FTeddyParts P;
+	P.Body = BodyMesh;
+	P.Head = HeadMesh;
+	P.EarL = EarL;
+	P.EarR = EarR;
+	P.PawL = PawL;
+	P.PawR = PawR;
+	P.Snout = Snout;
+	P.Belly = Belly;
+	P.EyeL = EyeL;
+	P.EyeR = EyeR;
+	P.Halo = HaloMesh;
+	return P;
+}
+
+void AHolypawCharacter::CelebrateConvert()
+{
+	HolypawAnim::PlayConvert(TeddyAnim);
+	HolypawAnim::PlayCelebrate(PartyAnim);
+}
+
 void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 {
 	if (Mode == EHolypawPawnMode::Title || Mode == EHolypawPawnMode::Pause)
 	{
 		return;
 	}
-	AnimT += DeltaSeconds;
-	BlinkT -= DeltaSeconds;
-	const float Speed = GetVelocity().Size();
-	const float Walk = FMath::Clamp(Speed / 700.f, 0.f, 1.2f);
-	const float Bob = FMath::Sin(AnimT * (7.f + Walk * 5.f)) * 6.f * FMath::Max(0.15f, Walk);
-	const float Squash = HurtPulse * 0.16f;
-	if (BodyMesh)
+	HolypawAnim::FTeddyInput In;
+	In.Speed = GetVelocity().Size();
+	In.bAirborne = GetCharacterMovement() && GetCharacterMovement()->IsFalling();
+	In.bInBattle = Mode == EHolypawPawnMode::Battle;
+	In.DeltaSeconds = DeltaSeconds;
+	HolypawAnim::TickTeddy(TeddyAnim, In);
+	if (HolypawAnim::IsHugging(TeddyAnim) && !TeddyAnim.HugDir.IsNearlyZero())
 	{
-		BodyMesh->SetRelativeLocation(BodyBase + FVector(0.f, 0.f, Bob - Squash * 8.f));
-		BodyMesh->SetRelativeScale3D(FVector(0.85f + Squash, 0.7f + Squash, 0.75f - Squash));
+		const FRotator Want(0.f, TeddyAnim.HugDir.Rotation().Yaw, 0.f);
+		SetActorRotation(FMath::RInterpTo(GetActorRotation(), Want, DeltaSeconds, 14.f));
 	}
-	if (HeadMesh)
+	if (HolypawAnim::IsHugging(TeddyAnim) && TeddyAnim.bHasHugTarget)
 	{
-		HeadMesh->SetRelativeLocation(HeadBase + FVector(0.f, 0.f, Bob * 0.6f));
+		FVector Here = GetActorLocation();
+		FVector There = TeddyAnim.HugTarget;
+		There.Z = Here.Z;
+		const float Dist = FVector::Dist2D(Here, There);
+		if (Dist > HolypawAnim::HugStandOff)
+		{
+			const FVector Step = (There - Here).GetSafeNormal2D() * FMath::Min(Dist - HolypawAnim::HugStandOff, 520.f * DeltaSeconds);
+			AddActorWorldOffset(FVector(Step.X, Step.Y, 0.f));
+		}
 	}
-	const float Ear = FMath::Sin(AnimT * 5.5f) * (8.f + Walk * 10.f);
-	if (EarL)
-	{
-		EarL->SetRelativeRotation(EarLRot + FRotator(Ear, 0.f, HugAnim * -12.f));
-	}
-	if (EarR)
-	{
-		EarR->SetRelativeRotation(EarRRot + FRotator(-Ear, 0.f, HugAnim * 12.f));
-	}
-	if (PawL)
-	{
-		PawL->SetRelativeRotation(PawLRot + FRotator(HugAnim * 28.f, 0.f, HugAnim * 18.f));
-	}
-	if (PawR)
-	{
-		PawR->SetRelativeRotation(PawRRot + FRotator(HugAnim * 28.f, 0.f, HugAnim * -18.f));
-	}
-	float EyeY = 1.f;
-	if (BlinkT < 0.12f)
-	{
-		EyeY = 0.12f;
-	}
-	if (BlinkT < 0.f)
-	{
-		BlinkT = 2.2f + FMath::FRandRange(0.f, 2.5f);
-	}
-	if (EyeL)
-	{
-		EyeL->SetRelativeScale3D(FVector(EyeLScale.X, EyeLScale.Y, EyeLScale.Z * EyeY));
-	}
-	if (EyeR)
-	{
-		EyeR->SetRelativeScale3D(FVector(EyeRScale.X, EyeRScale.Y, EyeRScale.Z * EyeY));
-	}
+	HolypawAnim::ApplyTeddyPose(HolypawAnim::EvaluateTeddy(TeddyAnim, TeddyRest), TeddyParts());
 }
 
 FString AHolypawCharacter::GetClockLine() const

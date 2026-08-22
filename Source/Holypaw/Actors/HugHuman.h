@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
 #include "HolypawTypes.h"
+#include "Anim/HolypawProcAnim.h"
 #include "HugHuman.generated.h"
 
 UCLASS()
@@ -61,17 +62,20 @@ public:
 
 	void BecomeBeliever(bool bCelebrate = true);
 	void KneelInWorship();
+	void PlayConvertBow();
 	void ReceiveHug();
 	void NoticeConvert(const FVector& At);
+	void ReceiveHug(const FVector& FromWorld);
 	void ResetFaith();
 	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
 	bool IsKnelt() const { return bKnelt; }
 	bool IsClapping() const;
+	bool IsAnimLocked() const;
 	FString GetSkepticLine(int32 Pct) const;
 	FString GetBelieverLine() const;
 
 protected:
 	bool bKnelt = false;
-	float HugPulse = 0.f;
-	FVector BaseScale = FVector::OneVector;
+	HolypawAnim::FHumanState HumanAnim;
+	HolypawAnim::FHumanRest HumanRest;
 };

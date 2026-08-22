@@ -55,12 +55,26 @@ void AHugHuman::BeginPlay()
 {
 	Super::BeginPlay();
 	Mesh->SetWorldScale3D(FVector(0.45f, 0.35f, 1.05f));
-	BaseScale = GetActorScale3D();
 	HomeLocation = GetActorLocation();
 	HomeZone = HolypawFaith::ZoneAt(this, HomeLocation);
 	bHomeZoneReady = true;
 	bTendsStall = PersonName.ToString().Contains(TEXT("Shopkeep")) || PersonName.ToString().Contains(TEXT("Hawker"));
 	ParadeSalt = FMath::Fmod(static_cast<float>(GetTypeHash(PersonName.ToString())) * 0.017f + FMath::Abs(HomeLocation.X) * 0.00013f, 4.f);
+	HumanRest.Scale = GetActorScale3D();
+	HumanRest.ActorRot = GetActorRotation();
+	if (HeadMesh)
+	{
+		HumanRest.HeadLoc = HeadMesh->GetRelativeLocation();
+		HumanRest.HeadRot = HeadMesh->GetRelativeRotation();
+	}
+	if (ArmL)
+	{
+		HumanRest.ArmLLoc = ArmL->GetRelativeLocation();
+	}
+	if (ArmR)
+	{
+		HumanRest.ArmRLoc = ArmR->GetRelativeLocation();
+	}
 	if (ShapeMat)
 	{
 		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
@@ -82,17 +96,15 @@ void AHugHuman::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	BounceT += DeltaSeconds;
-	if (HugPulse > 0.f)
+	HumanAnim.bBeliever = bBeliever;
+	HolypawAnim::TickHuman(HumanAnim, DeltaSeconds);
+	const HolypawAnim::FHumanPose Pose = HolypawAnim::EvaluateHuman(HumanAnim, HumanRest);
+	SetActorScale3D(Pose.Scale);
+	if (HeadMesh)
 	{
-		HugPulse = FMath::Max(0.f, HugPulse - DeltaSeconds);
+		HeadMesh->SetRelativeLocation(Pose.HeadLoc);
+		HeadMesh->SetRelativeRotation(Pose.HeadRot);
 	}
-	if (ClapBurst > 0.f)
-	{
-		ClapBurst = FMath::Max(0.f, ClapBurst - DeltaSeconds);
-	}
-	const float Bounce = bBeliever ? 0.06f * FMath::Sin(BounceT * 6.f) : 0.02f * FMath::Sin(BounceT * 2.4f);
-	const float Squeeze = HugPulse > 0.f ? 0.12f * HugPulse : 0.f;
-	SetActorScale3D(BaseScale * FVector(1.f + Squeeze, 1.f + Squeeze, 1.f + Bounce - Squeeze * 0.4f));
 
 	float Hour = 12.f;
 	bool bDusk = false;
@@ -102,20 +114,46 @@ void AHugHuman::Tick(float DeltaSeconds)
 		bDusk = GI->IsDusk();
 	}
 	const int32 Hearts = HolypawFaith::HeartsAt(this, HomeZone);
-	const bool bClap = IsClapping();
+	const bool bClap = IsClapping() && !Pose.bHoldFeet;
 	if (ArmL && ArmR)
 	{
-		const float Wrap = (HugPulse > 0.f) ? 28.f : (bBeliever ? 8.f : 0.f);
-		const float Rate = HolypawFaith::ClapRate(Hearts, bDusk);
-		const float Clap = bClap ? 42.f * FMath::Abs(FMath::Sin(BounceT * Rate)) : 0.f;
-		ArmL->SetRelativeRotation(FRotator(Clap, 0.f, Wrap));
-		ArmR->SetRelativeRotation(FRotator(Clap, 0.f, -Wrap));
-		ArmL->SetRelativeLocation(FVector(8.f + Clap * 0.15f, 22.f, 18.f + Clap * 0.35f));
-		ArmR->SetRelativeLocation(FVector(8.f + Clap * 0.15f, -22.f, 18.f + Clap * 0.35f));
+		if (bClap)
+		{
+			const float Rate = HolypawFaith::ClapRate(Hearts, bDusk);
+			const float Clap = 42.f * FMath::Abs(FMath::Sin(BounceT * Rate));
+			ArmL->SetRelativeRotation(FRotator(Clap, 0.f, 8.f));
+			ArmR->SetRelativeRotation(FRotator(Clap, 0.f, -8.f));
+			ArmL->SetRelativeLocation(FVector(8.f + Clap * 0.15f, 22.f, 18.f + Clap * 0.35f));
+			ArmR->SetRelativeLocation(FVector(8.f + Clap * 0.15f, -22.f, 18.f + Clap * 0.35f));
+		}
+		else
+		{
+			ArmL->SetRelativeRotation(Pose.ArmL);
+			ArmL->SetRelativeLocation(Pose.ArmLLoc);
+			ArmR->SetRelativeRotation(Pose.ArmR);
+			ArmR->SetRelativeLocation(Pose.ArmRLoc);
+		}
+	}
+
+	if (CelebrateHold > 0.f)
+	{
+		CelebrateHold = FMath::Max(0.f, CelebrateHold - DeltaSeconds);
+	}
+	if (Pose.bHoldFeet || IsKnelt())
+	{
+		SetActorRotation(Pose.ActorRot);
+		FVector Feet = GetActorLocation();
+		Feet.Z = HomeLocation.Z + Pose.DropZ;
+		SetActorLocation(Feet);
+		return;
 	}
 
 	HolypawSchedule::TickHuman(*this, DeltaSeconds, Hour);
 	// Day parade / dusk chapel / night inn: bBeliever && !bKnelt is the old beat; TickHuman owns it now.
+	HumanRest.ActorRot = FRotator(0.f, GetActorRotation().Yaw, 0.f);
+	FVector Feet = GetActorLocation();
+	Feet.Z = HomeLocation.Z + Pose.DropZ;
+	SetActorLocation(Feet);
 }
 
 FText AHugHuman::GetPrompt() const
@@ -144,7 +182,12 @@ bool AHugHuman::Interact(AHolypawCharacter* InstigatorPawn)
 
 void AHugHuman::ReceiveHug()
 {
-	HugPulse = 1.f;
+	HolypawAnim::PlayHumanHug(HumanAnim);
+}
+
+void AHugHuman::ReceiveHug(const FVector& FromWorld)
+{
+	HolypawAnim::PlayHumanHug(HumanAnim, FromWorld - GetActorLocation());
 }
 
 void AHugHuman::NoticeConvert(const FVector& At)
@@ -153,13 +196,13 @@ void AHugHuman::NoticeConvert(const FVector& At)
 	{
 		return;
 	}
-	HugPulse = FMath::Max(HugPulse, 0.7f);
 	NoticeHold = 1.5f;
 	const FVector Step = At - GetActorLocation();
 	if (Step.SizeSquared2D() > 4.f)
 	{
 		NoticeYaw = FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X));
 	}
+	HolypawAnim::PlayHumanHug(HumanAnim, At - GetActorLocation());
 }
 
 FString AHugHuman::GetSkepticLine(int32 Pct) const
@@ -206,6 +249,11 @@ FString AHugHuman::GetBelieverLine() const
 	return FString::Printf(TEXT("%s: \"%s\""), *Who, *Quote);
 }
 
+bool AHugHuman::IsAnimLocked() const
+{
+	return HumanAnim.HugT > 0.f || HumanAnim.BowDelay > 0.f || HumanAnim.Kneel != HolypawAnim::EHumanKneel::None;
+}
+
 bool AHugHuman::IsClapping() const
 {
 	if (!bBeliever || bKnelt)
@@ -241,10 +289,11 @@ void AHugHuman::BecomeBeliever(const bool bCelebrate)
 {
 	bBeliever = true;
 	ConvertProgress = 100.f;
+	HumanAnim.bBeliever = true;
 	if (bCelebrate)
 	{
 		ClapBurst = 2.6f;
-		CelebrateHold = 1.25f;
+		CelebrateHold = 1.7f;
 		ParadeKick = 8.5f;
 	}
 	if (Sash)
@@ -271,6 +320,12 @@ void AHugHuman::BecomeBeliever(const bool bCelebrate)
 	}
 }
 
+void AHugHuman::PlayConvertBow()
+{
+	BecomeBeliever();
+	HolypawAnim::PlayConvertBow(HumanAnim);
+}
+
 void AHugHuman::KneelInWorship()
 {
 	if (bKnelt)
@@ -283,26 +338,21 @@ void AHugHuman::KneelInWorship()
 	CelebrateHold = 0.f;
 	ClapBurst = 0.f;
 	NoticeHold = 0.f;
-	AddActorWorldRotation(FRotator(35.f, 0.f, 0.f));
-	BaseScale = FVector(1.f, 1.f, 0.72f);
-	SetActorScale3D(BaseScale);
+	HolypawAnim::PlayWorshipKneel(HumanAnim);
 }
 
 void AHugHuman::ResetFaith()
 {
 	bBeliever = false;
 	ConvertProgress = 0.f;
-	if (bKnelt)
-	{
-		SetActorRotation(FRotator::ZeroRotator);
-	}
 	bKnelt = false;
 	ClapBurst = 0.f;
 	ParadeKick = 0.f;
 	CelebrateHold = 0.f;
 	NoticeHold = 0.f;
-	BaseScale = FVector::OneVector;
-	SetActorScale3D(BaseScale);
+	HolypawAnim::ResetHumanMotion(HumanAnim);
+	SetActorRotation(HumanRest.ActorRot);
+	SetActorScale3D(HumanRest.Scale);
 	SetActorLocation(HomeLocation);
 	SetSolidColor(ShirtColor);
 	if (Sash)
@@ -329,5 +379,6 @@ void AHugHuman::RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt)
 	if (bNowKnelt)
 	{
 		KneelInWorship();
+		HumanAnim.KneelT = HolypawAnim::KneelSeconds;
 	}
 }

@@ -60,6 +60,23 @@ void AWildFluffy::BeginPlay()
 		}
 	}
 	WanderT = FMath::FRandRange(0.5f, 2.f);
+	MeshBase = Mesh ? Mesh->GetRelativeLocation() : FVector::ZeroVector;
+	if (EarL)
+	{
+		FluffyRest.EarL = EarL->GetRelativeRotation();
+	}
+	if (EarR)
+	{
+		FluffyRest.EarR = EarR->GetRelativeRotation();
+	}
+	if (Tail)
+	{
+		FluffyRest.TailLoc = Tail->GetRelativeLocation();
+	}
+	if (Mesh)
+	{
+		FluffyRest.BodyScale = Mesh->GetRelativeScale3D();
+	}
 }
 
 FText AWildFluffy::GetPrompt() const
@@ -83,6 +100,7 @@ bool AWildFluffy::Interact(AHolypawCharacter* InstigatorPawn)
 void AWildFluffy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	AnimClock += DeltaSeconds;
 	if (bRecruited)
 	{
 		return;
@@ -101,5 +119,25 @@ void AWildFluffy::Tick(float DeltaSeconds)
 	else
 	{
 		SetActorLocation(Next);
+	}
+
+	const HolypawAnim::FFluffyPose Pose = HolypawAnim::EvaluateFluffy(FluffyRest, AnimClock, Vel, bRecruited);
+	if (EarL)
+	{
+		EarL->SetRelativeRotation(Pose.EarL);
+	}
+	if (EarR)
+	{
+		EarR->SetRelativeRotation(Pose.EarR);
+	}
+	if (Tail)
+	{
+		Tail->SetRelativeLocation(Pose.TailLoc);
+		Tail->SetRelativeRotation(Pose.TailRot);
+	}
+	if (Mesh)
+	{
+		Mesh->SetRelativeScale3D(Pose.BodyScale);
+		Mesh->SetRelativeLocation(MeshBase + FVector(0.f, 0.f, Pose.BobZ));
 	}
 }
