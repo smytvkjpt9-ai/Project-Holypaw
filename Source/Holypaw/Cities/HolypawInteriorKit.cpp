@@ -148,6 +148,17 @@ void AHolypawWorldBuilder::DressShopRoom(const FVector& Origin)
 	SpawnLamp(this, Origin + FVector(0.f, 20.f, 188.f), FLinearColor(1.f, 0.88f, 0.55f), 3000.f);
 }
 
+void AHolypawWorldBuilder::DressOpenStall(const FVector& Origin)
+{
+	PlaceCube(Origin + FVector(0.f, 36.f, 10.f), FVector(1.7f, 1.15f, 0.1f), FLinearColor(0.78f, 0.62f, 0.38f), MakeName(TEXT("KioskDeck")));
+	PlaceCube(Origin + FVector(0.f, 88.f, 52.f), FVector(1.8f, 0.45f, 0.7f), FLinearColor(0.62f, 0.42f, 0.28f), MakeName(TEXT("ShopCounter")));
+	PlaceCube(Origin + FVector(0.f, 18.f, 142.f), FVector(2.05f, 1.45f, 0.08f), FLinearColor(0.95f, 0.55f, 0.62f), MakeName(TEXT("KioskAwning")));
+	PlaceCube(Origin + FVector(-72.f, -22.f, 78.f), FVector(0.12f, 0.12f, 1.35f), FLinearColor(0.42f, 0.3f, 0.22f), MakeName(TEXT("AwningPole")));
+	PlaceCube(Origin + FVector(72.f, -22.f, 78.f), FVector(0.12f, 0.12f, 1.35f), FLinearColor(0.42f, 0.3f, 0.22f), MakeName(TEXT("AwningPole")));
+	PlaceCube(Origin + FVector(68.f, 18.f, 40.f), FVector(0.55f, 0.45f, 0.45f), FLinearColor(0.98f, 0.82f, 0.55f), MakeName(TEXT("BunBasket")));
+	PlaceCube(Origin + FVector(-52.f, 52.f, 68.f), FVector(0.22f, 0.22f, 0.55f), FLinearColor(0.95f, 0.55f, 0.72f), MakeName(TEXT("RibbonSpool")));
+}
+
 void AHolypawWorldBuilder::DressMillHall(const FVector& Origin)
 {
 	const FLinearColor Wall(0.58f, 0.54f, 0.5f);
@@ -208,6 +219,10 @@ bool AHolypawWorldBuilder::IsPlayerIndoors(const FVector& WorldPos) const
 	{
 		const AFaithStall* Stall = *StallIt;
 		if (!Stall)
+		{
+			continue;
+		}
+		if (Stall->bOpenAir)
 		{
 			continue;
 		}

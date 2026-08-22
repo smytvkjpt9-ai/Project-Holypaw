@@ -117,12 +117,26 @@ namespace HolypawAudio
 			Seconds = 0.22f;
 			Volume = 0.32f;
 		}
-		else if (Cue == TEXT("Theme"))
+		else if (Cue == TEXT("DuskHymn"))
 		{
-			FreqA = 220.f;
-			FreqB = 330.f;
-			Seconds = 0.4f;
-			Volume = 0.22f;
+			FreqA = 196.f;
+			FreqB = 294.f;
+			Seconds = 0.85f;
+			Volume = 0.42f;
+		}
+		else if (Cue == TEXT("BannerDown"))
+		{
+			FreqA = 110.f;
+			FreqB = 165.f;
+			Seconds = 0.38f;
+			Volume = 0.4f;
+		}
+		else if (Cue == TEXT("ShopOpen"))
+		{
+			FreqA = 523.f;
+			FreqB = 784.f;
+			Seconds = 0.22f;
+			Volume = 0.4f;
 		}
 
 		TArray<uint8> PCM;
@@ -270,6 +284,74 @@ namespace HolypawAudio
 		Comp->SetSound(Pad);
 		const float Mix = (GI && GI->Settings) ? GI->Settings->MasterVolume : 1.f;
 		Comp->SetVolumeMultiplier(Mix * (bInterior ? 0.7f : 0.55f));
+		Comp->Play();
+		if (GI)
+		{
+			GI->KeepWave(Pad);
+		}
+	}
+
+	void PlayHymn(const UObject* WorldContext, AActor* Owner, TObjectPtr<UAudioComponent>& Comp)
+	{
+		UHolypawGameInstance* GI = UHolypawGameInstance::Get(WorldContext);
+		if (GI && GI->Settings && GI->Settings->bMuted)
+		{
+			StopTheme(Comp.Get());
+			return;
+		}
+		if (!Owner)
+		{
+			return;
+		}
+		TArray<uint8> PCM;
+		const float Seconds = 4.8f;
+		const int32 SampleRate = 16000;
+		const int32 N = FMath::RoundToInt(static_cast<float>(SampleRate) * Seconds);
+		PCM.SetNumZeroed(N * sizeof(int16));
+		int16* Samples = reinterpret_cast<int16*>(PCM.GetData());
+		const float FreqA = 196.f;
+		const float FreqB = 247.f;
+		const float FreqC = 294.f;
+		const float FreqD = 392.f;
+		for (int32 I = 0; I < N; ++I)
+		{
+			const float T = static_cast<float>(I) / static_cast<float>(SampleRate);
+			const float Fade = FMath::Min(T / 0.16f, FMath::Min(1.f, (Seconds - T) / 0.16f));
+			const float Breath = 0.72f + 0.28f * FMath::Sin(2.f * PI * 0.22f * T);
+			const float Osc =
+				0.28f * FMath::Sin(2.f * PI * FreqA * T) +
+				0.24f * FMath::Sin(2.f * PI * FreqB * T) +
+				0.22f * FMath::Sin(2.f * PI * FreqC * T) +
+				0.16f * FMath::Sin(2.f * PI * FreqD * T);
+			Samples[I] = static_cast<int16>(FMath::Clamp(Osc * Fade * Breath * 0.2f, -1.f, 1.f) * 22000.f);
+		}
+		USoundWaveProcedural* Pad = NewObject<USoundWaveProcedural>(Owner);
+		if (!Pad)
+		{
+			return;
+		}
+		Pad->SetSampleRate(SampleRate);
+		Pad->NumChannels = 1;
+		Pad->Duration = Seconds;
+		Pad->SoundGroup = SOUNDGROUP_Default;
+		Pad->bLooping = true;
+		Pad->QueueAudio(PCM.GetData(), PCM.Num());
+		if (!Comp)
+		{
+			Comp = NewObject<UAudioComponent>(Owner, TEXT("DuskHymn"));
+			if (!Comp)
+			{
+				return;
+			}
+			Comp->CreationMethod = EComponentCreationMethod::Instance;
+			Owner->AddInstanceComponent(Comp);
+			Comp->RegisterComponent();
+			Comp->bAutoActivate = false;
+		}
+		StopTheme(Comp.Get());
+		Comp->SetSound(Pad);
+		const float Mix = (GI && GI->Settings) ? GI->Settings->MasterVolume : 1.f;
+		Comp->SetVolumeMultiplier(Mix * 0.62f);
 		Comp->Play();
 		if (GI)
 		{

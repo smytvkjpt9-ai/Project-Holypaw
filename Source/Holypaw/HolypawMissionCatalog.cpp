@@ -36,8 +36,8 @@ namespace HolypawCatalog
 			TEXT("Compass (top-left) and N map. City is far east. Plaza, Market, Cloth Quarter, Harbor, Quiet Rows."));
 
 		Add(EHolypawMission::ConvertThree, TEXT("6. Soft Conversion"),
-			TEXT("Hug three people until they believe (100%). Their last serious thought falls out. This is the whole bit."),
-			TEXT("Baker, Acolyte, Mayor, Skeptic, and others. Hearts counter is on the HUD."));
+			TEXT("Hug three people until they believe (100%). Hearts must change Ribbon: shops open, mill banners come down, dusk hymn."),
+			TEXT("Baker, Acolyte, Mayor, Skeptic, and others. First Heart opens stalls. Third Heart drops mill banners."));
 
 		Add(EHolypawMission::PolyCourt, TEXT("7. Poly Court"),
 			TEXT("Defeat Silk Magistrate, the Poly Mill's city judge, north of the plaza."),
