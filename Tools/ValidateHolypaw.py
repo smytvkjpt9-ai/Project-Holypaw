@@ -255,6 +255,74 @@ if 'ActionName="TitleConfirm"' not in INPUT:
 if "UHolypawTitleWidget" not in HUD:
     errors.append("HUD missing title overlay")
 
+UI_SUITE = (
+    "Source/Holypaw/UI/HolypawUiTheme.cpp",
+    "Source/Holypaw/UI/HolypawUiIcons.cpp",
+    "Source/Holypaw/UI/HolypawUiCopy.cpp",
+    "Source/Holypaw/UI/HolypawPauseWidget.cpp",
+    "Source/Holypaw/UI/HolypawMapWidget.cpp",
+    "Source/Holypaw/UI/HolypawJournalWidget.cpp",
+    "Source/Holypaw/UI/HolypawTalkWidget.cpp",
+    "Source/Holypaw/UI/HolypawShopWidget.cpp",
+    "Source/Holypaw/UI/HolypawPlayHudWidget.cpp",
+)
+for path in UI_SUITE:
+    if not (ROOT / path).exists():
+        errors.append(f"missing {path}")
+
+THEME = (ROOT / "Source/Holypaw/UI/HolypawUiTheme.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiTheme.cpp").exists() else ""
+ICONS = (ROOT / "Source/Holypaw/UI/HolypawUiIcons.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiIcons.cpp").exists() else ""
+COPY = (ROOT / "Source/Holypaw/UI/HolypawUiCopy.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiCopy.cpp").exists() else ""
+MAPW = (ROOT / "Source/Holypaw/UI/HolypawMapWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawMapWidget.cpp").exists() else ""
+TITLEW = (ROOT / "Source/Holypaw/UI/HolypawTitleWidget.cpp").read_text()
+BATTLEW = (ROOT / "Source/Holypaw/UI/HolypawBattleWidget.cpp").read_text()
+PAUSEW = (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").exists() else ""
+TALKW = (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").exists() else ""
+SHOPW = (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").exists() else ""
+PLAYW = (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").exists() else ""
+
+if "DashRect" not in THEME or "CornerKnots" not in THEME:
+    errors.append("UI theme missing stitched panel chrome")
+if "DrawIcon" not in ICONS or "EHolypawUiIcon::Heart" not in ICONS or "EHolypawUiIcon::Lantern" not in ICONS:
+    errors.append("UI icons missing stitched heart/lantern glyphs")
+if 'NSLOCTEXT("HolypawUI"' not in COPY:
+    errors.append("UI copy missing HolypawUI loc keys")
+if "HeartsHeat" not in MAPW or "WorldToMap" not in MAPW:
+    errors.append("map widget missing Hearts heat atlas")
+if "GetPeakCenter" not in MAPW:
+    errors.append("map widget missing cottage/peak pins")
+if "EHolypawPawnMode::Pause" in TITLEW:
+    errors.append("title widget still owns pause — pause is its own product surface")
+if "UHolypawPauseWidget" not in HUD:
+    errors.append("HUD missing pause overlay")
+if "UHolypawMapWidget" not in HUD:
+    errors.append("HUD missing map overlay")
+if "UHolypawJournalWidget" not in HUD:
+    errors.append("HUD missing journal overlay")
+if "UHolypawTalkWidget" not in HUD:
+    errors.append("HUD missing talk overlay")
+if "UHolypawShopWidget" not in HUD:
+    errors.append("HUD missing shop overlay")
+if "UHolypawPlayHudWidget" not in HUD:
+    errors.append("HUD missing play HUD overlay")
+for leftover in ("Survey Map", "Bear Faith Journal", "Testimony", "Faith stall"):
+    if leftover in HUD:
+        errors.append(f"HUD still dumping leftover '{leftover}' strings")
+if "IconForAbility" not in BATTLEW:
+    errors.append("battle overlay missing stitched ability icons")
+if "VerbRow" not in TALKW:
+    errors.append("talk overlay missing verb row")
+if "ShopDiscount" not in SHOPW and "Hearts discount" not in SHOPW:
+    errors.append("shop overlay missing Hearts discount")
+if "Miracle" not in PLAYW:
+    errors.append("play HUD missing Miracle bar")
+if "GetTalkSpeaker" not in (ROOT / "Source/Holypaw/Character/HolypawCharacter.h").read_text():
+    errors.append("character missing GetTalkSpeaker for talk surface")
+if "GetPeakCenter" not in (ROOT / "Source/Holypaw/HolypawWorldBuilder.h").read_text():
+    errors.append("world missing GetPeakCenter for map pins")
+if "Paused" not in PAUSEW:
+    errors.append("pause widget missing paused title")
+
 if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
     errors.append("missing procedural audio")
 if not (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").exists():

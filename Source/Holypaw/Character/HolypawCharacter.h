@@ -162,6 +162,8 @@ public:
 	bool IsShopOpen() const { return bShopOpen; }
 	bool IsInventoryOpen() const { return bInventoryOpen; }
 	TArray<FString> GetTalkLines() const;
+	FString GetTalkSpeaker() const { return TalkSpeaker; }
+	FString GetTalkBody() const { return TalkBody; }
 	TArray<FString> GetShopLines() const;
 	TArray<FString> GetInventoryLines() const;
 	int32 GetLastDamageDealt() const { return LastDamageDealt; }
