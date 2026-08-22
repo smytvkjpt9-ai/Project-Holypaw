@@ -152,6 +152,8 @@ protected:
 	void DressChapelRoom(const FVector& Origin);
 	void DressWorkshopRoom(const FVector& Origin);
 	void DressCottageRooms(const FVector& Origin, float GroundZ);
+	void DressShopRoom(const FVector& Origin);
+	void DressMillHall(const FVector& Origin);
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY);

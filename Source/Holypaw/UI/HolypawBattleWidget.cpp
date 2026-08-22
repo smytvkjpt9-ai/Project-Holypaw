@@ -90,7 +90,8 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(40.f, Size.Y - 310.f), FVector2D(440.f, 250.f), FLinearColor(0.10f, 0.07f, 0.14f, 0.82f));
 		const int32 Page = P->GetBattlePage();
 		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(56.f, Size.Y - 298.f),
-			Page == 0 ? TEXT("Tab  overflow page") : TEXT("Tab  basic page"), FLinearColor(1.f, 0.85f, 0.55f), 0.85f);
+			Page == 0 ? TEXT("Tab  overflow page") : (Page == 1 ? TEXT("Tab  party tricks") : TEXT("Tab  basic page")),
+			FLinearColor(1.f, 0.85f, 0.55f), 0.85f);
 		for (int32 Slot = 1; Slot <= 6; ++Slot)
 		{
 			const FHolypawAbilityDef* A = HolypawCatalog::FindAbilityBySlot(Page, Slot);
@@ -152,9 +153,10 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 			int32 I = 0;
 			for (const FPartyMember& M : P->Party->Members)
 			{
-				PaintText(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 200.f, 292.f + I * 36.f),
-					FString::Printf(TEXT("%d  %s   %s   ATK %d"), I + 1, *M.DisplayName.ToString(), *M.Rarity, M.Attack),
-					FLinearColor(0.95f, 0.85f, 1.f), 1.05f);
+				PaintText(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 220.f, 292.f + I * 36.f),
+					FString::Printf(TEXT("%d  %s   %s   ATK %d   %s"), I + 1, *M.DisplayName.ToString(), *M.Rarity, M.Attack,
+						UPartyComponent::RoleLabel(M.Role)),
+					FLinearColor(0.95f, 0.85f, 1.f), 1.0f);
 				++I;
 			}
 		}

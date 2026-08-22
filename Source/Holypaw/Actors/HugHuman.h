@@ -25,6 +25,10 @@ public:
 	FLinearColor ShirtColor = FLinearColor(0.55f, 0.5f, 0.62f);
 
 	FVector HomeLocation = FVector::ZeroVector;
+	FVector ChapelGoal = FVector::ZeroVector;
+	FVector InnGoal = FVector::ZeroVector;
+	bool bAnchorsReady = false;
+	float BounceT = 0.f;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
@@ -51,7 +55,6 @@ public:
 
 protected:
 	bool bKnelt = false;
-	float BounceT = 0.f;
 	float HugPulse = 0.f;
 	FVector BaseScale = FVector::OneVector;
 };

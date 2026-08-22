@@ -69,7 +69,7 @@ Wild biomes fill the land between cities: Stuffed Park, Nursery Hills, Cozy Home
 
 ## Combat (UMG)
 
-Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands **1–6** on the current page. **Tab in battle** cycles the basic page (Slap / Beam / Party / Flee / Guard / Hymn) and the overflow page (Unstuff / Button Beam / Deep Stitch / Poly Rip / Lullaby / Seam Guard). Slap builds a combo; crits **stagger** and hit-stop. Elites and bosses enter **phase two** under half stuffing; campaign bosses run an authored extra in `HolypawBossScript`. Beam and Button Beam slip armor plates. Frost / poison / hymn shield / rip DoT / mill polyester show on the overlay.
+Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands **1–6** on the current page. **Tab in battle** cycles three pages: basics, overflow (Unstuff / Button Beam / …), and party tricks (Cheer / Tuck / Fluff Burst / Mill Hymn / Ribbon Bind / Spare Bun). Recruited fluffies have **roles** (Choir, Brace, Ripper, Scout) that change Party Assault, flee, and heals. Elites and bosses enter **phase two**; campaign bosses run `HolypawBossScript`. Frost / poison / hymn shield / rip DoT / mill polyester show on the overlay.
 
 ## Three skill trees (K, Tab to cycle)
 
@@ -116,4 +116,4 @@ Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Conv
 
 Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Some believers have a **third quiet line** if your Faith is high enough. Journal (**J**) lists errands across Home Sewn, Globe Trek, Old World, and the Sand Belt.
 
-Dressed cities: **all 26**. Each has districts, an inn, a font or chapel, a pickup, and an errand. Inns, chapels, and workshops are **walk-in rooms** (floor, walls, doorway, furniture) with the old E-pad inside; the forest cottage opens the same way. Far cities **stream in** when you walk or lantern-hop within ~1.5× city radius (Ribbon dresses at Play so the opening road still lands in a finished town). Talk runs through `HolypawDialogueVM`. Combat incoming specials, lullaby, hit-stop, ability pages, and boss kits run through `HolypawBattleDirector` + `HolypawBossScript`. City theme pads are procedural sines (TEMP — swap for WAV on your PC). Still not schedules, Nanite, or a Shipping `.exe`.
+Dressed cities: **all 26**. Each has districts, a walk-in inn, a walk-in shop, a font or chapel, a pickup, and an errand. The **Poly Mill** is a hall you enter (conveyors, vats, west door toward Ribbon). Humans follow a **day / dusk / night** beat: wander, chapel hymn, inn pile-in. Talk runs through `HolypawDialogueVM`. Combat pages, roles, and boss kits run through the director. City theme pads are procedural sines (TEMP). Still not 24 NPCs per city, Nanite, or a Shipping `.exe`.

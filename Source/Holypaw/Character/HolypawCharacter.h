@@ -282,6 +282,8 @@ protected:
 	int32 EnemyRipTurns = 0;
 	int32 MillTurns = 0;
 	bool bSeamBrace = false;
+	bool bPartyBrace = false;
+	bool bHeardChoirHour = false;
 	float ExploreArm = 540.f;
 	float BattleArm = 300.f;
 	FTimerHandle BattleTimer;

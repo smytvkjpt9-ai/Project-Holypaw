@@ -15,6 +15,7 @@ RIM = (ROOT / "Source/Holypaw/Cities/HolypawRimCities.cpp").read_text() if (ROOT
 INTERIOR = (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").exists() else ""
 STREAM = (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").read_text() if (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").exists() else ""
 BOSS = (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").exists() else ""
+SCHEDULE = (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").read_text() if (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").exists() else ""
 SKILLS = (ROOT / "Source/Holypaw/HolypawSkillCatalog.cpp").read_text()
 MISSIONS = (ROOT / "Source/Holypaw/HolypawMissionCatalog.cpp").read_text()
 CHAR = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
@@ -405,6 +406,17 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("TickHuman", SCHEDULE, "schedule"),
+    ("ChapelGoal", SCHEDULE, "schedule"),
+    ("DressShopRoom", INTERIOR, "interior kit"),
+    ("DressMillHall", INTERIOR, "interior kit"),
+    ("MillConveyor", INTERIOR, "interior kit"),
+    ("ShopCounter", INTERIOR, "interior kit"),
+    ("Floor Foreman", WORLD, "world"),
+    ("Shopkeep", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("RoleFor", (ROOT / "Source/Holypaw/Components/PartyComponent.cpp").read_text(), "party"),
+    ("fluffBurst", CHAR, "character"),
+    ("Choir hour", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")
