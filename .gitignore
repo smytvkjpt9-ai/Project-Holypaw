@@ -22,6 +22,9 @@ Saved/
 # Local engine path for Tools/BuildHolypaw.bat
 Tools/UE_PATH.txt
 
+# Local build log from BuildHolypaw.bat (keep folder)
+BuildHolypaw-last-run.txt
+
 # Local generated Content (keep folder)
 Content/Holypaw/Maps/
 Content/Holypaw/__ExternalActors__/

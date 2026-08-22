@@ -1,3 +1,4 @@
 @echo off
-rem Build HolypawEditor from the project root (no .sln required).
+title Build Holypaw
+cd /d "%~dp0"
 call "%~dp0Tools\BuildHolypaw.bat" %*
