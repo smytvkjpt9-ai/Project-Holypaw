@@ -23,7 +23,7 @@ int32 UHolypawPlayHudWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 		return Layer;
 	}
 
-	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer, HolypawUi::GetViewportCanvasSize(this)};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 
@@ -127,9 +127,17 @@ int32 UHolypawPlayHudWidget::NativePaint(const FPaintArgs& Args, const FGeometry
 	{
 		const FString Prompt = Pawn->GetPrompt().ToString();
 		const float PromptW = FMath::Min(420.f, FMath::Max(180.f, 40.f + HolypawUi::TextWidth(Prompt, 0.85f)));
-		Q.Chip(FVector2D((Size.X - PromptW) * 0.5f, Size.Y - 86.f), FVector2D(PromptW, 36.f),
+		Q.Chip(FVector2D((Size.X - PromptW) * 0.5f, Size.Y - 118.f), FVector2D(PromptW, 36.f),
 			EHolypawUiIcon::Key, Prompt, Pal.Rose);
 	}
+
+	const float FooterH = 34.f;
+	const float FooterY = Size.Y - FooterH - 10.f;
+	Q.Fill(FVector2D(16.f, FooterY), FVector2D(Size.X - 32.f, FooterH), Pal.Felt);
+	Q.Frame(FVector2D(16.f, FooterY), FVector2D(Size.X - 32.f, FooterH), Pal.Rose, 1.4f);
+	Q.Text(FVector2D(24.f, FooterY + 8.f),
+		TEXT("WASD move  ·  Mouse look  ·  Scroll / PageUp-Down zoom  ·  E interact  ·  J journal  ·  N map"),
+		Pal.Muted, 0.78f, Size.X - 48.f);
 
 	return Layer + 4;
 }

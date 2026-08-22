@@ -60,7 +60,7 @@ int32 UHolypawMapWidget::NativePaint(const FPaintArgs& Args, const FGeometry& Al
 		return Layer;
 	}
 
-	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer, HolypawUi::GetViewportCanvasSize(this)};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 	Q.Fill(FVector2D::ZeroVector, Size, Pal.Dim);

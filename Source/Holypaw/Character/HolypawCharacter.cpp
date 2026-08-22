@@ -459,11 +459,16 @@ void AHolypawCharacter::CameraZoom(float Value)
 	{
 		return;
 	}
+	AdjustCameraZoom(-Value * 60.f);
+}
+
+void AHolypawCharacter::AdjustCameraZoom(float DeltaArm)
+{
 	if (Mode != EHolypawPawnMode::Play && Mode != EHolypawPawnMode::Title)
 	{
 		return;
 	}
-	ExploreArm = FMath::Clamp(ExploreArm - Value * 48.f, ExploreArmMin, ExploreArmMax);
+	ExploreArm = FMath::Clamp(ExploreArm + DeltaArm, ExploreArmMin, ExploreArmMax);
 	if (SpringArm)
 	{
 		SpringArm->TargetArmLength = ExploreArm;

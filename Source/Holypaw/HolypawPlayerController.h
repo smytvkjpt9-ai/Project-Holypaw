@@ -16,4 +16,10 @@ public:
 	virtual void SetupInputComponent() override;
 
 	void OnEscape();
+	void ZoomIn();
+	void ZoomOut();
+
+protected:
+	void CameraZoomAxis(float Value);
+	void ApplyCameraZoom(float DeltaArm);
 };

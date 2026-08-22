@@ -4,6 +4,7 @@
 #include "UI/HolypawUiIcons.h"
 
 class FSlateWindowElementList;
+class UWidget;
 struct FGeometry;
 struct FSlateBrush;
 
@@ -38,6 +39,7 @@ namespace HolypawUi
 
 	const FPalette& Colors();
 	const FSlateBrush* WhiteBrush();
+	FVector2D GetViewportCanvasSize(const UWidget* Widget);
 
 	FLinearColor HeartsHeat(int32 Hearts);
 	FLinearColor WithAlpha(FLinearColor C, float A);
@@ -56,6 +58,7 @@ namespace HolypawUi
 		FSlateWindowElementList& Out;
 		const FGeometry& Geo;
 		int32 Layer = 0;
+		FVector2D ViewportSize = FVector2D::ZeroVector;
 
 		FVector2D Canvas() const;
 

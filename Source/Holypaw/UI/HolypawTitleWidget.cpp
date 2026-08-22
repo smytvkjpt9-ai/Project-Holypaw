@@ -23,7 +23,7 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 		return Layer;
 	}
 
-	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer, HolypawUi::GetViewportCanvasSize(this)};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 	if (Size.X < 8.f || Size.Y < 8.f)

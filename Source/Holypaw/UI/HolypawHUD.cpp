@@ -10,10 +10,6 @@
 #include "UI/HolypawCodexWidget.h"
 #include "UI/HolypawUiCopy.h"
 #include "Character/HolypawCharacter.h"
-#include "Components/AffectionComponent.h"
-#include "Components/MissionComponent.h"
-#include "Actors/HostilePet.h"
-#include "HolypawCatalog.h"
 #include "HolypawGameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Canvas.h"
@@ -34,15 +30,58 @@ namespace
 		Widget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
 
-	bool TitleWidgetFillsViewport(const UHolypawTitleWidget* Title)
+	bool TitleScreenUsesCanvas(const APlayerController* PC)
 	{
-		if (!Title)
+		if (!PC)
 		{
-			return false;
+			return true;
 		}
-		const FVector2D Size = Title->GetCachedGeometry().GetLocalSize();
-		return Size.X >= 8.f && Size.Y >= 8.f;
+		int32 ViewX = 0;
+		int32 ViewY = 0;
+		PC->GetViewportSize(ViewX, ViewY);
+		return ViewX < 640 || ViewY < 480;
 	}
+}
+
+AHolypawHUD::AHolypawHUD()
+{
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+}
+
+void AHolypawHUD::StretchViewportWidget(UUserWidget* Widget, const FVector2D& ViewportSize) const
+{
+	if (!Widget || !Widget->IsInViewport() || ViewportSize.X < 8.f || ViewportSize.Y < 8.f)
+	{
+		return;
+	}
+	Widget->SetAnchorsInViewport(FAnchors(0.f, 0.f, 1.f, 1.f));
+	Widget->SetAlignmentInViewport(FVector2D(0.f, 0.f));
+	Widget->SetPositionInViewport(FVector2D::ZeroVector, false);
+	Widget->SetDesiredSizeInViewport(ViewportSize);
+}
+
+void AHolypawHUD::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	APlayerController* PC = GetOwningPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+	int32 ViewX = 0;
+	int32 ViewY = 0;
+	PC->GetViewportSize(ViewX, ViewY);
+	const FVector2D ViewportSize(static_cast<float>(ViewX), static_cast<float>(ViewY));
+	StretchViewportWidget(PlayHudWidget, ViewportSize);
+	StretchViewportWidget(OverlayWidget, ViewportSize);
+	StretchViewportWidget(MapWidget, ViewportSize);
+	StretchViewportWidget(JournalWidget, ViewportSize);
+	StretchViewportWidget(TalkWidget, ViewportSize);
+	StretchViewportWidget(ShopWidget, ViewportSize);
+	StretchViewportWidget(CodexWidget, ViewportSize);
+	StretchViewportWidget(TitleWidget, ViewportSize);
+	StretchViewportWidget(PauseWidget, ViewportSize);
 }
 
 void AHolypawHUD::BeginPlay()
@@ -56,7 +95,6 @@ void AHolypawHUD::BeginPlay()
 
 	PlayHudWidget = CreateWidget<UHolypawPlayHudWidget>(PC);
 	AddHolypawViewportWidget(PlayHudWidget, 10);
-	PlayHudWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 	OverlayWidget = CreateWidget<UHolypawBattleWidget>(PC);
 	AddHolypawViewportWidget(OverlayWidget, 20);
@@ -111,163 +149,55 @@ void AHolypawHUD::DrawTile(float X, float Y, float W, float H, const FLinearColo
 
 void AHolypawHUD::SyncViewportWidgets(const AHolypawCharacter* Pawn) const
 {
+	if (!Pawn)
+	{
+		return;
+	}
+	const bool bTitle = Pawn->Mode == EHolypawPawnMode::Title;
+	const bool bPause = Pawn->Mode == EHolypawPawnMode::Pause;
+	const bool bBattle = Pawn->Mode == EHolypawPawnMode::Battle;
+	const bool bBusyUi = Pawn->IsSkillsOpen() || Pawn->IsPartyOpen() || Pawn->IsInventoryOpen()
+		|| Pawn->IsMapOpen() || Pawn->IsJournalOpen() || Pawn->IsTalkOpen() || Pawn->IsShopOpen()
+		|| Pawn->IsCodexOpen();
+	const bool bOverlayPanel = Pawn->IsSkillsOpen() || Pawn->IsPartyOpen() || Pawn->IsInventoryOpen();
+
 	if (PlayHudWidget)
 	{
-		PlayHudWidget->SetVisibility(ESlateVisibility::Collapsed);
+		const bool bShow = !bTitle && !bPause && !bBattle && !bBusyUi;
+		PlayHudWidget->SetVisibility(bShow ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-	if (!OverlayWidget || !Pawn)
+	if (OverlayWidget)
 	{
-		return;
+		const bool bShow = bBattle || bOverlayPanel;
+		OverlayWidget->SetVisibility(bShow ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-	const bool bPanel = Pawn->IsSkillsOpen() || Pawn->IsPartyOpen() || Pawn->IsInventoryOpen();
-	const bool bShowOverlay = bPanel;
-	OverlayWidget->SetVisibility(bShowOverlay ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
-}
-
-void AHolypawHUD::DrawPlayCanvas(const AHolypawCharacter* Pawn) const
-{
-	if (!Canvas || !Pawn || !Pawn->Affection || Pawn->Mode != EHolypawPawnMode::Play)
+	if (MapWidget)
 	{
-		return;
+		MapWidget->SetVisibility(Pawn->IsMapOpen() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-
-	const float W = Canvas->SizeX;
-	const float H = Canvas->SizeY;
-	if (W < 8.f || H < 8.f)
+	if (JournalWidget)
 	{
-		return;
+		JournalWidget->SetVisibility(Pawn->IsJournalOpen() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-
-	DrawTile(16.f, 14.f, W - 32.f, 48.f, FLinearColor(0.10f, 0.06f, 0.12f), 0.88f);
-	DrawLabel(28.f, 26.f, HolypawCatalog::ZoneDisplayName(Pawn->CurrentZone), FLinearColor(0.96f, 0.92f, 0.88f), 0.95f);
-	DrawLabel(260.f, 26.f, FString::Printf(TEXT("HP %s"), *HolypawUiCopy::HpFrac(Pawn->HP, Pawn->HPMax).ToString()),
-		FLinearColor(0.72f, 0.92f, 0.78f), 0.9f);
-	DrawLabel(380.f, 26.f, FString::Printf(TEXT("AP %d  FP %d"), Pawn->Affection->AP, Pawn->Affection->FP),
-		FLinearColor(0.95f, 0.78f, 0.40f), 0.9f);
-	const FString Clock = Pawn->GetClockLine();
-	if (!Clock.IsEmpty())
+	if (TalkWidget)
 	{
-		DrawLabel(W - 220.f, 26.f, Clock, FLinearColor(0.95f, 0.78f, 0.40f), 0.85f);
+		TalkWidget->SetVisibility(Pawn->IsTalkOpen() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-	const FString Faith = Pawn->GetFaithLine();
-	if (!Faith.IsEmpty())
+	if (ShopWidget)
 	{
-		DrawLabel(28.f, 68.f, Faith, FLinearColor(0.86f, 0.52f, 0.62f), 0.78f);
+		ShopWidget->SetVisibility(Pawn->IsShopOpen() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-
-	if (Pawn->GetToastAlpha() > 0.f)
+	if (CodexWidget)
 	{
-		const float ToastW = FMath::Min(W - 80.f, 760.f);
-		DrawTile((W - ToastW) * 0.5f, 96.f, ToastW, 42.f, FLinearColor(0.08f, 0.04f, 0.10f), 0.92f);
-		DrawLabel((W - ToastW) * 0.5f + 16.f, 108.f, Pawn->GetToast(), FLinearColor(0.96f, 0.92f, 0.88f), 0.88f);
+		CodexWidget->SetVisibility(Pawn->IsCodexOpen() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-
-	if (!Pawn->GetPrompt().IsEmpty())
+	if (TitleWidget)
 	{
-		const FString Prompt = Pawn->GetPrompt().ToString();
-		const float PromptW = FMath::Clamp(40.f + Prompt.Len() * 9.f, 180.f, 520.f);
-		const float PX = (W - PromptW) * 0.5f;
-		const float PY = H - 118.f;
-		DrawTile(PX, PY, PromptW, 40.f, FLinearColor(0.42f, 0.22f, 0.36f), 0.94f);
-		DrawLabel(PX + 16.f, PY + 10.f, Prompt, FLinearColor(0.98f, 0.94f, 0.90f), 0.92f);
+		TitleWidget->SetVisibility(bTitle ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
-
-	DrawTile(16.f, H - 54.f, W - 32.f, 38.f, FLinearColor(0.08f, 0.04f, 0.10f), 0.82f);
-	DrawLabel(28.f, H - 42.f,
-		TEXT("WASD move  ·  Mouse look  ·  Scroll zoom  ·  E interact  ·  J journal  ·  N map  ·  1-6 battle"),
-		FLinearColor(0.72f, 0.66f, 0.78f), 0.78f);
-}
-
-void AHolypawHUD::DrawBattleCanvas(const AHolypawCharacter* Pawn) const
-{
-	if (!Canvas || !Pawn || Pawn->Mode != EHolypawPawnMode::Battle)
+	if (PauseWidget)
 	{
-		return;
-	}
-
-	const float W = Canvas->SizeX;
-	const float H = Canvas->SizeY;
-	if (W < 8.f || H < 8.f)
-	{
-		return;
-	}
-
-	const float BannerW = FMath::Min(1100.f, W - 40.f);
-	const float BannerX = (W - BannerW) * 0.5f;
-	const float BannerY = H * 0.07f;
-	DrawTile(BannerX, BannerY, BannerW, 118.f, FLinearColor(0.08f, 0.04f, 0.10f), 0.90f);
-
-	DrawLabel(BannerX + 20.f, BannerY + 14.f, HolypawUiCopy::BattleYou().ToString(), FLinearColor(0.86f, 0.52f, 0.62f), 1.0f);
-	DrawLabel(BannerX + 20.f, BannerY + 44.f, HolypawUiCopy::HpFrac(Pawn->HP, Pawn->HPMax).ToString(),
-		FLinearColor(0.72f, 0.92f, 0.78f), 0.92f);
-	DrawLabel(BannerX + BannerW * 0.5f - 16.f, BannerY + 38.f, HolypawUiCopy::BattleVs().ToString(),
-		FLinearColor(0.95f, 0.78f, 0.40f), 1.15f);
-
-	const AHostilePet* Enemy = Pawn->GetBattleEnemy();
-	const float EX = BannerX + BannerW - 320.f;
-	DrawLabel(EX, BannerY + 14.f, Enemy ? Enemy->DisplayName.ToString() : HolypawUiCopy::Hostile().ToString(),
-		FLinearColor(0.92f, 0.38f, 0.42f), 1.0f);
-	if (Enemy)
-	{
-		DrawLabel(EX, BannerY + 44.f, HolypawUiCopy::HpFrac(FMath::Max(0, Enemy->HP), Enemy->HPMax).ToString(),
-			FLinearColor(0.92f, 0.38f, 0.42f), 0.92f);
-		DrawLabel(EX, BannerY + 68.f,
-			FString::Printf(TEXT("%s · %s"), *HolypawCatalog::RankLabel(Enemy->Rank), *HolypawCatalog::SpecialLabel(Enemy->Special)),
-			FLinearColor(0.96f, 0.92f, 0.88f), 0.75f);
-	}
-
-	const float LogY = BannerY + 126.f;
-	DrawTile(BannerX, LogY, BannerW, 36.f, FLinearColor(0.16f, 0.09f, 0.18f), 0.92f);
-	DrawLabel(BannerX + 14.f, LogY + 8.f, Pawn->GetBattleLog(), FLinearColor(0.96f, 0.92f, 0.88f), 0.82f);
-	const FString Status = Pawn->GetBattleStatusLine();
-	if (!Status.IsEmpty())
-	{
-		DrawLabel(BannerX + BannerW * 0.55f, LogY + 8.f, Status, FLinearColor(0.72f, 0.92f, 0.78f), 0.75f);
-	}
-
-	const int32 Page = Pawn->GetBattlePage();
-	const float TrayW = FMath::Min(1080.f, W - 32.f);
-	const float TrayH = 186.f;
-	const float TrayX = (W - TrayW) * 0.5f;
-	const float TrayY = H - TrayH - 18.f;
-	DrawTile(TrayX, TrayY, TrayW, TrayH, FLinearColor(0.10f, 0.06f, 0.12f), 0.94f);
-
-	const TCHAR* PageName = Page == 1 ? TEXT("Overflow") : (Page == 2 ? TEXT("Party tricks") : TEXT("Basics"));
-	DrawLabel(TrayX + 16.f, TrayY + 10.f,
-		FString::Printf(TEXT("%s   ·   Tab page   ·   Keys 1-6 attack"), PageName),
-		FLinearColor(0.95f, 0.78f, 0.40f), 0.82f);
-
-	const float CardW = (TrayW - 32.f) / 6.f;
-	for (int32 Slot = 1; Slot <= 6; ++Slot)
-	{
-		const FHolypawAbilityDef* Ability = HolypawCatalog::FindAbilityBySlot(Page, Slot);
-		const float CX = TrayX + 16.f + (Slot - 1) * CardW;
-		const float CY = TrayY + 44.f;
-		DrawTile(CX, CY, CardW - 8.f, 118.f, FLinearColor(0.16f, 0.09f, 0.18f), 0.96f);
-		DrawLabel(CX + 8.f, CY + 8.f, FString::FromInt(Slot), FLinearColor(0.95f, 0.78f, 0.40f), 0.95f);
-		if (Ability)
-		{
-			DrawLabel(CX + 8.f, CY + 34.f, Ability->DisplayName.ToString(), FLinearColor(0.96f, 0.92f, 0.88f), 0.78f);
-			if (Ability->FpCost > 0)
-			{
-				DrawLabel(CX + 8.f, CY + 86.f, HolypawUiCopy::FpCost(Ability->FpCost).ToString(),
-					FLinearColor(0.95f, 0.78f, 0.40f), 0.72f);
-			}
-			else if (Ability->Stitch > 0)
-			{
-				DrawLabel(CX + 8.f, CY + 86.f, HolypawUiCopy::StitchPlus(Ability->Stitch).ToString(),
-					FLinearColor(0.72f, 0.92f, 0.78f), 0.72f);
-			}
-		}
-	}
-
-	if (Pawn->IsBattleBusy())
-	{
-		DrawLabel(TrayX + TrayW * 0.5f - 80.f, TrayY - 28.f, TEXT("…"), FLinearColor(0.72f, 0.66f, 0.78f), 1.1f);
-	}
-	if (Pawn->GetToastAlpha() > 0.f)
-	{
-		DrawLabel(TrayX + 16.f, TrayY - 28.f, Pawn->GetToast(), FLinearColor(0.96f, 0.92f, 0.88f), 0.82f);
+		PauseWidget->SetVisibility(bPause ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 	}
 }
 
@@ -325,22 +255,10 @@ void AHolypawHUD::DrawHUD()
 	AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(GetOwningPawn());
 	SyncViewportWidgets(Pawn);
 
+	APlayerController* PC = GetOwningPlayerController();
 	const bool bTitle = !Pawn || Pawn->Mode == EHolypawPawnMode::Title;
-	if (bTitle && !TitleWidgetFillsViewport(TitleWidget))
+	if (bTitle && TitleScreenUsesCanvas(PC))
 	{
 		DrawTitleCanvas(Pawn);
-		return;
-	}
-
-	if (Pawn)
-	{
-		if (Pawn->Mode == EHolypawPawnMode::Play)
-		{
-			DrawPlayCanvas(Pawn);
-		}
-		else if (Pawn->Mode == EHolypawPawnMode::Battle)
-		{
-			DrawBattleCanvas(Pawn);
-		}
 	}
 }

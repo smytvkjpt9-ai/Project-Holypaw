@@ -25,7 +25,7 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		return Layer;
 	}
 
-	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer, HolypawUi::GetViewportCanvasSize(this)};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 	const float CX = Size.X * 0.5f;
@@ -100,8 +100,9 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 		}
 
 		const int32 Page = Pawn->GetBattlePage();
-		const FVector2D Tray = HolypawUi::Fit(Size, FVector2D(1080.f, 186.f), 24.f);
-		const FVector2D TrayPos((Size.X - Tray.X) * 0.5f, Size.Y - Tray.Y - 20.f);
+		const float FooterH = 36.f;
+		const FVector2D Tray = HolypawUi::Fit(Size, FVector2D(1080.f, 196.f), 24.f);
+		const FVector2D TrayPos((Size.X - Tray.X) * 0.5f, Size.Y - Tray.Y - FooterH - 24.f);
 		Q.Panel(TrayPos, Tray);
 
 		TArray<HolypawUi::FChipSpec> Pages;
@@ -134,6 +135,25 @@ int32 UHolypawBattleWidget::NativePaint(const FPaintArgs& Args, const FGeometry&
 				}
 			}
 		}
+
+		FString CmdLine;
+		for (int32 AbilitySlot = 1; AbilitySlot <= 6; ++AbilitySlot)
+		{
+			const FHolypawAbilityDef* Ability = HolypawCatalog::FindAbilityBySlot(Page, AbilitySlot);
+			if (!Ability)
+			{
+				continue;
+			}
+			if (!CmdLine.IsEmpty())
+			{
+				CmdLine += TEXT("   ·   ");
+			}
+			CmdLine += FString::Printf(TEXT("[%d] %s"), AbilitySlot, *Ability->DisplayName.ToString());
+		}
+		const float FooterY = Size.Y - FooterH - 8.f;
+		Q.Fill(FVector2D(16.f, FooterY), FVector2D(Size.X - 32.f, FooterH), Pal.Felt);
+		Q.Frame(FVector2D(16.f, FooterY), FVector2D(Size.X - 32.f, FooterH), Pal.Gold, 1.5f);
+		Q.Text(FVector2D(24.f, FooterY + 8.f), HolypawUi::Ellipsize(CmdLine, Size.X - 56.f, 0.82f), Pal.Gold, 0.82f, Size.X - 56.f);
 	}
 
 	if (Pawn->IsSkillsOpen() && Pawn->Skills && Pawn->Affection)

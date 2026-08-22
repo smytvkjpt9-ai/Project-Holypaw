@@ -223,6 +223,7 @@ public:
 	void TryMiracle();
 	void CompleteBearFaith();
 	void ApplySkillEffects(FName Id);
+	void AdjustCameraZoom(float DeltaArm);
 	bool IsGuarding() const { return bGuarding; }
 	void Toast(const FString& Msg);
 	FString GetToast() const { return ToastMsg; }

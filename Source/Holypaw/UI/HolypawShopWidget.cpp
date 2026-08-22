@@ -22,7 +22,7 @@ int32 UHolypawShopWidget::NativePaint(const FPaintArgs& Args, const FGeometry& A
 		return Layer;
 	}
 
-	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer, HolypawUi::GetViewportCanvasSize(this)};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
 	Q.Fill(FVector2D::ZeroVector, Size, HolypawUi::WithAlpha(Pal.Dim, 0.55f));

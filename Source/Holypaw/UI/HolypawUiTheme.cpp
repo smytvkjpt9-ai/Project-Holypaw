@@ -1,4 +1,6 @@
 #include "UI/HolypawUiTheme.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
 #include "Rendering/DrawElements.h"
 #include "Styling/CoreStyle.h"
 #include "Styling/SlateBrush.h"
@@ -133,9 +135,33 @@ namespace HolypawUi
 		return S.Left(MaxChars - 1) + TEXT("…");
 	}
 
+	FVector2D GetViewportCanvasSize(const UWidget* Widget)
+	{
+		if (const APlayerController* PC = Widget ? Widget->GetOwningPlayer() : nullptr)
+		{
+			int32 ViewX = 0;
+			int32 ViewY = 0;
+			PC->GetViewportSize(ViewX, ViewY);
+			if (ViewX >= 8 && ViewY >= 8)
+			{
+				return FVector2D(static_cast<float>(ViewX), static_cast<float>(ViewY));
+			}
+		}
+		return FVector2D::ZeroVector;
+	}
+
 	FVector2D FPaint::Canvas() const
 	{
-		return Geo.GetLocalSize();
+		if (ViewportSize.X >= 8.f && ViewportSize.Y >= 8.f)
+		{
+			return ViewportSize;
+		}
+		const FVector2D Local = Geo.GetLocalSize();
+		if (Local.X >= 8.f && Local.Y >= 8.f)
+		{
+			return Local;
+		}
+		return ViewportSize;
 	}
 
 	void FPaint::Fill(FVector2D Pos, FVector2D Size, FLinearColor Color) const
