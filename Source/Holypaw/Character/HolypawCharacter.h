@@ -171,6 +171,9 @@ public:
 	TObjectPtr<UStaticMeshComponent> BowR;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPointLightComponent> KeyFill;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UPointLightComponent> HaloLight;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -384,8 +387,8 @@ protected:
 	bool bSeamBrace = false;
 	bool bPartyBrace = false;
 	bool bHeardChoirHour = false;
-	float ExploreArm = 430.f;
-	float BattleArm = 240.f;
+	float ExploreArm = 300.f;
+	float BattleArm = 220.f;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;

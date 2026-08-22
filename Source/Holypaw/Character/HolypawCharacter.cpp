@@ -75,8 +75,9 @@ AHolypawCharacter::AHolypawCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 430.f;
-	SpringArm->SocketOffset = FVector(0.f, 34.f, 46.f);
+	SpringArm->TargetArmLength = ExploreArm;
+	SpringArm->SocketOffset = FVector(0.f, 52.f, 78.f);
+	SpringArm->SetRelativeRotation(FRotator(-10.f, 0.f, 0.f));
 	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->bDoCollisionTest = true;
 	SpringArm->ProbeSize = 12.f;
@@ -165,6 +166,16 @@ AHolypawCharacter::AHolypawCharacter()
 	HaloLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("HaloLight"));
 	HaloLight->SetupAttachment(HaloMesh);
 	HaloLight->SetVisibility(false);
+
+	KeyFill = CreateDefaultSubobject<UPointLightComponent>(TEXT("KeyFill"));
+	KeyFill->SetupAttachment(RootComponent);
+	KeyFill->SetRelativeLocation(FVector(110.f, 60.f, 150.f));
+	KeyFill->SetIntensity(7200.f);
+	KeyFill->SetAttenuationRadius(1600.f);
+	KeyFill->SetLightColor(FLinearColor(1.f, 0.94f, 0.86f));
+	KeyFill->SetCastShadows(false);
+	KeyFill->SetUseInverseSquaredFalloff(true);
+	KeyFill->SetSpecularScale(0.25f);
 
 	EarL->SetRelativeLocation(FVector(-4.f, 20.f, 36.f));
 	EarL->SetRelativeRotation(FRotator(18.f, 6.f, -20.f));
@@ -363,6 +374,9 @@ void AHolypawCharacter::BeginPlay()
 	{
 		PC->bShowMouseCursor = false;
 		PC->SetInputMode(FInputModeGameOnly());
+		FRotator View = PC->GetControlRotation();
+		View.Pitch = -16.f;
+		PC->SetControlRotation(View);
 	}
 	HolypawLook::ApplyViewExposure(Camera);
 	PlayCue(TEXT("Title"));
@@ -476,6 +490,12 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 		const bool Lit = HaloMesh && !HaloMesh->bHiddenInGame;
 		HaloLight->SetVisibility(Lit);
 		HaloLight->SetIntensity(Lit ? 900.f : 0.f);
+	}
+	if (KeyFill)
+	{
+		const bool bPlayView = Mode == EHolypawPawnMode::Play || Mode == EHolypawPawnMode::Title;
+		KeyFill->SetVisibility(bPlayView);
+		KeyFill->SetIntensity(bPlayView ? 7200.f : 0.f);
 	}
 	if (Mode == EHolypawPawnMode::Play)
 	{
@@ -2360,6 +2380,7 @@ void AHolypawCharacter::TitleNewGame()
 		ResetForNewGame();
 	}
 	Mode = EHolypawPawnMode::Play;
+	HolypawLook::ApplyViewExposure(Camera);
 	if (Story)
 	{
 		Story->TryAdvance(this);
@@ -2382,6 +2403,7 @@ void AHolypawCharacter::TitleLoad()
 		return;
 	}
 	Mode = EHolypawPawnMode::Play;
+	HolypawLook::ApplyViewExposure(Camera);
 	Toast(FString::Printf(TEXT("Loaded. %s still believes a teddy should run things."),
 		HolypawCatalog::ZoneDisplayName(CurrentZone)));
 }

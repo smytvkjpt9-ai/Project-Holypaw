@@ -80,7 +80,7 @@ namespace HolypawLook
 
 	void GradeVolume(APostProcessVolume* PP);
 	void TickGrade(APostProcessVolume* PP, float Hour, bool bIndoors, float MillWeight);
-	void DressSun(UDirectionalLightComponent* C);
+	void DressSun(UDirectionalLightComponent* C, bool bLinkAtmosphere = true);
 	void DressFill(UDirectionalLightComponent* C);
 	void DressMoon(UDirectionalLightComponent* C);
 	void DressSky(USkyLightComponent* C);
@@ -89,7 +89,7 @@ namespace HolypawLook
 	void DressClouds(UVolumetricCloudComponent* C);
 	void DressLanternLight(UPointLightComponent* C, const FLinearColor& Color = Lantern);
 	void DressCamera(UCameraComponent* Camera, bool bBattle, float DeltaSeconds);
-	void ApplyViewExposure(UCameraComponent* Camera, float Bias = 0.55f);
+	void ApplyViewExposure(UCameraComponent* Camera, float Bias = 1.15f);
 
 	void SpawnGlow(UWorld* World, AActor* Owner, const FVector& Loc, const FLinearColor& Color, float Intensity, float Radius);
 

@@ -27,11 +27,24 @@ void HolypawLook::Paint(UMeshComponent* Mesh, const FLinearColor& Color)
 	UMaterialInterface* Parent = Mesh->GetMaterial(0);
 	if (!Parent)
 	{
+		Parent = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+		if (Parent)
+		{
+			Mesh->SetMaterial(0, Parent);
+		}
+	}
+	if (!Parent)
+	{
 		return;
 	}
+	const FLinearColor Bright = Color * 1.18f + FLinearColor(0.05f, 0.04f, 0.05f);
 	if (UMaterialInstanceDynamic* Mid = Mesh->CreateDynamicMaterialInstance(0, Parent))
 	{
-		Mid->SetVectorParameterValue(TEXT("Color"), Color);
+		Mid->SetVectorParameterValue(TEXT("Color"), Bright);
+		Mid->SetVectorParameterValue(TEXT("BaseColor"), Bright);
+		Mid->SetVectorParameterValue(TEXT("Base Color"), Bright);
+		Mid->SetScalarParameterValue(TEXT("Roughness"), 0.82f);
+		Mid->SetScalarParameterValue(TEXT("Metallic"), 0.f);
 	}
 }
 
@@ -249,7 +262,7 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	S.bOverride_AutoExposureMethod = true;
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
-	S.AutoExposureBias = 0.48f;
+	S.AutoExposureBias = 0.92f;
 
 	S.bOverride_ColorSaturation = true;
 	S.ColorSaturation = FVector4(1.02f, 1.02f, 1.02f, 1.f);
@@ -319,20 +332,20 @@ void HolypawLook::TickGrade(APostProcessVolume* PP, const float Hour, const bool
 		L.Bias -= 0.20f * MillWeight;
 		L.Tint = FMath::Lerp(L.Tint, FLinearColor(0.92f, 0.88f, 0.78f), MillWeight);
 	}
-	S.AutoExposureBias = L.Bias;
+	S.AutoExposureBias = L.Bias + 0.42f;
 	S.WhiteTemp = L.Temp;
 	S.SceneColorTint = L.Tint;
 }
 
-void HolypawLook::DressSun(UDirectionalLightComponent* C)
+void HolypawLook::DressSun(UDirectionalLightComponent* C, const bool bLinkAtmosphere)
 {
 	if (!C)
 	{
 		return;
 	}
-	C->SetIntensity(10.5f);
+	C->SetIntensity(bLinkAtmosphere ? 10.5f : 14.f);
 	C->SetLightColor(FLinearColor(1.f, 0.93f, 0.82f));
-	C->SetAtmosphereSunLight(true);
+	C->SetAtmosphereSunLight(bLinkAtmosphere);
 	C->SetAtmosphereSunLightIndex(0);
 	C->SetCastShadows(true);
 	C->SetDynamicShadowDistanceMovableLight(110000.f);
@@ -358,7 +371,7 @@ void HolypawLook::DressFill(UDirectionalLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(0.40f);
+	C->SetIntensity(0.62f);
 	C->SetLightColor(Powder);
 	C->SetCastShadows(false);
 	C->SetSpecularScale(0.08f);
@@ -394,7 +407,7 @@ void HolypawLook::DressSky(USkyLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(1.22f);
+	C->SetIntensity(1.45f);
 	C->SetLightColor(FLinearColor(0.74f, 0.84f, 1.f));
 	C->bRealTimeCapture = true;
 	C->IndirectLightingIntensity = 1.1f;
@@ -409,13 +422,10 @@ void HolypawLook::DressFog(UExponentialHeightFogComponent* C)
 	{
 		return;
 	}
-	C->SetFogDensity(0.009f);
+	C->SetFogDensity(0.0045f);
 	C->SetFogHeightFalloff(0.10f);
 	C->SetFogInscatteringColor(FLinearColor(0.78f, 0.84f, 0.95f));
-	C->SetVolumetricFog(true);
-	C->VolumetricFogScatteringDistribution = 0.42f;
-	C->VolumetricFogExtinctionScale = 0.85f;
-	C->VolumetricFogDistance = 22000.f;
+	C->SetVolumetricFog(false);
 	C->StartDistance = 400.f;
 }
 
@@ -482,7 +492,7 @@ void HolypawLook::ApplyViewExposure(UCameraComponent* Camera, const float Bias)
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
 	S.AutoExposureBias = Bias;
-	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.35f);
+	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.65f);
 }
 
 void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, const float DeltaSeconds)

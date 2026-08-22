@@ -295,7 +295,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		FillLight->SetActorRotation(FRotator(-28.f, 215.f, 0.f));
 		if (UDirectionalLightComponent* C = FillLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
-			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.28f : 0.40f, DeltaSeconds, 1.2f));
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.45f : 0.62f, DeltaSeconds, 1.2f));
 		}
 	}
 	if (MoonLight)
@@ -382,7 +382,7 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42.f, 35.f, 0.f), Sp))
 	{
 		SunLight = Sun;
-		HolypawLook::DressSun(Sun->FindComponentByClass<UDirectionalLightComponent>());
+		HolypawLook::DressSun(Sun->FindComponentByClass<UDirectionalLightComponent>(), SkyAtmosphereComp != nullptr);
 	}
 	if (ADirectionalLight* Fill = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-28.f, 215.f, 0.f), Sp))
 	{
@@ -602,7 +602,7 @@ void AHolypawWorldBuilder::BuildTerrain()
 	if (ShapeMat)
 	{
 		UMaterialInstanceDynamic* Mid = UMaterialInstanceDynamic::Create(ShapeMat, this);
-		Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.48f, 0.64f, 0.40f));
+		Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.58f, 0.74f, 0.48f));
 		TerrainMesh->SetMaterial(0, Mid);
 	}
 	TerrainMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
