@@ -24,6 +24,7 @@ void AHolypawGameMode::StartPlay()
 	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
 		It->GenerateWorld();
+		It->TickClockLighting(0.f);
 		break;
 	}
 	Super::StartPlay();

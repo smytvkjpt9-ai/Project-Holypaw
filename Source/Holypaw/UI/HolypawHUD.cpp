@@ -10,6 +10,21 @@
 #include "UI/HolypawCodexWidget.h"
 #include "Blueprint/UserWidget.h"
 
+namespace
+{
+	void AddHolypawViewportWidget(UUserWidget* Widget, const int32 ZOrder)
+	{
+		if (!Widget)
+		{
+			return;
+		}
+		Widget->AddToViewport(ZOrder);
+		Widget->SetAnchorsInViewport(FAnchors(0.f, 0.f, 1.f, 1.f));
+		Widget->SetAlignmentInViewport(FVector2D(0.f, 0.f));
+		Widget->SetPositionInViewport(FVector2D::ZeroVector, false);
+	}
+}
+
 void AHolypawHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -20,50 +35,31 @@ void AHolypawHUD::BeginPlay()
 	}
 
 	PlayHudWidget = CreateWidget<UHolypawPlayHudWidget>(PC);
-	if (PlayHudWidget)
-	{
-		PlayHudWidget->AddToViewport(10);
-	}
+	AddHolypawViewportWidget(PlayHudWidget, 10);
+
 	OverlayWidget = CreateWidget<UHolypawBattleWidget>(PC);
-	if (OverlayWidget)
-	{
-		OverlayWidget->AddToViewport(20);
-	}
+	AddHolypawViewportWidget(OverlayWidget, 20);
+
 	MapWidget = CreateWidget<UHolypawMapWidget>(PC);
-	if (MapWidget)
-	{
-		MapWidget->AddToViewport(30);
-	}
+	AddHolypawViewportWidget(MapWidget, 30);
+
 	JournalWidget = CreateWidget<UHolypawJournalWidget>(PC);
-	if (JournalWidget)
-	{
-		JournalWidget->AddToViewport(31);
-	}
+	AddHolypawViewportWidget(JournalWidget, 31);
+
 	TalkWidget = CreateWidget<UHolypawTalkWidget>(PC);
-	if (TalkWidget)
-	{
-		TalkWidget->AddToViewport(32);
-	}
+	AddHolypawViewportWidget(TalkWidget, 32);
+
 	ShopWidget = CreateWidget<UHolypawShopWidget>(PC);
-	if (ShopWidget)
-	{
-		ShopWidget->AddToViewport(33);
-	}
+	AddHolypawViewportWidget(ShopWidget, 33);
+
 	CodexWidget = CreateWidget<UHolypawCodexWidget>(PC);
-	if (CodexWidget)
-	{
-		CodexWidget->AddToViewport(34);
-	}
+	AddHolypawViewportWidget(CodexWidget, 34);
+
 	TitleWidget = CreateWidget<UHolypawTitleWidget>(PC);
-	if (TitleWidget)
-	{
-		TitleWidget->AddToViewport(40);
-	}
+	AddHolypawViewportWidget(TitleWidget, 40);
+
 	PauseWidget = CreateWidget<UHolypawPauseWidget>(PC);
-	if (PauseWidget)
-	{
-		PauseWidget->AddToViewport(41);
-	}
+	AddHolypawViewportWidget(PauseWidget, 41);
 }
 
 void AHolypawHUD::DrawHUD()

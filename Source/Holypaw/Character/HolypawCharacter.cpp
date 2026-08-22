@@ -364,6 +364,7 @@ void AHolypawCharacter::BeginPlay()
 		PC->bShowMouseCursor = false;
 		PC->SetInputMode(FInputModeGameOnly());
 	}
+	HolypawLook::ApplyViewExposure(Camera);
 	PlayCue(TEXT("Title"));
 	Toast(TEXT("The Fluffy Ascendancy — pick a slot. The porch is already under you."));
 }

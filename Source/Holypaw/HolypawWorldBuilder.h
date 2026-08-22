@@ -18,6 +18,7 @@ class AExponentialHeightFog;
 class APostProcessVolume;
 class ASkyAtmosphere;
 class AVolumetricCloud;
+class USkyAtmosphereComponent;
 
 /**
  * Runtime open world: Earth-analog globe from HolypawAtlas (cities, roads, landmasses).
@@ -269,6 +270,9 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<APostProcessVolume> GradeVolume;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USkyAtmosphereComponent> SkyAtmosphereComp;
 
 	UPROPERTY()
 	TObjectPtr<ASkyAtmosphere> SkyAtmo;

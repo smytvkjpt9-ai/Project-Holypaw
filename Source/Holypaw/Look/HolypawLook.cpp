@@ -249,7 +249,7 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	S.bOverride_AutoExposureMethod = true;
 	S.AutoExposureMethod = AEM_Manual;
 	S.bOverride_AutoExposureBias = true;
-	S.AutoExposureBias = 0.38f;
+	S.AutoExposureBias = 0.48f;
 
 	S.bOverride_ColorSaturation = true;
 	S.ColorSaturation = FVector4(1.02f, 1.02f, 1.02f, 1.f);
@@ -469,6 +469,20 @@ void HolypawLook::DressLanternLight(UPointLightComponent* C, const FLinearColor&
 	C->SetSpecularScale(0.35f);
 	C->VolumetricScatteringIntensity = 0.8f;
 	C->bUseInverseSquaredFalloff = true;
+}
+
+void HolypawLook::ApplyViewExposure(UCameraComponent* Camera, const float Bias)
+{
+	if (!Camera)
+	{
+		return;
+	}
+	FPostProcessSettings& S = Camera->PostProcessSettings;
+	S.bOverride_AutoExposureMethod = true;
+	S.AutoExposureMethod = AEM_Manual;
+	S.bOverride_AutoExposureBias = true;
+	S.AutoExposureBias = Bias;
+	Camera->PostProcessBlendWeight = FMath::Max(Camera->PostProcessBlendWeight, 0.35f);
 }
 
 void HolypawLook::DressCamera(UCameraComponent* Camera, const bool bBattle, const float DeltaSeconds)

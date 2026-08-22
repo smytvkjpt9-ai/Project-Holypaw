@@ -89,6 +89,7 @@ namespace HolypawLook
 	void DressClouds(UVolumetricCloudComponent* C);
 	void DressLanternLight(UPointLightComponent* C, const FLinearColor& Color = Lantern);
 	void DressCamera(UCameraComponent* Camera, bool bBattle, float DeltaSeconds);
+	void ApplyViewExposure(UCameraComponent* Camera, float Bias = 0.55f);
 
 	void SpawnGlow(UWorld* World, AActor* Owner, const FVector& Loc, const FLinearColor& Color, float Intensity, float Radius);
 

@@ -43,6 +43,9 @@ AHolypawWorldBuilder::AHolypawWorldBuilder()
 	SetRootComponent(TerrainMesh);
 	TerrainMesh->bUseAsyncCooking = true;
 
+	SkyAtmosphereComp = CreateDefaultSubobject<USkyAtmosphereComponent>(TEXT("SkyAtmosphere"));
+	SkyAtmosphereComp->SetupAttachment(RootComponent);
+
 	Trees = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Trees"));
 	Trees->SetupAttachment(RootComponent);
 	Trees->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -401,15 +404,15 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 		HeightFog = Fog;
 		HolypawLook::DressFog(Fog->FindComponentByClass<UExponentialHeightFogComponent>());
 	}
+	if (SkyAtmosphereComp)
+	{
+		HolypawLook::DressAtmosphere(SkyAtmosphereComp);
+	}
 	if (UClass* SkyAtmoClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.SkyAtmosphere")))
 	{
-		if (AActor* AtmoActor = GetWorld()->SpawnActor<AActor>(SkyAtmoClass, FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+		if (AActor* AtmoActor = GetWorld()->SpawnActor<AActor>(SkyAtmoClass, FVector(0.f, 0.f, 500.f), FRotator::ZeroRotator, Sp))
 		{
 			SkyAtmo = Cast<ASkyAtmosphere>(AtmoActor);
-			if (USkyAtmosphereComponent* AtmoComp = AtmoActor->FindComponentByClass<USkyAtmosphereComponent>())
-			{
-				HolypawLook::DressAtmosphere(AtmoComp);
-			}
 		}
 	}
 	if (UClass* CloudClass = StaticLoadClass(AActor::StaticClass(), nullptr, TEXT("/Script/Engine.VolumetricCloud")))
@@ -428,6 +431,14 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 		GradeVolume = PP;
 		HolypawLook::GradeVolume(PP);
 	}
+	if (SkyLight)
+	{
+		if (USkyLightComponent* SkyComp = SkyLight->GetLightComponent())
+		{
+			SkyComp->RecaptureSky();
+		}
+	}
+	TickClockLighting(0.f);
 }
 
 float AHolypawWorldBuilder::HashRand(int32 X, int32 Y, int32 Salt) const

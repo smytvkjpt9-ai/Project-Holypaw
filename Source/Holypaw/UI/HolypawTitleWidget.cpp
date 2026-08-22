@@ -17,7 +17,8 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 {
 	int32 Layer = Super::NativePaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
 	const AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(GetOwningPlayerPawn());
-	if (!Pawn || Pawn->Mode != EHolypawPawnMode::Title)
+	const bool bTitle = !Pawn || Pawn->Mode == EHolypawPawnMode::Title;
+	if (!bTitle)
 	{
 		return Layer;
 	}
@@ -25,9 +26,17 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
 	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
 	const FVector2D Size = Q.Canvas();
-	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(Pawn);
+	if (Size.X < 8.f || Size.Y < 8.f)
+	{
+		return Layer;
+	}
+	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(Pawn ? static_cast<const UObject*>(Pawn) : GetOwningPlayer());
 
 	Q.Fill(FVector2D::ZeroVector, Size, Pal.Dim);
+	if (!Pawn)
+	{
+		Q.Text(FVector2D((Size.X - 240.f) * 0.5f, Size.Y * 0.52f), TEXT("Stitching the porch…"), Pal.Muted, 0.9f, 240.f);
+	}
 	Q.Fill(FVector2D(0.f, Size.Y * 0.16f), FVector2D(Size.X, 10.f), HolypawUi::WithAlpha(Pal.Rose, 0.35f));
 	Q.Fill(FVector2D(0.f, Size.Y * 0.78f), FVector2D(Size.X, 8.f), HolypawUi::WithAlpha(Pal.Gold, 0.28f));
 
