@@ -206,6 +206,15 @@ enum class EHolypawMission : uint8
 	BearFaith
 };
 
+UENUM(BlueprintType)
+enum class EPartyRole : uint8
+{
+	Brace UMETA(DisplayName = "Brace"),
+	Choir UMETA(DisplayName = "Choir"),
+	Ripper UMETA(DisplayName = "Ripper"),
+	Scout UMETA(DisplayName = "Scout")
+};
+
 USTRUCT(BlueprintType)
 struct HOLYPAW_API FFluffyTypeDef
 {
@@ -243,6 +252,12 @@ struct HOLYPAW_API FPartyMember
 
 	UPROPERTY(BlueprintReadOnly)
 	FString Rarity = TEXT("common");
+
+	UPROPERTY(BlueprintReadOnly)
+	EPartyRole Role = EPartyRole::Choir;
+
+	UPROPERTY(BlueprintReadOnly)
+	EFluffyId FluffyId = EFluffyId::Bunny;
 };
 
 USTRUCT(BlueprintType)

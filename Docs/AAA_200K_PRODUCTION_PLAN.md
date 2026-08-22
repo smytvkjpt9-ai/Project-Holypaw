@@ -47,9 +47,10 @@ The slice already has: 26-city atlas, 13 missions, 40 villains, UMG battle overl
 
 It is still not a store-page title:
 
-- Interiors are one room kit per shrine type, not 8 enterable building types with schedules, 24 NPCs each, or local events.
+- Interiors are shrine/shop/mill kits, not 8 building types with 24 NPCs each.
+- Humans follow a day/dusk/night beat (wander, chapel, inn). Not full city schedules or local festivals.
 - Dialogue VM is listen / hint / turn-in / accept plus a Faith-gated LineC. Not 650 speakers or cinematics.
-- Combat director covers specials, lullaby, hit-stop, flee, two command pages, and eight authored boss extras. Not 80 abilities or 12 full boss files.
+- Combat has three command pages, party roles, and eight authored boss extras. Not 80 abilities or 12 full boss files.
 - `AHolypawCharacter` still owns HUD, hug, miracle, map, and battle flow.
 - Streaming dresses districts when you approach; it does not unload far cities yet.
 - This VM cannot sculpt Nanite, record WAV, or ship a Shipping `.exe`. Those stay on the user's PC.

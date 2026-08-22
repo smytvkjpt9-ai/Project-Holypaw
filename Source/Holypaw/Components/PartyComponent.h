@@ -27,4 +27,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	int32 TotalAttack() const;
+
+	int32 CountRole(EPartyRole Role) const;
+	int32 AssaultBonus(bool bVsMill) const;
+	FString DescribeRoles() const;
+	static EPartyRole RoleFor(EFluffyId Id);
+	static const TCHAR* RoleLabel(EPartyRole Role);
 };

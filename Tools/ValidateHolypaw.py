@@ -15,6 +15,7 @@ RIM = (ROOT / "Source/Holypaw/Cities/HolypawRimCities.cpp").read_text() if (ROOT
 INTERIOR = (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").exists() else ""
 STREAM = (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").read_text() if (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").exists() else ""
 BOSS = (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").exists() else ""
+SCHEDULE = (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").read_text() if (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").exists() else ""
 SKILLS = (ROOT / "Source/Holypaw/HolypawSkillCatalog.cpp").read_text()
 MISSIONS = (ROOT / "Source/Holypaw/HolypawMissionCatalog.cpp").read_text()
 CHAR = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
@@ -254,6 +255,111 @@ if 'ActionName="TitleConfirm"' not in INPUT:
 if "UHolypawTitleWidget" not in HUD:
     errors.append("HUD missing title overlay")
 
+UI_SUITE = (
+    "Source/Holypaw/UI/HolypawUiTheme.cpp",
+    "Source/Holypaw/UI/HolypawUiIcons.cpp",
+    "Source/Holypaw/UI/HolypawUiCopy.cpp",
+    "Source/Holypaw/UI/HolypawPauseWidget.cpp",
+    "Source/Holypaw/UI/HolypawMapWidget.cpp",
+    "Source/Holypaw/UI/HolypawJournalWidget.cpp",
+    "Source/Holypaw/UI/HolypawTalkWidget.cpp",
+    "Source/Holypaw/UI/HolypawShopWidget.cpp",
+    "Source/Holypaw/UI/HolypawPlayHudWidget.cpp",
+    "Source/Holypaw/UI/HolypawCodexWidget.cpp",
+)
+for path in UI_SUITE:
+    if not (ROOT / path).exists():
+        errors.append(f"missing {path}")
+
+THEME = (ROOT / "Source/Holypaw/UI/HolypawUiTheme.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiTheme.cpp").exists() else ""
+ICONS = (ROOT / "Source/Holypaw/UI/HolypawUiIcons.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiIcons.cpp").exists() else ""
+COPY = (ROOT / "Source/Holypaw/UI/HolypawUiCopy.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawUiCopy.cpp").exists() else ""
+MAPW = (ROOT / "Source/Holypaw/UI/HolypawMapWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawMapWidget.cpp").exists() else ""
+TITLEW = (ROOT / "Source/Holypaw/UI/HolypawTitleWidget.cpp").read_text()
+BATTLEW = (ROOT / "Source/Holypaw/UI/HolypawBattleWidget.cpp").read_text()
+PAUSEW = (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPauseWidget.cpp").exists() else ""
+TALKW = (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawTalkWidget.cpp").exists() else ""
+SHOPW = (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawShopWidget.cpp").exists() else ""
+PLAYW = (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawPlayHudWidget.cpp").exists() else ""
+JOURNALW = (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").exists() else ""
+CODEXW = (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").read_text() if (ROOT / "Source/Holypaw/UI/HolypawCodexWidget.cpp").exists() else ""
+
+if "DashRect" not in THEME or "CornerKnots" not in THEME:
+    errors.append("UI theme missing stitched panel chrome")
+if "TextBlock" not in THEME or "WrapLines" not in THEME:
+    errors.append("UI theme missing wrapped text")
+if "Ellipsize" not in THEME:
+    errors.append("UI theme missing ellipsize")
+if "ChipRow" not in THEME or "MeasureChip" not in THEME:
+    errors.append("UI theme missing flowing chip row")
+if "Toast" not in THEME or "Meter" not in THEME:
+    errors.append("UI theme missing toast/meter")
+if "KeyWidth" not in THEME:
+    errors.append("UI theme missing measured keycaps")
+if "DrawIcon" not in ICONS or "EHolypawUiIcon::Heart" not in ICONS or "EHolypawUiIcon::Lantern" not in ICONS:
+    errors.append("UI icons missing stitched heart/lantern glyphs")
+if 'NSLOCTEXT("HolypawUI"' not in COPY:
+    errors.append("UI copy missing HolypawUI loc keys")
+if "HeartsHeat" not in MAPW or "WorldToMap" not in MAPW:
+    errors.append("map widget missing Hearts heat atlas")
+if "GetPeakCenter" not in MAPW:
+    errors.append("map widget missing cottage/peak pins")
+if "EHolypawPawnMode::Pause" in TITLEW:
+    errors.append("title widget still owns pause — pause is its own product surface")
+if "UHolypawPauseWidget" not in HUD:
+    errors.append("HUD missing pause overlay")
+if "UHolypawMapWidget" not in HUD:
+    errors.append("HUD missing map overlay")
+if "UHolypawJournalWidget" not in HUD:
+    errors.append("HUD missing journal overlay")
+if "UHolypawTalkWidget" not in HUD:
+    errors.append("HUD missing talk overlay")
+if "UHolypawShopWidget" not in HUD:
+    errors.append("HUD missing shop overlay")
+if "UHolypawPlayHudWidget" not in HUD:
+    errors.append("HUD missing play HUD overlay")
+if "UHolypawCodexWidget" not in HUD:
+    errors.append("HUD missing codex overlay")
+for leftover in ("Survey Map", "Bear Faith Journal", "Testimony", "Faith stall", "Villain Codex"):
+    if leftover in HUD:
+        errors.append(f"HUD still dumping leftover '{leftover}' strings")
+if "IconForAbility" not in BATTLEW:
+    errors.append("battle overlay missing stitched ability icons")
+if "VerbRow" not in TALKW:
+    errors.append("talk overlay missing verb row")
+if "ShopDiscount" not in SHOPW and "Hearts discount" not in SHOPW:
+    errors.append("shop overlay missing Hearts discount")
+if "MiracleCharge" not in PLAYW:
+    errors.append("play HUD missing Miracle bar")
+if "TextBlock" not in TALKW or "TextBlock" not in (ROOT / "Source/Holypaw/UI/HolypawJournalWidget.cpp").read_text():
+    errors.append("talk/journal missing wrapped body copy")
+if "LandTint" not in MAPW:
+    errors.append("map widget missing continent tint")
+if "GetTalkSpeaker" not in (ROOT / "Source/Holypaw/Character/HolypawCharacter.h").read_text():
+    errors.append("character missing GetTalkSpeaker for talk surface")
+if "GetPeakCenter" not in (ROOT / "Source/Holypaw/HolypawWorldBuilder.h").read_text():
+    errors.append("world missing GetPeakCenter for map pins")
+if "Paused" not in PAUSEW:
+    errors.append("pause widget missing paused title")
+if "ChipRow" not in TITLEW or "ChipRow" not in PAUSEW or "ChipRow" not in SHOPW:
+    errors.append("title/pause/shop missing flowing chip rows")
+if "ChipRow" not in MAPW or "ChipRow" not in JOURNALW:
+    errors.append("map/journal missing flowing chip rows")
+if 'TEXT("Lanterns")' in MAPW:
+    errors.append("map still invents leftover Lanterns string")
+if "HomePin" not in MAPW or "PeakPin" not in MAPW:
+    errors.append("map missing loc Home/Peak pins")
+if 'TEXT("Fluffy Party")' in BATTLEW or 'TEXT("Pockets")' in BATTLEW:
+    errors.append("battle overlay still invents leftover party/pocket titles")
+if "Recruits %d" in JOURNALW or "Talk 4 takes a job" in JOURNALW:
+    errors.append("journal still invents leftover recruit/errand strings")
+if "Seen %d" in CODEXW or 'TEXT("fell")' in CODEXW:
+    errors.append("codex still invents leftover seen/fell strings")
+if "Quiet line at" in TALKW:
+    errors.append("talk still invents leftover quiet-line strings")
+if "NeedAp" not in SHOPW:
+    errors.append("shop missing can't-afford copy")
+
 if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
     errors.append("missing procedural audio")
 if not (ROOT / "Source/Holypaw/Anim/HolypawProcAnim.cpp").exists():
@@ -436,6 +542,17 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("TickHuman", SCHEDULE, "schedule"),
+    ("ChapelGoal", SCHEDULE, "schedule"),
+    ("DressShopRoom", INTERIOR, "interior kit"),
+    ("DressMillHall", INTERIOR, "interior kit"),
+    ("MillConveyor", INTERIOR, "interior kit"),
+    ("ShopCounter", INTERIOR, "interior kit"),
+    ("Floor Foreman", WORLD, "world"),
+    ("Shopkeep", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("RoleFor", (ROOT / "Source/Holypaw/Components/PartyComponent.cpp").read_text(), "party"),
+    ("fluffBurst", CHAR, "character"),
+    ("Choir hour", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

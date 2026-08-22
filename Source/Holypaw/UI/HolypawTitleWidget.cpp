@@ -1,11 +1,9 @@
 #include "UI/HolypawTitleWidget.h"
+#include "UI/HolypawUiTheme.h"
+#include "UI/HolypawUiCopy.h"
 #include "HolypawGameInstance.h"
 #include "Save/HolypawSaveGame.h"
 #include "Character/HolypawCharacter.h"
-#include "Rendering/DrawElements.h"
-#include "Styling/CoreStyle.h"
-#include "Layout/SlateLayoutTransform.h"
-#include "Brushes/SlateColorBrush.h"
 
 void UHolypawTitleWidget::NativeConstruct()
 {
@@ -13,81 +11,70 @@ void UHolypawTitleWidget::NativeConstruct()
 	SetVisibility(ESlateVisibility::HitTestInvisible);
 }
 
-void UHolypawTitleWidget::PaintText(FSlateWindowElementList& OutDrawElements, int32 LayerId, const FGeometry& AllottedGeometry,
-	const FVector2D& Pos, const FString& Text, const FLinearColor& Color, float Scale) const
-{
-	FSlateFontInfo Font = FCoreStyle::GetDefaultFontStyle("Bold", FMath::Max(10, FMath::RoundToInt(16.f * Scale)));
-	const FPaintGeometry Geo = AllottedGeometry.ToPaintGeometry(
-		FVector2f(1100.f, 44.f),
-		FSlateLayoutTransform(FVector2f(Pos.X, Pos.Y)));
-	FSlateDrawElement::MakeText(OutDrawElements, LayerId, Geo, Text, Font, ESlateDrawEffect::None, Color);
-}
-
-void UHolypawTitleWidget::PaintPanel(FSlateWindowElementList& OutDrawElements, int32 LayerId, const FGeometry& AllottedGeometry,
-	const FVector2D& Pos, const FVector2D& Size, const FLinearColor& Color) const
-{
-	static FSlateColorBrush White(FLinearColor::White);
-	const FPaintGeometry Geo = AllottedGeometry.ToPaintGeometry(
-		FVector2f(Size.X, Size.Y),
-		FSlateLayoutTransform(FVector2f(Pos.X, Pos.Y)));
-	FSlateDrawElement::MakeBox(OutDrawElements, LayerId, Geo, &White, ESlateDrawEffect::None, Color);
-}
-
 int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
 	FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
 	int32 Layer = Super::NativePaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
-	const AHolypawCharacter* P = Cast<AHolypawCharacter>(GetOwningPlayerPawn());
-	if (!P || (P->Mode != EHolypawPawnMode::Title && P->Mode != EHolypawPawnMode::Pause))
+	const AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(GetOwningPlayerPawn());
+	if (!Pawn || Pawn->Mode != EHolypawPawnMode::Title)
 	{
 		return Layer;
 	}
 
-	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(P);
-	const FVector2D Size = AllottedGeometry.GetLocalSize();
-	const float CX = Size.X * 0.5f;
+	HolypawUi::FPaint Q{OutDrawElements, AllottedGeometry, Layer};
+	const HolypawUi::FPalette& Pal = HolypawUi::Colors();
+	const FVector2D Size = Q.Canvas();
+	const UHolypawGameInstance* GI = UHolypawGameInstance::Get(Pawn);
 
-	PaintPanel(OutDrawElements, Layer, AllottedGeometry, FVector2D(0.f, 0.f), Size, FLinearColor(0.08f, 0.04f, 0.10f, 0.82f));
-	PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 420.f, 90.f), FVector2D(840.f, Size.Y - 180.f), FLinearColor(0.14f, 0.08f, 0.16f, 0.92f));
+	Q.Fill(FVector2D::ZeroVector, Size, Pal.Dim);
+	Q.Fill(FVector2D(0.f, Size.Y * 0.16f), FVector2D(Size.X, 10.f), HolypawUi::WithAlpha(Pal.Rose, 0.35f));
+	Q.Fill(FVector2D(0.f, Size.Y * 0.78f), FVector2D(Size.X, 8.f), HolypawUi::WithAlpha(Pal.Gold, 0.28f));
 
-	if (P->Mode == EHolypawPawnMode::Pause)
+	const FVector2D Panel = HolypawUi::Fit(Size, FVector2D(820.f, 560.f), 40.f);
+	const FVector2D Origin = HolypawUi::Centered(Size, Panel);
+	Q.Panel(Origin, Panel);
+	Q.Caption(Origin + FVector2D(32.f, 24.f), EHolypawUiIcon::Teddy, HolypawUiCopy::GameTitle().ToString(), Pal.Rose, Panel.X - 64.f);
+	const float TagH = Q.TextBlock(Origin + FVector2D(32.f, 64.f), HolypawUiCopy::Tagline().ToString(), Pal.Powder, 0.9f, Panel.X - 64.f, 2);
+
+	TArray<HolypawUi::FChipSpec> Actions;
+	Actions.Add({EHolypawUiIcon::Paw, HolypawUiCopy::Continue().ToString(), Pal.Gold});
+	Actions.Add({EHolypawUiIcon::Teddy, HolypawUiCopy::NewCoup().ToString(), Pal.Rose});
+	Actions.Add({EHolypawUiIcon::Save, HolypawUiCopy::LoadSlot().ToString(), Pal.Mint});
+	if (GI && GI->Settings)
 	{
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 90.f, 130.f), TEXT("Paused"), FLinearColor(1.f, 0.82f, 0.9f), 1.8f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 280.f, 210.f), TEXT("The humans freeze. They were mid-opinion."), FLinearColor(0.9f, 0.82f, 1.f), 1.05f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 280.f), TEXT("Enter / Esc   resume"), FLinearColor(1.f, 0.92f, 0.8f), 1.15f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 320.f), TEXT("F5            save this slot"), FLinearColor(0.85f, 0.9f, 1.f), 1.15f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 360.f), TEXT("F8            title (progress stays saved)"), FLinearColor(0.85f, 0.9f, 1.f), 1.15f);
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 400.f), TEXT("F6            mute"), FLinearColor(0.85f, 0.9f, 1.f), 1.15f);
-		if (GI && GI->Settings)
+		const bool bMuted = GI->Settings->bMuted;
+		Actions.Add({EHolypawUiIcon::Mute,
+			bMuted ? HolypawUiCopy::TitleMuteOn().ToString() : HolypawUiCopy::TitleMuteOff().ToString(),
+			bMuted ? Pal.Danger : Pal.Mint});
+	}
+	const float ActionMaxW = Panel.X - 64.f;
+	float ActionH = 32.f;
+	float RowW = 0.f;
+	for (const HolypawUi::FChipSpec& C : Actions)
+	{
+		const float W = Q.MeasureChip(C.Label, 32.f);
+		if (RowW > 0.f && RowW + W > ActionMaxW)
 		{
-			PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 260.f, 460.f),
-				GI->Settings->bMuted ? TEXT("Audio  MUTED  (temp stingers later)") : TEXT("Audio  ON  (drop WAVs on cue IDs later)"),
-				FLinearColor(1.f, 0.85f, 0.55f), 1.0f);
+			ActionH += 40.f;
+			RowW = 0.f;
 		}
-		return Layer + 3;
+		RowW += W + 8.f;
 	}
 
-	PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 280.f, 120.f), TEXT("The Fluffy Ascendancy"), FLinearColor(1.f, 0.78f, 0.88f), 1.7f);
-	PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 300.f, 168.f), TEXT("A handmade teddy. A polyester empire. A hug coup."), FLinearColor(0.92f, 0.84f, 1.f), 1.0f);
-
+	const float HeaderH = 64.f + TagH + 12.f;
+	const float SlotArea = Panel.Y - HeaderH - ActionH - 36.f;
+	const float SlotH = FMath::Clamp((SlotArea / 3.f) - 10.f, 56.f, 80.f);
 	const int32 Cursor = GI ? GI->TitleCursor : 0;
 	for (int32 I = 0; I < UHolypawGameInstance::SlotCount; ++I)
 	{
 		const bool Sel = (I == Cursor);
-		const FString Line = FString::Printf(TEXT("%d   Slot %d   %s"), I + 1, I + 1, GI ? *GI->SlotSummary(I) : TEXT("..."));
-		PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry,
-			FVector2D(CX - 360.f, 230.f + I * 78.f), FVector2D(720.f, 64.f),
-			Sel ? FLinearColor(0.42f, 0.22f, 0.38f, 0.95f) : FLinearColor(0.18f, 0.10f, 0.20f, 0.8f));
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 340.f, 248.f + I * 78.f), Line,
-			Sel ? FLinearColor(1.f, 0.92f, 0.75f) : FLinearColor(0.85f, 0.78f, 0.9f), 1.05f);
+		const FVector2D Card = Origin + FVector2D(40.f, HeaderH + I * (SlotH + 8.f));
+		Q.SlotCard(Card, FVector2D(Panel.X - 80.f, SlotH), Sel,
+			HolypawUiCopy::SlotN(I + 1).ToString(),
+			GI ? GI->SlotSummary(I) : HolypawUiCopy::EmptyPorch().ToString(),
+			FString::FromInt(I + 1));
 	}
 
-	PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 340.f, 480.f), TEXT("1-3 select   Enter continue   N new   L load"), FLinearColor(0.95f, 0.88f, 1.f), 1.0f);
-	PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 340.f, 512.f), TEXT("F6 mute   F5 saves after you start   Cottage porch waits behind this menu"), FLinearColor(0.75f, 0.7f, 0.85f), 0.9f);
-	if (GI && GI->Settings)
-	{
-		PaintText(OutDrawElements, Layer + 2, AllottedGeometry, FVector2D(CX - 340.f, 548.f),
-			GI->Settings->bMuted ? TEXT("Mute ON") : TEXT("Mute OFF"), FLinearColor(1.f, 0.85f, 0.55f), 0.95f);
-	}
-	return Layer + 3;
+	Q.ChipRow(Origin + FVector2D(32.f, Panel.Y - ActionH - 20.f), ActionMaxW, Actions, 32.f);
+	return Layer + 6;
 }
