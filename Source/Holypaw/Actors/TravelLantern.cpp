@@ -11,6 +11,11 @@ ATravelLantern::ATravelLantern()
 	Globe->SetupAttachment(Root);
 	Globe->SetRelativeLocation(FVector(0.f, 0.f, 90.f));
 	Globe->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.55f));
+	Hood = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hood"));
+	Hood->SetupAttachment(Globe);
+	Hood->SetRelativeLocation(FVector(0.f, 0.f, 18.f));
+	Hood->SetRelativeRotation(FRotator(180.f, 0.f, 0.f));
+	Hood->SetRelativeScale3D(FVector(0.85f, 0.85f, 0.35f));
 	Glow = CreateDefaultSubobject<UPointLightComponent>(TEXT("Glow"));
 	Glow->SetupAttachment(Globe);
 }
@@ -26,6 +31,7 @@ void ATravelLantern::BeginPlay()
 	Mesh->SetRelativeLocation(FVector(0.f, 0.f, 40.f));
 	SetSolidColor(HolypawLook::Wood);
 	HolypawLook::PrepPart(Globe, SphereMesh);
+	HolypawLook::PrepPart(Hood, ConeMesh ? ConeMesh : SphereMesh);
 	if (Globe)
 	{
 		Globe->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
@@ -35,7 +41,12 @@ void ATravelLantern::BeginPlay()
 	{
 		Globe->SetMaterial(0, ShapeMat);
 	}
+	if (ShapeMat && Hood)
+	{
+		Hood->SetMaterial(0, ShapeMat);
+	}
 	HolypawLook::Paint(Globe, HolypawLook::Lantern);
+	HolypawLook::Paint(Hood, HolypawLook::Wood);
 	HolypawLook::DressLanternLight(Glow, HolypawLook::Lantern);
 }
 

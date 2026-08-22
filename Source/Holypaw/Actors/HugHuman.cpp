@@ -17,6 +17,16 @@ AHugHuman::AHugHuman()
 	Hair->SetRelativeLocation(FVector(-4.f, 0.f, 18.f));
 	Hair->SetRelativeScale3D(FVector(0.95f, 0.95f, 0.55f));
 
+	Bangs = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bangs"));
+	Bangs->SetupAttachment(HeadMesh);
+	Bangs->SetRelativeLocation(FVector(10.f, 0.f, 12.f));
+	Bangs->SetRelativeScale3D(FVector(0.55f, 0.82f, 0.28f));
+
+	Neck = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Neck"));
+	Neck->SetupAttachment(Root);
+	Neck->SetRelativeLocation(FVector(0.f, 0.f, 38.f));
+	Neck->SetRelativeScale3D(FVector(0.16f, 0.16f, 0.18f));
+
 	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
 	EyeL->SetupAttachment(HeadMesh);
 	EyeL->SetRelativeLocation(FVector(16.f, 8.f, 4.f));
@@ -26,6 +36,16 @@ AHugHuman::AHugHuman()
 	EyeR->SetupAttachment(HeadMesh);
 	EyeR->SetRelativeLocation(FVector(16.f, -8.f, 4.f));
 	EyeR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.12f));
+
+	HighlightL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HighlightL"));
+	HighlightL->SetupAttachment(EyeL);
+	HighlightL->SetRelativeLocation(FVector(6.f, 3.f, 4.f));
+	HighlightL->SetRelativeScale3D(FVector(0.28f, 0.28f, 0.28f));
+
+	HighlightR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HighlightR"));
+	HighlightR->SetupAttachment(EyeR);
+	HighlightR->SetRelativeLocation(FVector(6.f, 3.f, 4.f));
+	HighlightR->SetRelativeScale3D(FVector(0.28f, 0.28f, 0.28f));
 
 	Hat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hat"));
 	Hat->SetupAttachment(HeadMesh);
@@ -42,6 +62,16 @@ AHugHuman::AHugHuman()
 	ArmR->SetupAttachment(Root);
 	ArmR->SetRelativeLocation(FVector(0.f, -24.f, 18.f));
 	ArmR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.48f));
+
+	HandL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandL"));
+	HandL->SetupAttachment(ArmL);
+	HandL->SetRelativeLocation(FVector(0.f, 0.f, -22.f));
+	HandL->SetRelativeScale3D(FVector(0.85f, 0.70f, 0.28f));
+
+	HandR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandR"));
+	HandR->SetupAttachment(ArmR);
+	HandR->SetRelativeLocation(FVector(0.f, 0.f, -22.f));
+	HandR->SetRelativeScale3D(FVector(0.85f, 0.70f, 0.28f));
 
 	LegL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegL"));
 	LegL->SetupAttachment(Root);
@@ -73,18 +103,24 @@ void AHugHuman::BeginPlay()
 	}
 	HolypawLook::PrepPart(HeadMesh, SphereMesh);
 	HolypawLook::PrepPart(Hair, SphereMesh);
+	HolypawLook::PrepPart(Bangs, SphereMesh);
+	HolypawLook::PrepPart(Neck, CylMesh ? CylMesh : SphereMesh);
 	HolypawLook::PrepPart(EyeL, SphereMesh);
 	HolypawLook::PrepPart(EyeR, SphereMesh);
+	HolypawLook::PrepPart(HighlightL, SphereMesh);
+	HolypawLook::PrepPart(HighlightR, SphereMesh);
 	HolypawLook::PrepPart(Hat, SphereMesh);
 	HolypawLook::PrepPart(ArmL, CylMesh ? CylMesh : CubeMesh);
 	HolypawLook::PrepPart(ArmR, CylMesh ? CylMesh : CubeMesh);
+	HolypawLook::PrepPart(HandL, SphereMesh);
+	HolypawLook::PrepPart(HandR, SphereMesh);
 	HolypawLook::PrepPart(LegL, CylMesh ? CylMesh : CubeMesh);
 	HolypawLook::PrepPart(LegR, CylMesh ? CylMesh : CubeMesh);
 	HolypawLook::PrepPart(ShoeL, SphereMesh);
 	HolypawLook::PrepPart(ShoeR, SphereMesh);
 	if (ShapeMat)
 	{
-		for (UStaticMeshComponent* P : { HeadMesh, Hair, EyeL, EyeR, Hat, ArmL, ArmR, LegL, LegR, ShoeL, ShoeR })
+		for (UStaticMeshComponent* P : { HeadMesh, Hair, Bangs, Neck, EyeL, EyeR, HighlightL, HighlightR, Hat, ArmL, ArmR, HandL, HandR, LegL, LegR, ShoeL, ShoeR })
 		{
 			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
@@ -95,11 +131,17 @@ void AHugHuman::BeginPlay()
 	HomeLocation = GetActorLocation();
 	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
 	HolypawLook::Paint(Hair, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
+	HolypawLook::Paint(Bangs, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
+	HolypawLook::Paint(Neck, HolypawLook::Skin);
 	HolypawLook::Paint(EyeL, HolypawLook::Button);
 	HolypawLook::Paint(EyeR, HolypawLook::Button);
+	HolypawLook::Paint(HighlightL, HolypawLook::Catchlight);
+	HolypawLook::Paint(HighlightR, HolypawLook::Catchlight);
 	HolypawLook::Paint(Hat, HolypawLook::GoldWarm);
-	HolypawLook::Paint(ArmL, HolypawLook::Skin);
-	HolypawLook::Paint(ArmR, HolypawLook::Skin);
+	HolypawLook::Paint(ArmL, ShirtColor);
+	HolypawLook::Paint(ArmR, ShirtColor);
+	HolypawLook::Paint(HandL, HolypawLook::Skin);
+	HolypawLook::Paint(HandR, HolypawLook::Skin);
 	HolypawLook::Paint(LegL, ShirtColor * 0.72f);
 	HolypawLook::Paint(LegR, ShirtColor * 0.72f);
 	HolypawLook::Paint(ShoeL, HolypawLook::Wood);
@@ -193,6 +235,9 @@ void AHugHuman::BecomeBeliever()
 	HolypawLook::Paint(HeadMesh, HolypawLook::BelieverGold);
 	HolypawLook::Paint(Mesh, HolypawLook::Rose);
 	HolypawLook::Paint(Hair, HolypawLook::Gold);
+	HolypawLook::Paint(Bangs, HolypawLook::Gold);
+	HolypawLook::Paint(ArmL, HolypawLook::Rose);
+	HolypawLook::Paint(ArmR, HolypawLook::Rose);
 	if (Hat)
 	{
 		Hat->SetHiddenInGame(false);
@@ -227,8 +272,11 @@ void AHugHuman::ResetFaith()
 	SetSolidColor(ShirtColor);
 	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
 	HolypawLook::Paint(Hair, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
-	HolypawLook::Paint(ArmL, HolypawLook::Skin);
-	HolypawLook::Paint(ArmR, HolypawLook::Skin);
+	HolypawLook::Paint(Bangs, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
+	HolypawLook::Paint(ArmL, ShirtColor);
+	HolypawLook::Paint(ArmR, ShirtColor);
+	HolypawLook::Paint(HandL, HolypawLook::Skin);
+	HolypawLook::Paint(HandR, HolypawLook::Skin);
 	if (Hat)
 	{
 		Hat->SetHiddenInGame(true);

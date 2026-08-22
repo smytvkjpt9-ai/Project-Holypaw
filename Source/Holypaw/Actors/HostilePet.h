@@ -58,6 +58,12 @@ public:
 	TObjectPtr<UStaticMeshComponent> CrestMesh;
 
 	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Cloak;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> HornR;
+
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> EyeL;
 
 	UPROPERTY(VisibleAnywhere)

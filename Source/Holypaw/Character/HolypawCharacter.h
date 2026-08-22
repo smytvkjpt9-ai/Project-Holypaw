@@ -34,6 +34,15 @@ struct FHolypawFollowerVisual
 
 	UPROPERTY()
 	TObjectPtr<UStaticMeshComponent> Tail;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EyeL;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EyeR;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Snout;
 };
 
 UENUM()
@@ -362,8 +371,8 @@ protected:
 	int32 EnemyRipTurns = 0;
 	int32 MillTurns = 0;
 	bool bSeamBrace = false;
-	float ExploreArm = 560.f;
-	float BattleArm = 270.f;
+	float ExploreArm = 430.f;
+	float BattleArm = 240.f;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;
@@ -417,6 +426,8 @@ protected:
 	FVector ArmRBase = FVector::ZeroVector;
 	FVector LegLBase = FVector::ZeroVector;
 	FVector LegRBase = FVector::ZeroVector;
+	FVector FootLBase = FVector::ZeroVector;
+	FVector FootRBase = FVector::ZeroVector;
 	FVector EyeLScale = FVector::OneVector;
 	FVector EyeRScale = FVector::OneVector;
 	FVector HighlightLScale = FVector::OneVector;
@@ -429,6 +440,8 @@ protected:
 	FRotator ArmRRot = FRotator::ZeroRotator;
 	FRotator LegLRot = FRotator::ZeroRotator;
 	FRotator LegRRot = FRotator::ZeroRotator;
+	FRotator FootLRot = FRotator::ZeroRotator;
+	FRotator FootRRot = FRotator::ZeroRotator;
 
 	UPROPERTY()
 	TArray<FHolypawItemStack> Inventory;

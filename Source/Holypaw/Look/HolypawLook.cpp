@@ -69,7 +69,7 @@ void HolypawLook::AimCatchlight(UStaticMeshComponent* Highlight, const USceneCom
 		return;
 	}
 	const FVector Local = Eye->GetComponentTransform().InverseTransformVector(ToCam).GetSafeNormal();
-	Highlight->SetRelativeLocation(Local * 11.f + FVector(3.f, 0.f, 3.f));
+	Highlight->SetRelativeLocation(Local * 9.f + FVector(2.f, 0.f, 2.f));
 }
 
 namespace
@@ -92,97 +92,125 @@ namespace
 
 	HolypawLook::FHourLook KeyAt(const float Hour)
 	{
+		// Exact keyframes. Do not bucket — 8am used to return the noon look.
 		HolypawLook::FHourLook K;
-		if (Hour <= 0.01f || Hour >= 23.99f)
+		const int32 H = FMath::RoundToInt(Hour * 10.f);
+		if (H <= 1 || H >= 239)
 		{
-			K.SunInt = 0.22f;
-			K.SkyInt = 0.22f;
-			K.FogDensity = 0.024f;
-			K.MoonInt = 2.5f;
-			K.Pitch = 16.f;
-			K.Bias = -0.28f;
-			K.Temp = 9000.f;
-			K.SunCol = FLinearColor(0.40f, 0.50f, 0.92f);
+			K.SunInt = 0.16f;
+			K.SkyInt = 0.18f;
+			K.FogDensity = 0.016f;
+			K.MoonInt = 1.15f;
+			K.Pitch = 18.f;
+			K.Bias = -0.20f;
+			K.Temp = 8800.f;
+			K.SunCol = FLinearColor(0.38f, 0.48f, 0.88f);
 			K.FogCol = HolypawLook::NightFog;
-			K.Tint = FLinearColor(0.90f, 0.92f, 1.08f);
+			K.Tint = FLinearColor(0.92f, 0.94f, 1.06f);
 		}
-		else if (Hour < 6.f)
+		else if (H <= 51)
 		{
-			K.SunInt = 0.28f;
-			K.SkyInt = 0.26f;
-			K.FogDensity = 0.025f;
-			K.MoonInt = 2.2f;
-			K.Pitch = 14.f;
-			K.Bias = -0.22f;
-			K.Temp = 8600.f;
-			K.SunCol = FLinearColor(0.48f, 0.52f, 0.90f);
-			K.FogCol = FLinearColor(0.22f, 0.26f, 0.46f);
-			K.Tint = FLinearColor(0.92f, 0.93f, 1.06f);
-		}
-		else if (Hour < 8.f)
-		{
-			K.SunInt = 6.8f;
-			K.SkyInt = 0.88f;
+			K.SunInt = 0.20f;
+			K.SkyInt = 0.22f;
 			K.FogDensity = 0.016f;
-			K.MoonInt = 0.15f;
-			K.Pitch = -18.f;
-			K.Bias = 0.18f;
-			K.Temp = 5400.f;
-			K.SunCol = FLinearColor(1.f, 0.78f, 0.58f);
-			K.FogCol = FLinearColor(0.90f, 0.76f, 0.66f);
-			K.Tint = FLinearColor(1.05f, 0.97f, 0.92f);
+			K.MoonInt = 1.0f;
+			K.Pitch = 12.f;
+			K.Bias = -0.16f;
+			K.Temp = 8200.f;
+			K.SunCol = FLinearColor(0.50f, 0.54f, 0.86f);
+			K.FogCol = FLinearColor(0.24f, 0.28f, 0.44f);
+			K.Tint = FLinearColor(0.94f, 0.94f, 1.04f);
 		}
-		else if (Hour < 16.f)
+		else if (H <= 66)
 		{
-			K.SunInt = 10.2f;
-			K.SkyInt = 1.18f;
-			K.FogDensity = 0.013f;
+			K.SunInt = 5.2f;
+			K.SkyInt = 0.72f;
+			K.FogDensity = 0.011f;
+			K.MoonInt = 0.12f;
+			K.Pitch = -16.f;
+			K.Bias = 0.14f;
+			K.Temp = 5000.f;
+			K.SunCol = FLinearColor(1.f, 0.76f, 0.54f);
+			K.FogCol = FLinearColor(0.88f, 0.74f, 0.62f);
+			K.Tint = FLinearColor(1.04f, 0.97f, 0.90f);
+		}
+		else if (H <= 81)
+		{
+			K.SunInt = 8.2f;
+			K.SkyInt = 1.02f;
+			K.FogDensity = 0.009f;
 			K.MoonInt = 0.f;
-			K.Pitch = -55.f;
-			K.Bias = 0.38f;
-			K.Temp = 6600.f;
-			K.SunCol = FLinearColor(1.f, 0.93f, 0.82f);
-			K.FogCol = FLinearColor(0.78f, 0.84f, 0.95f);
-			K.Tint = FLinearColor(1.02f, 0.99f, 1.03f);
+			K.Pitch = -34.f;
+			K.Bias = 0.28f;
+			K.Temp = 6000.f;
+			K.SunCol = FLinearColor(1.f, 0.90f, 0.76f);
+			K.FogCol = FLinearColor(0.82f, 0.84f, 0.90f);
+			K.Tint = FLinearColor(1.01f, 0.99f, 0.97f);
 		}
-		else if (Hour < 18.f)
+		else if (H <= 121)
 		{
-			K.SunInt = 7.4f;
-			K.SkyInt = 0.95f;
-			K.FogDensity = 0.016f;
-			K.MoonInt = 0.2f;
-			K.Pitch = -28.f;
-			K.Bias = 0.22f;
-			K.Temp = 5600.f;
-			K.SunCol = FLinearColor(1.f, 0.80f, 0.58f);
-			K.FogCol = FLinearColor(0.90f, 0.72f, 0.58f);
-			K.Tint = FLinearColor(1.05f, 0.96f, 0.90f);
+			K.SunInt = 10.f;
+			K.SkyInt = 1.16f;
+			K.FogDensity = 0.008f;
+			K.MoonInt = 0.f;
+			K.Pitch = -58.f;
+			K.Bias = 0.36f;
+			K.Temp = 6500.f;
+			K.SunCol = FLinearColor(1.f, 0.95f, 0.88f);
+			K.FogCol = FLinearColor(0.80f, 0.86f, 0.94f);
+			K.Tint = FLinearColor(1.00f, 0.995f, 0.99f);
 		}
-		else if (Hour < 20.f)
+		else if (H <= 161)
 		{
-			K.SunInt = 3.8f;
-			K.SkyInt = 0.62f;
-			K.FogDensity = 0.020f;
-			K.MoonInt = 0.7f;
-			K.Pitch = -8.f;
-			K.Bias = 0.08f;
+			K.SunInt = 8.6f;
+			K.SkyInt = 1.04f;
+			K.FogDensity = 0.009f;
+			K.MoonInt = 0.f;
+			K.Pitch = -36.f;
+			K.Bias = 0.28f;
+			K.Temp = 5800.f;
+			K.SunCol = FLinearColor(1.f, 0.88f, 0.72f);
+			K.FogCol = FLinearColor(0.86f, 0.80f, 0.70f);
+			K.Tint = FLinearColor(1.02f, 0.98f, 0.94f);
+		}
+		else if (H <= 181)
+		{
+			K.SunInt = 5.8f;
+			K.SkyInt = 0.82f;
+			K.FogDensity = 0.011f;
+			K.MoonInt = 0.18f;
+			K.Pitch = -18.f;
+			K.Bias = 0.16f;
 			K.Temp = 4600.f;
-			K.SunCol = FLinearColor(1.f, 0.52f, 0.34f);
-			K.FogCol = FLinearColor(0.94f, 0.56f, 0.42f);
-			K.Tint = FLinearColor(1.08f, 0.92f, 0.88f);
+			K.SunCol = FLinearColor(1.f, 0.72f, 0.48f);
+			K.FogCol = FLinearColor(0.92f, 0.68f, 0.48f);
+			K.Tint = FLinearColor(1.05f, 0.96f, 0.88f);
+		}
+		else if (H <= 201)
+		{
+			K.SunInt = 2.0f;
+			K.SkyInt = 0.42f;
+			K.FogDensity = 0.014f;
+			K.MoonInt = 0.55f;
+			K.Pitch = -6.f;
+			K.Bias = 0.02f;
+			K.Temp = 3800.f;
+			K.SunCol = FLinearColor(1.f, 0.48f, 0.30f);
+			K.FogCol = FLinearColor(0.72f, 0.42f, 0.38f);
+			K.Tint = FLinearColor(1.04f, 0.92f, 0.88f);
 		}
 		else
 		{
-			K.SunInt = 0.28f;
-			K.SkyInt = 0.24f;
-			K.FogDensity = 0.025f;
-			K.MoonInt = 2.3f;
-			K.Pitch = 16.f;
-			K.Bias = -0.30f;
-			K.Temp = 9100.f;
-			K.SunCol = FLinearColor(0.42f, 0.52f, 0.95f);
+			K.SunInt = 0.18f;
+			K.SkyInt = 0.20f;
+			K.FogDensity = 0.016f;
+			K.MoonInt = 1.1f;
+			K.Pitch = 14.f;
+			K.Bias = -0.18f;
+			K.Temp = 9000.f;
+			K.SunCol = FLinearColor(0.40f, 0.50f, 0.90f);
 			K.FogCol = HolypawLook::NightFog;
-			K.Tint = FLinearColor(0.88f, 0.90f, 1.10f);
+			K.Tint = FLinearColor(0.90f, 0.92f, 1.08f);
 		}
 		return K;
 	}
@@ -191,9 +219,9 @@ namespace
 HolypawLook::FHourLook HolypawLook::SampleHour(float Hour)
 {
 	Hour = FMath::Fmod(Hour + 24.f, 24.f);
-	static const float Keys[] = { 0.f, 5.f, 6.5f, 8.f, 12.f, 16.f, 18.f, 20.f, 24.f };
+	static const float Keys[] = { 0.f, 5.f, 6.5f, 8.f, 12.f, 16.f, 18.f, 20.f, 22.f, 24.f };
 	int32 I = 0;
-	for (int32 N = 0; N < 8; ++N)
+	for (int32 N = 0; N < 9; ++N)
 	{
 		if (Hour >= Keys[N] && Hour <= Keys[N + 1])
 		{
@@ -222,46 +250,46 @@ void HolypawLook::GradeVolume(APostProcessVolume* PP)
 	S.AutoExposureBias = 0.38f;
 
 	S.bOverride_ColorSaturation = true;
-	S.ColorSaturation = FVector4(1.04f, 1.02f, 1.06f, 1.f);
+	S.ColorSaturation = FVector4(1.02f, 1.02f, 1.02f, 1.f);
 	S.bOverride_ColorContrast = true;
-	S.ColorContrast = FVector4(1.05f, 1.03f, 1.06f, 1.f);
+	S.ColorContrast = FVector4(1.04f, 1.04f, 1.05f, 1.f);
 	S.bOverride_ColorGamma = true;
-	S.ColorGamma = FVector4(1.01f, 1.00f, 1.02f, 1.f);
+	S.ColorGamma = FVector4(1.00f, 1.00f, 1.00f, 1.f);
 	S.bOverride_ColorGain = true;
-	S.ColorGain = FVector4(1.02f, 0.99f, 1.03f, 1.f);
+	S.ColorGain = FVector4(1.00f, 0.995f, 0.99f, 1.f);
 	S.bOverride_ColorOffset = true;
-	S.ColorOffset = FVector4(0.006f, 0.002f, 0.008f, 0.f);
+	S.ColorOffset = FVector4(0.002f, 0.002f, 0.003f, 0.f);
 
 	S.bOverride_SceneColorTint = true;
-	S.SceneColorTint = FLinearColor(1.02f, 0.99f, 1.03f);
+	S.SceneColorTint = FLinearColor(1.00f, 0.995f, 0.99f);
 
 	S.bOverride_WhiteTemp = true;
-	S.WhiteTemp = 6600.f;
+	S.WhiteTemp = 6500.f;
 	S.bOverride_WhiteTint = true;
-	S.WhiteTint = 0.02f;
+	S.WhiteTint = 0.0f;
 
 	S.bOverride_BloomIntensity = true;
-	S.BloomIntensity = 0.28f;
+	S.BloomIntensity = 0.18f;
 	S.bOverride_BloomThreshold = true;
-	S.BloomThreshold = -0.15f;
+	S.BloomThreshold = 0.08f;
 
 	S.bOverride_VignetteIntensity = true;
-	S.VignetteIntensity = 0.22f;
+	S.VignetteIntensity = 0.18f;
 	S.bOverride_FilmGrainIntensity = true;
-	S.FilmGrainIntensity = 0.025f;
+	S.FilmGrainIntensity = 0.02f;
 
 	S.bOverride_AmbientOcclusionIntensity = true;
-	S.AmbientOcclusionIntensity = 0.48f;
+	S.AmbientOcclusionIntensity = 0.42f;
 	S.bOverride_AmbientOcclusionRadius = true;
 	S.AmbientOcclusionRadius = 42.f;
 
 	S.bOverride_IndirectLightingColor = true;
-	S.IndirectLightingColor = FLinearColor(1.03f, 0.97f, 1.05f);
+	S.IndirectLightingColor = FLinearColor(1.01f, 0.99f, 1.00f);
 	S.bOverride_IndirectLightingIntensity = true;
-	S.IndirectLightingIntensity = 1.08f;
+	S.IndirectLightingIntensity = 1.04f;
 
 	S.bOverride_SceneFringeIntensity = true;
-	S.SceneFringeIntensity = 0.06f;
+	S.SceneFringeIntensity = 0.025f;
 
 	S.bOverride_MotionBlurAmount = true;
 	S.MotionBlurAmount = 0.f;
@@ -328,7 +356,7 @@ void HolypawLook::DressFill(UDirectionalLightComponent* C)
 	{
 		return;
 	}
-	C->SetIntensity(0.65f);
+	C->SetIntensity(0.40f);
 	C->SetLightColor(Powder);
 	C->SetCastShadows(false);
 	C->SetSpecularScale(0.08f);
@@ -379,7 +407,7 @@ void HolypawLook::DressFog(UExponentialHeightFogComponent* C)
 	{
 		return;
 	}
-	C->SetFogDensity(0.014f);
+	C->SetFogDensity(0.009f);
 	C->SetFogHeightFalloff(0.10f);
 	C->SetFogInscatteringColor(FLinearColor(0.78f, 0.84f, 0.95f));
 	C->SetVolumetricFog(true);

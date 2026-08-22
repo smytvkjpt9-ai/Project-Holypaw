@@ -22,6 +22,9 @@ public:
 	TObjectPtr<UStaticMeshComponent> Globe;
 
 	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Hood;
+
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UPointLightComponent> Glow;
 
 	virtual void BeginPlay() override;

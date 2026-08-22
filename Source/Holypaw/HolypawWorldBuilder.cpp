@@ -175,7 +175,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			bIndoors = true;
 			SunInt *= 0.42f;
 			SkyInt *= 0.55f;
-			FogDensity += 0.01f;
+			FogDensity += 0.004f;
 			SunCol = FMath::Lerp(SunCol, FLinearColor(1.f, 0.82f, 0.58f), 0.45f);
 			FogCol = FMath::Lerp(FogCol, FLinearColor(0.72f, 0.52f, 0.4f), 0.35f);
 		}
@@ -198,7 +198,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			case EHolypawZone::Ocean:
 			case EHolypawZone::CapePlush:
 			case EHolypawZone::CoralChoir:
-				FogDensity += 0.01f;
+				FogDensity += 0.004f;
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.55f, 0.72f, 0.82f), 0.35f);
 				break;
 			case EHolypawZone::Snowveil:
@@ -207,7 +207,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			case EHolypawZone::FeltIceCamp:
 			case EHolypawZone::AuroraBorough:
 			case EHolypawZone::TundraParish:
-				FogDensity += 0.008f;
+				FogDensity += 0.003f;
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.86f, 0.9f, 0.98f), 0.4f);
 				SunCol = FMath::Lerp(SunCol, FLinearColor(0.82f, 0.88f, 1.f), 0.25f);
 				break;
@@ -221,7 +221,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 				break;
 			case EHolypawZone::Mossgate:
 			case EHolypawZone::Quiltland:
-				FogDensity += 0.014f;
+				FogDensity += 0.006f;
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.48f, 0.68f, 0.62f), 0.4f);
 				break;
 			case EHolypawZone::PalmaDusk:
@@ -241,7 +241,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 				break;
 			case EHolypawZone::Clockhaven:
 			case EHolypawZone::VelvetSeine:
-				FogDensity += 0.012f;
+				FogDensity += 0.005f;
 				FogCol = FMath::Lerp(FogCol, FLinearColor(0.62f, 0.68f, 0.78f), 0.38f);
 				break;
 			case EHolypawZone::MarbleForum:
@@ -279,7 +279,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		FillLight->SetActorRotation(FRotator(-28.f, 215.f, 0.f));
 		if (UDirectionalLightComponent* C = FillLight->FindComponentByClass<UDirectionalLightComponent>())
 		{
-			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.35f : 0.65f, DeltaSeconds, 1.2f));
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.28f : 0.40f, DeltaSeconds, 1.2f));
 		}
 	}
 	if (MoonLight)
@@ -659,11 +659,23 @@ void AHolypawWorldBuilder::ScatterFlora()
 		if (Z == EHolypawZone::Snow || Z == EHolypawZone::Snowveil || Z == EHolypawZone::TundraParish || Z == EHolypawZone::AuroraBorough || Z == EHolypawZone::FeltIceCamp) { H *= 0.7f; }
 		if (Z == EHolypawZone::Jungle || Z == EHolypawZone::PalmaDusk || Z == EHolypawZone::Quiltland || Z == EHolypawZone::CarnivalBahia) { H *= 1.28f; }
 		AddKit(Trees, FVector(X, Y, Zs + H * 0.5f), FRotator::ZeroRotator, FVector(0.45f, 0.45f, H / 100.f));
-		AddKit(Canopies, FVector(X, Y, Zs + H + 80.f), FRotator::ZeroRotator, FVector(2.4f, 2.4f, 2.1f));
-		AddKit(CanopyPuffs, FVector(X + 55.f, Y - 30.f, Zs + H + 40.f), FRotator::ZeroRotator, FVector(1.7f, 1.55f, 1.35f));
-		if (HashRand(int32(X), int32(Y), 9) > 0.45f)
+		AddKit(Trees, FVector(X, Y, Zs + 22.f), FRotator::ZeroRotator, FVector(0.82f, 0.82f, 0.32f));
+		const bool bSnowTree = (Z == EHolypawZone::Snow || Z == EHolypawZone::Snowveil || Z == EHolypawZone::TundraParish || Z == EHolypawZone::AuroraBorough || Z == EHolypawZone::FeltIceCamp);
+		const bool bJungleTree = (Z == EHolypawZone::Jungle || Z == EHolypawZone::PalmaDusk || Z == EHolypawZone::Quiltland || Z == EHolypawZone::CarnivalBahia);
+		if (bSnowTree)
 		{
-			AddKit(CanopyPuffs, FVector(X - 40.f, Y + 35.f, Zs + H + 20.f), FRotator::ZeroRotator, FVector(1.4f, 1.3f, 1.15f));
+			AddKit(Canopies, FVector(X, Y, Zs + H + 70.f), FRotator::ZeroRotator, FVector(1.55f, 1.55f, 2.2f));
+			AddKit(CanopyPuffs, FVector(X, Y, Zs + H + 20.f), FRotator::ZeroRotator, FVector(1.15f, 1.15f, 1.05f));
+		}
+		else
+		{
+			const float Canopy = bJungleTree ? 2.85f : 2.4f;
+			AddKit(Canopies, FVector(X, Y, Zs + H + 80.f), FRotator::ZeroRotator, FVector(Canopy, Canopy, bJungleTree ? 2.4f : 2.1f));
+			AddKit(CanopyPuffs, FVector(X + 55.f, Y - 30.f, Zs + H + 40.f), FRotator::ZeroRotator, FVector(1.7f, 1.55f, 1.35f));
+			if (HashRand(int32(X), int32(Y), 9) > 0.45f || bJungleTree)
+			{
+				AddKit(CanopyPuffs, FVector(X - 40.f, Y + 35.f, Zs + H + 20.f), FRotator::ZeroRotator, FVector(1.4f, 1.3f, 1.15f));
+			}
 		}
 		++TreeCount;
 	}
@@ -731,6 +743,10 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X, CottageSpawn.Y, Z + 340.f), FVector(7.4f, 6.0f, 1.6f), FLinearColor(0.55f, 0.28f, 0.28f), MakeName(TEXT("CottageRoof")));
 	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 90.f), FVector(3.2f, 3.8f, 0.25f), FLinearColor(0.62f, 0.5f, 0.38f), MakeName(TEXT("Porch")));
 	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), FLinearColor(0.55f, 0.82f, 0.95f), MakeName(TEXT("Window")));
+	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y + 90.f, Z + 175.f), FVector(0.9f, 0.12f, 0.9f), HolypawLook::Glass, MakeName(TEXT("WindowBack")));
+	PlaceCube(FVector(CottageSpawn.X + 40.f, CottageSpawn.Y - 96.f, Z + 175.f), FVector(0.55f, 0.05f, 0.55f), HolypawLook::GoldWarm, MakeName(TEXT("WindowPane")));
+	PlaceCube(FVector(CottageSpawn.X + 196.f, CottageSpawn.Y, Z + 86.f), FVector(0.12f, 0.72f, 1.35f), HolypawLook::Wood, MakeName(TEXT("CottageDoor")));
+	PlaceCube(FVector(CottageSpawn.X + 206.f, CottageSpawn.Y + 18.f, Z + 82.f), FVector(0.07f, 0.07f, 0.07f), HolypawLook::Gold, MakeName(TEXT("DoorKnob")));
 	PlaceCube(FVector(CottageSpawn.X - 180.f, CottageSpawn.Y + 220.f, Z + 70.f), FVector(1.2f, 1.2f, 1.4f), FLinearColor(0.42f, 0.32f, 0.22f), MakeName(TEXT("Woodpile")));
 	PlaceCube(FVector(CottageSpawn.X - 80.f, CottageSpawn.Y, Z + 28.f), FVector(5.4f, 4.2f, 0.12f), FLinearColor(0.62f, 0.44f, 0.32f), MakeName(TEXT("CottageFloor")));
 	PlaceCube(FVector(CottageSpawn.X - 140.f, CottageSpawn.Y + 40.f, Z + 70.f), FVector(2.4f, 1.3f, 0.45f), FLinearColor(0.78f, 0.55f, 0.62f), MakeName(TEXT("CottageBed")));
@@ -819,15 +835,24 @@ void AHolypawWorldBuilder::BuildTown(const FHolypawCity& City)
 			const float H = 2.8f + HashRand(Col, Row, 8) * (City.bTallSpire ? 7.f : 4.2f);
 			UInstancedStaticMeshComponent* Wall = Walls[(Col + Row + 16) % 3];
 			AddKit(Wall, FVector(X, Y, Z + H * 50.f), FRotator::ZeroRotator, FVector(W, D, H));
-			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 40.f), FRotator::ZeroRotator, FVector(W + 0.55f, D + 0.55f, 0.42f));
+			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 52.f), FRotator(14.f, 0.f, 0.f), FVector(W + 0.72f, D + 0.28f, 0.38f));
 			const float FaceY = D * 50.f;
 			const float FaceX = W * 50.f;
 			AddKit(Windows, FVector(X - 22.f, Y - FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
 			AddKit(Windows, FVector(X + 22.f, Y - FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
+			AddKit(Windows, FVector(X - 22.f, Y + FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
+			AddKit(Windows, FVector(X + 22.f, Y + FaceY, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.36f, 0.07f, 0.42f));
 			AddKit(Windows, FVector(X + FaceX, Y, Z + H * 58.f), FRotator(0.f, 90.f, 0.f), FVector(0.36f, 0.07f, 0.40f));
+			AddKit(Windows, FVector(X - FaceX, Y, Z + H * 58.f), FRotator(0.f, 90.f, 0.f), FVector(0.36f, 0.07f, 0.40f));
 			AddKit(WindowWarm, FVector(X - 22.f, Y - FaceY - 4.f, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.22f, 0.04f, 0.28f));
+			AddKit(WindowWarm, FVector(X + 22.f, Y - FaceY - 4.f, Z + H * 46.f), FRotator::ZeroRotator, FVector(0.22f, 0.04f, 0.28f));
+			if (H > 5.2f)
+			{
+				AddKit(Windows, FVector(X - 18.f, Y - FaceY, Z + H * 78.f), FRotator::ZeroRotator, FVector(0.30f, 0.06f, 0.34f));
+				AddKit(Windows, FVector(X + 18.f, Y - FaceY, Z + H * 78.f), FRotator::ZeroRotator, FVector(0.30f, 0.06f, 0.34f));
+			}
 			AddKit(Doors, FVector(X, Y - FaceY, Z + 42.f), FRotator::ZeroRotator, FVector(0.28f, 0.08f, 0.72f));
-			AddKit(Chimneys, FVector(X + W * 28.f, Y + D * 16.f, Z + H * 100.f + 78.f), FRotator::ZeroRotator, FVector(0.32f, 0.32f, 0.72f));
+			AddKit(Chimneys, FVector(X + W * 28.f, Y + D * 16.f, Z + H * 100.f + 88.f), FRotator::ZeroRotator, FVector(0.32f, 0.32f, 0.72f));
 		}
 	}
 }
@@ -1293,9 +1318,21 @@ void AHolypawWorldBuilder::PlaceWaterSheet(float OriginX, float OriginY, int32 N
 				continue;
 			}
 			AddKit(WaterTiles, FVector(X, Y, Z), FRotator::ZeroRotator, FVector(Step / 100.f, Step / 100.f, 0.18f));
-			if (I == 0 || J == 0 || I == NX - 1 || J == NY - 1)
+			if (I == 0)
 			{
-				AddKit(Foam, FVector(X, Y, Z + 8.f), FRotator::ZeroRotator, FVector(Step / 140.f, Step / 140.f, 0.06f));
+				AddKit(Foam, FVector(X - Step * 0.42f, Y, Z + 8.f), FRotator::ZeroRotator, FVector(0.18f, Step / 100.f, 0.05f));
+			}
+			if (I == NX - 1)
+			{
+				AddKit(Foam, FVector(X + Step * 0.42f, Y, Z + 8.f), FRotator::ZeroRotator, FVector(0.18f, Step / 100.f, 0.05f));
+			}
+			if (J == 0)
+			{
+				AddKit(Foam, FVector(X, Y - Step * 0.42f, Z + 8.f), FRotator::ZeroRotator, FVector(Step / 100.f, 0.18f, 0.05f));
+			}
+			if (J == NY - 1)
+			{
+				AddKit(Foam, FVector(X, Y + Step * 0.42f, Z + 8.f), FRotator::ZeroRotator, FVector(Step / 100.f, 0.18f, 0.05f));
 			}
 		}
 	}

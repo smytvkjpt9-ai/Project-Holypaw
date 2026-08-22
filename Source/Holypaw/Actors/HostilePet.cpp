@@ -19,15 +19,28 @@ AHostilePet::AHostilePet()
 	CrestMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Crest"));
 	CrestMesh->SetupAttachment(Root);
 
+	Cloak = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Cloak"));
+	Cloak->SetupAttachment(Mesh);
+	Cloak->SetRelativeLocation(FVector(-22.f, 0.f, 2.f));
+	Cloak->SetRelativeRotation(FRotator(12.f, 0.f, 0.f));
+	Cloak->SetRelativeScale3D(FVector(0.72f, 0.95f, 0.22f));
+	Cloak->SetHiddenInGame(true);
+
+	HornR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HornR"));
+	HornR->SetupAttachment(Root);
+	HornR->SetRelativeLocation(FVector(-8.f, -22.f, 36.f));
+	HornR->SetRelativeRotation(FRotator(12.f, -18.f, 0.f));
+	HornR->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.28f));
+
 	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
-	EyeL->SetupAttachment(Root);
-	EyeL->SetRelativeLocation(FVector(28.f, 10.f, 18.f));
-	EyeL->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+	EyeL->SetupAttachment(Mesh);
+	EyeL->SetRelativeLocation(FVector(38.f, 16.f, 26.f));
+	EyeL->SetRelativeScale3D(FVector(0.14f, 0.14f, 0.14f));
 
 	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
-	EyeR->SetupAttachment(Root);
-	EyeR->SetRelativeLocation(FVector(28.f, -10.f, 18.f));
-	EyeR->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+	EyeR->SetupAttachment(Mesh);
+	EyeR->SetRelativeLocation(FVector(38.f, -16.f, 26.f));
+	EyeR->SetRelativeScale3D(FVector(0.14f, 0.14f, 0.14f));
 
 	GlowLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("GlowLight"));
 	GlowLight->SetupAttachment(Root);
@@ -100,11 +113,13 @@ void AHostilePet::ApplyFromCatalog()
 	HolypawLook::PrepPart(CrestMesh, (D.Rank == EVillainRank::Boss || D.Rank == EVillainRank::WorldBoss)
 		? (CylMesh ? CylMesh : CubeMesh)
 		: (SphereMesh ? SphereMesh : CubeMesh));
+	HolypawLook::PrepPart(Cloak, ConeMesh ? ConeMesh : CubeMesh);
+	HolypawLook::PrepPart(HornR, ConeMesh ? ConeMesh : CubeMesh);
 	HolypawLook::PrepPart(EyeL, SphereMesh);
 	HolypawLook::PrepPart(EyeR, SphereMesh);
 	if (ShapeMat)
 	{
-		for (UStaticMeshComponent* P : { AccentMesh, AccentMeshB, CrestMesh, EyeL, EyeR })
+		for (UStaticMeshComponent* P : { AccentMesh, AccentMeshB, CrestMesh, Cloak, HornR, EyeL, EyeR })
 		{
 			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
@@ -131,6 +146,23 @@ void AHostilePet::ApplyFromCatalog()
 		AccentMeshB->SetRelativeRotation(FRotator(12.f, 18.f, 0.f));
 		AccentMeshB->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.28f));
 		ColorPart(AccentMeshB, D.AccentColor);
+	}
+	if (HornR && Ear)
+	{
+		HornR->SetStaticMesh(Ear);
+		HornR->SetRelativeLocation(FVector(-8.f, -22.f, 36.f));
+		HornR->SetRelativeRotation(FRotator(12.f, -18.f, 0.f));
+		HornR->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.28f));
+		ColorPart(HornR, D.AccentColor);
+	}
+	if (Cloak)
+	{
+		const bool bCloak = D.Rank == EVillainRank::Boss || D.Rank == EVillainRank::WorldBoss || D.Rank == EVillainRank::Elite;
+		Cloak->SetHiddenInGame(!bCloak);
+		if (bCloak)
+		{
+			ColorPart(Cloak, D.Color * 0.55f);
+		}
 	}
 	if (CrestMesh && Extra)
 	{
@@ -182,6 +214,7 @@ void AHostilePet::ApplySignatureSilhouette(const FVillainDef& D)
 		AccentMeshB->SetRelativeScale3D(FVector(0.45f, 0.08f, 0.08f));
 		CrestMesh->SetHiddenInGame(false);
 		CrestMesh->SetRelativeLocation(FVector(0.f, 0.f, 55.f));
+		if (HornR) { HornR->SetHiddenInGame(true); }
 		break;
 	case EHolypawVillain::SaltCrab:
 	case EHolypawVillain::HarborHook:
@@ -196,6 +229,7 @@ void AHostilePet::ApplySignatureSilhouette(const FVillainDef& D)
 		AccentMeshB->SetRelativeLocation(FVector(30.f, -28.f, 8.f));
 		AccentMeshB->SetRelativeScale3D(FVector(0.35f, 0.12f, 0.12f));
 		HideCrest();
+		if (HornR) { HornR->SetHiddenInGame(true); }
 		break;
 	case EHolypawVillain::FrostMoth:
 	case EHolypawVillain::AuroraWisp:
@@ -213,6 +247,7 @@ void AHostilePet::ApplySignatureSilhouette(const FVillainDef& D)
 		AccentMeshB->SetRelativeRotation(FRotator(0.f, 0.f, -70.f));
 		AccentMeshB->SetRelativeScale3D(FVector(0.15f, 0.55f, 0.08f));
 		HideCrest();
+		if (HornR) { HornR->SetHiddenInGame(true); }
 		break;
 	case EHolypawVillain::SilkMagistrate:
 	case EHolypawVillain::HarvestOverseer:
@@ -250,6 +285,7 @@ void AHostilePet::ApplySignatureSilhouette(const FVillainDef& D)
 		AccentMesh->SetRelativeLocation(FVector(28.f, 0.f, 4.f));
 		AccentMesh->SetRelativeScale3D(FVector(0.28f, 0.12f, 0.12f));
 		HideCrest();
+		if (HornR) { HornR->SetHiddenInGame(true); }
 		break;
 	default:
 		break;

@@ -59,16 +59,16 @@ namespace HolypawLook
 
 	struct FHourLook
 	{
-		float SunInt = 10.5f;
-		float SkyInt = 1.22f;
-		float FogDensity = 0.014f;
+		float SunInt = 10.f;
+		float SkyInt = 1.16f;
+		float FogDensity = 0.009f;
 		float MoonInt = 0.f;
-		float Pitch = -42.f;
-		float Bias = 0.38f;
-		float Temp = 6600.f;
-		FLinearColor SunCol = FLinearColor(1.f, 0.93f, 0.82f);
-		FLinearColor FogCol = FLinearColor(0.78f, 0.84f, 0.95f);
-		FLinearColor Tint = FLinearColor(1.02f, 0.99f, 1.03f);
+		float Pitch = -58.f;
+		float Bias = 0.36f;
+		float Temp = 6500.f;
+		FLinearColor SunCol = FLinearColor(1.f, 0.95f, 0.88f);
+		FLinearColor FogCol = FLinearColor(0.80f, 0.86f, 0.94f);
+		FLinearColor Tint = FLinearColor(1.00f, 0.995f, 0.99f);
 	};
 
 	void Paint(UMeshComponent* Mesh, const FLinearColor& Color);

@@ -440,6 +440,20 @@ if "WindowWarm" not in WORLD:
     errors.append("world missing warm windows")
 if "TEXT(\"tail\")" not in CHAR and "tail" not in CHAR:
     errors.append("teddy missing tail socket")
+if "DriveLimb" not in CHAR:
+    errors.append("teddy missing heel-toe limb drive")
+if "CottageDoor" not in WORLD:
+    errors.append("cottage missing door")
+if "22.f, 24.f" not in (LOOK.read_text() if LOOK.exists() else ""):
+    errors.append("hour curve missing 22h night key")
+if "Hood" not in (ROOT / "Source/Holypaw/Actors/TravelLantern.cpp").read_text():
+    errors.append("lanterns missing hood")
+if "HindL" not in (ROOT / "Source/Holypaw/Actors/WildFluffy.cpp").read_text():
+    errors.append("fluffies missing hind paws")
+if "Cloak" not in (ROOT / "Source/Holypaw/Actors/HostilePet.cpp").read_text():
+    errors.append("villains missing cloak")
+if "Bangs" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing bangs")
 
 if errors:
     print("FAIL")
