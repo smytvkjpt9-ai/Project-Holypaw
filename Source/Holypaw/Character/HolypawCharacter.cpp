@@ -16,11 +16,13 @@
 #include "Save/HolypawSaveCodec.h"
 #include "Audio/HolypawAudio.h"
 #include "Anim/HolypawProcAnim.h"
+#include "Look/HolypawLook.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "TimerManager.h"
@@ -44,78 +46,155 @@ AHolypawCharacter::AHolypawCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 480.f;
-	SpringArm->SocketOffset = FVector(0.f, 50.f, 40.f);
+	SpringArm->TargetArmLength = 430.f;
+	SpringArm->SocketOffset = FVector(0.f, 34.f, 46.f);
 	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->bDoCollisionTest = true;
 	SpringArm->ProbeSize = 12.f;
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 18.f;
+	SpringArm->bEnableCameraRotationLag = true;
+	SpringArm->CameraRotationLagSpeed = 22.f;
+	SpringArm->CameraLagMaxDistance = 64.f;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	Camera->bUsePawnControlRotation = false;
-	Camera->FieldOfView = 70.f;
+	Camera->FieldOfView = 67.f;
+	Camera->PostProcessBlendWeight = 0.12f;
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	BodyMesh->SetupAttachment(RootComponent);
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BodyMesh->SetRelativeLocation(FVector(0.f, 0.f, -20.f));
-	BodyMesh->SetRelativeScale3D(FVector(0.85f, 0.7f, 0.75f));
+	BodyMesh->SetRelativeLocation(FVector(0.f, 0.f, -18.f));
+	BodyMesh->SetRelativeScale3D(FVector(0.92f, 0.78f, 0.82f));
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Head"));
 	HeadMesh->SetupAttachment(RootComponent);
-	HeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 42.f));
-	HeadMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.55f));
+	HeadMesh->SetRelativeLocation(FVector(2.f, 0.f, 50.f));
+	HeadMesh->SetRelativeScale3D(FVector(0.68f, 0.66f, 0.64f));
 
 	HaloMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Halo"));
 	HaloMesh->SetupAttachment(HeadMesh);
-	HaloMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HaloMesh->SetRelativeLocation(FVector(0.f, 0.f, 70.f));
-	HaloMesh->SetRelativeScale3D(FVector(0.45f, 0.45f, 0.08f));
+	HaloMesh->SetRelativeLocation(FVector(0.f, 0.f, 78.f));
+	HaloMesh->SetRelativeScale3D(FVector(0.48f, 0.48f, 0.08f));
 	HaloMesh->SetHiddenInGame(true);
 
 	EarL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarL"));
 	EarL->SetupAttachment(HeadMesh);
-	EarL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EarR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarR"));
 	EarR->SetupAttachment(HeadMesh);
-	EarR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	InnerEarL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("InnerEarL"));
+	InnerEarL->SetupAttachment(EarL);
+	InnerEarR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("InnerEarR"));
+	InnerEarR->SetupAttachment(EarR);
 	Snout = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Snout"));
 	Snout->SetupAttachment(HeadMesh);
-	Snout->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
-	PawL->SetupAttachment(BodyMesh);
-	PawL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
-	PawR->SetupAttachment(BodyMesh);
-	PawR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Nose = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Nose"));
+	Nose->SetupAttachment(Snout);
 	Belly = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Belly"));
 	Belly->SetupAttachment(BodyMesh);
-	Belly->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
 	EyeL->SetupAttachment(HeadMesh);
-	EyeL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
 	EyeR->SetupAttachment(HeadMesh);
-	EyeR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	EarL->SetRelativeLocation(FVector(-8.f, 18.f, 28.f));
-	EarL->SetRelativeRotation(FRotator(12.f, 0.f, -18.f));
-	EarL->SetRelativeScale3D(FVector(0.18f, 0.12f, 0.32f));
-	EarR->SetRelativeLocation(FVector(-8.f, -18.f, 28.f));
-	EarR->SetRelativeRotation(FRotator(12.f, 0.f, 18.f));
-	EarR->SetRelativeScale3D(FVector(0.18f, 0.12f, 0.32f));
-	Snout->SetRelativeLocation(FVector(22.f, 0.f, -4.f));
-	Snout->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.16f));
-	PawL->SetRelativeLocation(FVector(8.f, 22.f, -18.f));
-	PawL->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.12f));
-	PawR->SetRelativeLocation(FVector(8.f, -22.f, -18.f));
-	PawR->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.12f));
-	Belly->SetRelativeLocation(FVector(12.f, 0.f, -4.f));
-	Belly->SetRelativeScale3D(FVector(0.55f, 0.45f, 0.45f));
-	EyeL->SetRelativeLocation(FVector(18.f, 8.f, 6.f));
-	EyeL->SetRelativeScale3D(FVector(0.08f, 0.08f, 0.08f));
-	EyeR->SetRelativeLocation(FVector(18.f, -8.f, 6.f));
-	EyeR->SetRelativeScale3D(FVector(0.08f, 0.08f, 0.08f));
+	HighlightL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HighlightL"));
+	HighlightL->SetupAttachment(EyeL);
+	HighlightR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HighlightR"));
+	HighlightR->SetupAttachment(EyeR);
+	CheekL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CheekL"));
+	CheekL->SetupAttachment(HeadMesh);
+	CheekR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CheekR"));
+	CheekR->SetupAttachment(HeadMesh);
+	ArmL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArmL"));
+	ArmL->SetupAttachment(BodyMesh);
+	ArmR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArmR"));
+	ArmR->SetupAttachment(BodyMesh);
+	PawL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawL"));
+	PawL->SetupAttachment(ArmL);
+	PawR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawR"));
+	PawR->SetupAttachment(ArmR);
+	LegL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegL"));
+	LegL->SetupAttachment(BodyMesh);
+	LegR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LegR"));
+	LegR->SetupAttachment(BodyMesh);
+	FootL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FootL"));
+	FootL->SetupAttachment(LegL);
+	FootR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FootR"));
+	FootR->SetupAttachment(LegR);
+	Ribbon = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Ribbon"));
+	Ribbon->SetupAttachment(BodyMesh);
+	BowL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowL"));
+	BowL->SetupAttachment(Ribbon);
+	BowR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowR"));
+	BowR->SetupAttachment(Ribbon);
+	BrowL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BrowL"));
+	BrowL->SetupAttachment(HeadMesh);
+	BrowR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BrowR"));
+	BrowR->SetupAttachment(HeadMesh);
+	Tail = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tail"));
+	Tail->SetupAttachment(BodyMesh);
+	HaloLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("HaloLight"));
+	HaloLight->SetupAttachment(HaloMesh);
+	HaloLight->SetVisibility(false);
+
+	EarL->SetRelativeLocation(FVector(-4.f, 20.f, 36.f));
+	EarL->SetRelativeRotation(FRotator(18.f, 6.f, -20.f));
+	EarL->SetRelativeScale3D(FVector(0.15f, 0.12f, 0.36f));
+	EarR->SetRelativeLocation(FVector(-4.f, -20.f, 36.f));
+	EarR->SetRelativeRotation(FRotator(18.f, -6.f, 20.f));
+	EarR->SetRelativeScale3D(FVector(0.15f, 0.12f, 0.36f));
+	InnerEarL->SetRelativeLocation(FVector(8.f, 0.f, 6.f));
+	InnerEarL->SetRelativeScale3D(FVector(0.48f, 0.40f, 0.50f));
+	InnerEarR->SetRelativeLocation(FVector(8.f, 0.f, 6.f));
+	InnerEarR->SetRelativeScale3D(FVector(0.48f, 0.40f, 0.50f));
+	Snout->SetRelativeLocation(FVector(18.f, 0.f, -6.f));
+	Snout->SetRelativeScale3D(FVector(0.22f, 0.20f, 0.16f));
+	Nose->SetRelativeLocation(FVector(14.f, 0.f, 4.f));
+	Nose->SetRelativeScale3D(FVector(0.20f, 0.24f, 0.16f));
+	Belly->SetRelativeLocation(FVector(12.f, 0.f, -2.f));
+	Belly->SetRelativeScale3D(FVector(0.60f, 0.50f, 0.50f));
+	EyeL->SetRelativeLocation(FVector(22.f, 6.5f, 3.f));
+	EyeL->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.12f));
+	EyeR->SetRelativeLocation(FVector(22.f, -6.5f, 3.f));
+	EyeR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.12f));
+	HighlightL->SetRelativeLocation(FVector(8.f, 4.f, 6.f));
+	HighlightL->SetRelativeScale3D(FVector(0.30f, 0.30f, 0.30f));
+	HighlightR->SetRelativeLocation(FVector(8.f, 4.f, 6.f));
+	HighlightR->SetRelativeScale3D(FVector(0.30f, 0.30f, 0.30f));
+	CheekL->SetRelativeLocation(FVector(15.f, 11.f, -4.f));
+	CheekL->SetRelativeScale3D(FVector(0.11f, 0.09f, 0.07f));
+	CheekR->SetRelativeLocation(FVector(15.f, -11.f, -4.f));
+	CheekR->SetRelativeScale3D(FVector(0.11f, 0.09f, 0.07f));
+	ArmL->SetRelativeLocation(FVector(2.f, 36.f, 4.f));
+	ArmL->SetRelativeScale3D(FVector(0.24f, 0.20f, 0.34f));
+	ArmR->SetRelativeLocation(FVector(2.f, -36.f, 4.f));
+	ArmR->SetRelativeScale3D(FVector(0.24f, 0.20f, 0.34f));
+	PawL->SetRelativeLocation(FVector(6.f, 4.f, -18.f));
+	PawL->SetRelativeScale3D(FVector(0.62f, 0.58f, 0.40f));
+	PawR->SetRelativeLocation(FVector(6.f, -4.f, -18.f));
+	PawR->SetRelativeScale3D(FVector(0.62f, 0.58f, 0.40f));
+	LegL->SetRelativeLocation(FVector(2.f, 14.f, -30.f));
+	LegL->SetRelativeScale3D(FVector(0.24f, 0.22f, 0.26f));
+	LegR->SetRelativeLocation(FVector(2.f, -14.f, -30.f));
+	LegR->SetRelativeScale3D(FVector(0.24f, 0.22f, 0.26f));
+	FootL->SetRelativeLocation(FVector(10.f, 0.f, -16.f));
+	FootL->SetRelativeScale3D(FVector(0.95f, 0.80f, 0.40f));
+	FootR->SetRelativeLocation(FVector(10.f, 0.f, -16.f));
+	FootR->SetRelativeScale3D(FVector(0.95f, 0.80f, 0.40f));
+	Ribbon->SetRelativeLocation(FVector(2.f, 0.f, 24.f));
+	Ribbon->SetRelativeScale3D(FVector(0.22f, 0.22f, 0.16f));
+	BowL->SetRelativeLocation(FVector(-2.f, 14.f, 0.f));
+	BowL->SetRelativeScale3D(FVector(0.55f, 0.95f, 0.45f));
+	BowR->SetRelativeLocation(FVector(-2.f, -14.f, 0.f));
+	BowR->SetRelativeScale3D(FVector(0.55f, 0.95f, 0.45f));
+	BrowL->SetRelativeLocation(FVector(22.f, 8.f, 16.f));
+	BrowL->SetRelativeRotation(FRotator(0.f, 0.f, -10.f));
+	BrowL->SetRelativeScale3D(FVector(0.09f, 0.035f, 0.028f));
+	BrowR->SetRelativeLocation(FVector(22.f, -8.f, 16.f));
+	BrowR->SetRelativeRotation(FRotator(0.f, 0.f, 10.f));
+	BrowR->SetRelativeScale3D(FVector(0.09f, 0.035f, 0.028f));
+	Tail->SetRelativeLocation(FVector(-24.f, 0.f, -6.f));
+	Tail->SetRelativeScale3D(FVector(0.22f, 0.20f, 0.18f));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> TorusFinder(TEXT("/Engine/BasicShapes/Torus.Torus"));
@@ -124,42 +203,78 @@ AHolypawCharacter::AHolypawCharacter()
 	if (SphereFinder.Succeeded())
 	{
 		SphereMesh = SphereFinder.Object;
-		BodyMesh->SetStaticMesh(SphereFinder.Object);
-		HeadMesh->SetStaticMesh(SphereFinder.Object);
-		Snout->SetStaticMesh(SphereFinder.Object);
-		PawL->SetStaticMesh(SphereFinder.Object);
-		PawR->SetStaticMesh(SphereFinder.Object);
-		Belly->SetStaticMesh(SphereFinder.Object);
-		EyeL->SetStaticMesh(SphereFinder.Object);
-		EyeR->SetStaticMesh(SphereFinder.Object);
 	}
 	if (ConeFinder.Succeeded())
 	{
 		ConeMesh = ConeFinder.Object;
-		EarL->SetStaticMesh(ConeFinder.Object);
-		EarR->SetStaticMesh(ConeFinder.Object);
-	}
-	else if (SphereFinder.Succeeded())
-	{
-		EarL->SetStaticMesh(SphereFinder.Object);
-		EarR->SetStaticMesh(SphereFinder.Object);
-	}
-	if (TorusFinder.Succeeded())
-	{
-		HaloMesh->SetStaticMesh(TorusFinder.Object);
-	}
-	else if (SphereFinder.Succeeded())
-	{
-		HaloMesh->SetStaticMesh(SphereFinder.Object);
 	}
 	if (MatFinder.Succeeded())
 	{
 		ShapeMat = MatFinder.Object;
-		TArray<UStaticMeshComponent*> Parts = { BodyMesh, HeadMesh, HaloMesh, EarL, EarR, Snout, PawL, PawR, Belly, EyeL, EyeR };
+	}
+
+	HolypawLook::PrepPart(BodyMesh, SphereMesh);
+	HolypawLook::PrepPart(HeadMesh, SphereMesh);
+	HolypawLook::PrepPart(Snout, SphereMesh);
+	HolypawLook::PrepPart(Nose, SphereMesh);
+	HolypawLook::PrepPart(PawL, SphereMesh);
+	HolypawLook::PrepPart(PawR, SphereMesh);
+	HolypawLook::PrepPart(Belly, SphereMesh);
+	HolypawLook::PrepPart(EyeL, SphereMesh);
+	HolypawLook::PrepPart(EyeR, SphereMesh);
+	HolypawLook::PrepPart(HighlightL, SphereMesh);
+	HolypawLook::PrepPart(HighlightR, SphereMesh);
+	HolypawLook::PrepPart(CheekL, SphereMesh);
+	HolypawLook::PrepPart(CheekR, SphereMesh);
+	HolypawLook::PrepPart(ArmL, SphereMesh);
+	HolypawLook::PrepPart(ArmR, SphereMesh);
+	HolypawLook::PrepPart(LegL, SphereMesh);
+	HolypawLook::PrepPart(LegR, SphereMesh);
+	HolypawLook::PrepPart(FootL, SphereMesh);
+	HolypawLook::PrepPart(FootR, SphereMesh);
+	HolypawLook::PrepPart(Ribbon, SphereMesh);
+	HolypawLook::PrepPart(BowL, SphereMesh);
+	HolypawLook::PrepPart(BowR, SphereMesh);
+	HolypawLook::PrepPart(Tail, SphereMesh);
+	HolypawLook::PrepPart(BrowL, SphereMesh);
+	HolypawLook::PrepPart(BrowR, SphereMesh);
+	HolypawLook::PrepPart(InnerEarL, SphereMesh);
+	HolypawLook::PrepPart(InnerEarR, SphereMesh);
+	HolypawLook::PrepPart(EarL, ConeMesh ? ConeMesh : SphereMesh);
+	HolypawLook::PrepPart(EarR, ConeMesh ? ConeMesh : SphereMesh);
+	HolypawLook::PrepPart(HaloMesh, TorusFinder.Succeeded() ? TorusFinder.Object : SphereMesh);
+	if (ShapeMat)
+	{
+		TArray<UStaticMeshComponent*> Parts = {
+			BodyMesh, HeadMesh, HaloMesh, EarL, EarR, InnerEarL, InnerEarR, Snout, Nose,
+			PawL, PawR, Belly, EyeL, EyeR, HighlightL, HighlightR, CheekL, CheekR,
+			ArmL, ArmR, LegL, LegR, FootL, FootR, Ribbon, BowL, BowR, Tail, BrowL, BrowR
+		};
 		for (UStaticMeshComponent* P : Parts)
 		{
-			if (P) { P->SetMaterial(0, ShapeMat); }
+			if (P)
+			{
+				P->SetMaterial(0, ShapeMat);
+			}
 		}
+	}
+	HolypawLook::TagSocket(EarL, TEXT("earL"));
+	HolypawLook::TagSocket(EarR, TEXT("earR"));
+	HolypawLook::TagSocket(Snout, TEXT("snout"));
+	HolypawLook::TagSocket(HaloMesh, TEXT("halo"));
+	HolypawLook::TagSocket(PawL, TEXT("pawL"));
+	HolypawLook::TagSocket(PawR, TEXT("pawR"));
+	HolypawLook::TagSocket(HeadMesh, TEXT("head"));
+	HolypawLook::TagSocket(BodyMesh, TEXT("body"));
+	HolypawLook::TagSocket(Belly, TEXT("belly"));
+	HolypawLook::TagSocket(Nose, TEXT("nose"));
+	HolypawLook::TagSocket(Ribbon, TEXT("ribbon"));
+	HolypawLook::TagSocket(Tail, TEXT("tail"));
+	if (HaloLight)
+	{
+		HolypawLook::DressLanternLight(HaloLight, HolypawLook::GoldWarm);
+		HaloLight->SetIntensity(0.f);
+		HaloLight->SetAttenuationRadius(220.f);
 	}
 
 	Affection = CreateDefaultSubobject<UAffectionComponent>(TEXT("Affection"));
@@ -171,21 +286,48 @@ AHolypawCharacter::AHolypawCharacter()
 void AHolypawCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	Colorize(BodyMesh, FLinearColor(0.91f, 0.62f, 0.55f));
-	Colorize(HeadMesh, FLinearColor(0.95f, 0.72f, 0.66f));
-	Colorize(HaloMesh, FLinearColor(1.f, 0.9f, 0.45f));
-	Colorize(EarL, FLinearColor(0.88f, 0.55f, 0.5f));
-	Colorize(EarR, FLinearColor(0.88f, 0.55f, 0.5f));
-	Colorize(Snout, FLinearColor(0.98f, 0.82f, 0.76f));
-	Colorize(PawL, FLinearColor(0.85f, 0.52f, 0.48f));
-	Colorize(PawR, FLinearColor(0.85f, 0.52f, 0.48f));
-	Colorize(Belly, FLinearColor(0.98f, 0.9f, 0.82f));
-	Colorize(EyeL, FLinearColor(0.12f, 0.1f, 0.12f));
-	Colorize(EyeR, FLinearColor(0.12f, 0.1f, 0.12f));
+	Colorize(BodyMesh, HolypawLook::Fur);
+	Colorize(HeadMesh, HolypawLook::FurLight);
+	Colorize(HaloMesh, HolypawLook::GoldWarm);
+	Colorize(EarL, HolypawLook::Fur);
+	Colorize(EarR, HolypawLook::Fur);
+	Colorize(InnerEarL, HolypawLook::InnerEar);
+	Colorize(InnerEarR, HolypawLook::InnerEar);
+	Colorize(Snout, HolypawLook::Snout);
+	Colorize(Nose, HolypawLook::Pad);
+	Colorize(PawL, HolypawLook::Fur);
+	Colorize(PawR, HolypawLook::Fur);
+	Colorize(Belly, HolypawLook::Cream);
+	Colorize(EyeL, HolypawLook::Button);
+	Colorize(EyeR, HolypawLook::Button);
+	Colorize(HighlightL, HolypawLook::Catchlight);
+	Colorize(HighlightR, HolypawLook::Catchlight);
+	Colorize(CheekL, HolypawLook::InnerEar);
+	Colorize(CheekR, HolypawLook::InnerEar);
+	Colorize(ArmL, HolypawLook::Fur);
+	Colorize(ArmR, HolypawLook::Fur);
+	Colorize(LegL, HolypawLook::Fur);
+	Colorize(LegR, HolypawLook::Fur);
+	Colorize(FootL, HolypawLook::Pad);
+	Colorize(FootR, HolypawLook::Pad);
+	Colorize(Ribbon, HolypawLook::Rose);
+	Colorize(BowL, HolypawLook::Rose);
+	Colorize(BowR, HolypawLook::Rose);
+	Colorize(Tail, HolypawLook::Fur);
+	Colorize(BrowL, HolypawLook::Fur);
+	Colorize(BrowR, HolypawLook::Fur);
 	HolypawAnim::CaptureTeddyRest(TeddyRest, TeddyParts());
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	UnlockTravel(EHolypawZone::ForestCottage);
 	Mode = EHolypawPawnMode::Title;
+	if (ArmL) { ArmLBase = ArmL->GetRelativeLocation(); ArmLRot = ArmL->GetRelativeRotation(); }
+	if (ArmR) { ArmRBase = ArmR->GetRelativeLocation(); ArmRRot = ArmR->GetRelativeRotation(); }
+	if (LegL) { LegLBase = LegL->GetRelativeLocation(); LegLRot = LegL->GetRelativeRotation(); }
+	if (LegR) { LegRBase = LegR->GetRelativeLocation(); LegRRot = LegR->GetRelativeRotation(); }
+	if (FootL) { FootLBase = FootL->GetRelativeLocation(); FootLRot = FootL->GetRelativeRotation(); }
+	if (FootR) { FootRBase = FootR->GetRelativeLocation(); FootRRot = FootR->GetRelativeRotation(); }
+	if (HighlightL) { HighlightLScale = HighlightL->GetRelativeScale3D(); }
+	if (HighlightR) { HighlightRScale = HighlightR->GetRelativeScale3D(); }
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = false;
@@ -197,14 +339,7 @@ void AHolypawCharacter::BeginPlay()
 
 void AHolypawCharacter::Colorize(UStaticMeshComponent* Comp, const FLinearColor& Color)
 {
-	if (!Comp || !ShapeMat)
-	{
-		return;
-	}
-	if (UMaterialInstanceDynamic* Mid = Comp->CreateDynamicMaterialInstance(0, ShapeMat))
-	{
-		Mid->SetVectorParameterValue(TEXT("Color"), Color);
-	}
+	HolypawLook::Paint(Comp, Color);
 }
 
 void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -303,6 +438,13 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 		const float Want = Mode == EHolypawPawnMode::Battle ? BattleArm : ExploreArm;
 		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, Want, DeltaSeconds, 6.f);
 	}
+	HolypawLook::DressCamera(Camera, Mode == EHolypawPawnMode::Battle, DeltaSeconds);
+	if (HaloLight)
+	{
+		const bool Lit = HaloMesh && !HaloMesh->bHiddenInGame;
+		HaloLight->SetVisibility(Lit);
+		HaloLight->SetIntensity(Lit ? 900.f : 0.f);
+	}
 	if (Mode == EHolypawPawnMode::Play)
 	{
 		UpdateZone();
@@ -331,51 +473,112 @@ void AHolypawCharacter::SyncFollowers(float DeltaSeconds)
 	}
 
 	const int32 Wanted = Party ? Party->Members.Num() : 0;
-	while (FollowerMeshes.Num() < Wanted && SphereMesh)
+	while (Followers.Num() < Wanted && SphereMesh)
 	{
-		UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
-		Comp->SetStaticMesh(SphereMesh);
-		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Comp->SetMobility(EComponentMobility::Movable);
-		Comp->CreationMethod = EComponentCreationMethod::Instance;
-		AddInstanceComponent(Comp);
-		Comp->RegisterComponent();
-		Comp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-		if (ShapeMat)
+		FHolypawFollowerVisual V;
+		const int32 Idx = Followers.Num();
+		const FLinearColor Col = Party->Members.IsValidIndex(Idx) ? Party->Members[Idx].Color : HolypawLook::Mint;
+		V.Body = MakeFollowerPart(SphereMesh, Col);
+		V.EarL = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f, V.Body);
+		V.EarR = MakeFollowerPart(ConeMesh ? ConeMesh : SphereMesh, Col * 0.78f, V.Body);
+		V.Tail = MakeFollowerPart(SphereMesh, Col, V.Body);
+		V.EyeL = MakeFollowerPart(SphereMesh, HolypawLook::Button, V.Body);
+		V.EyeR = MakeFollowerPart(SphereMesh, HolypawLook::Button, V.Body);
+		V.Snout = MakeFollowerPart(SphereMesh, HolypawLook::Cream, V.Body);
+		if (V.Body)
 		{
-			Comp->SetMaterial(0, ShapeMat);
+			V.Body->SetWorldScale3D(FVector(0.38f, 0.30f, 0.30f));
 		}
-		const int32 Idx = FollowerMeshes.Num();
-		if (Party->Members.IsValidIndex(Idx))
+		if (V.EarL)
 		{
-			Colorize(Comp, Party->Members[Idx].Color);
+			V.EarL->SetRelativeLocation(FVector(0.f, 36.f, 48.f));
+			V.EarL->SetRelativeRotation(FRotator(12.f, 0.f, -16.f));
+			V.EarL->SetRelativeScale3D(FVector(0.32f, 0.24f, 0.58f));
 		}
-		Comp->SetWorldScale3D(FVector(0.35f));
-		FollowerMeshes.Add(Comp);
+		if (V.EarR)
+		{
+			V.EarR->SetRelativeLocation(FVector(0.f, -36.f, 48.f));
+			V.EarR->SetRelativeRotation(FRotator(12.f, 0.f, 16.f));
+			V.EarR->SetRelativeScale3D(FVector(0.32f, 0.24f, 0.58f));
+		}
+		if (V.Tail)
+		{
+			V.Tail->SetRelativeLocation(FVector(-38.f, 0.f, 4.f));
+			V.Tail->SetRelativeScale3D(FVector(0.38f, 0.32f, 0.32f));
+		}
+		if (V.EyeL)
+		{
+			V.EyeL->SetRelativeLocation(FVector(28.f, 10.f, 10.f));
+			V.EyeL->SetRelativeScale3D(FVector(0.16f, 0.16f, 0.16f));
+		}
+		if (V.EyeR)
+		{
+			V.EyeR->SetRelativeLocation(FVector(28.f, -10.f, 10.f));
+			V.EyeR->SetRelativeScale3D(FVector(0.16f, 0.16f, 0.16f));
+		}
+		if (V.Snout)
+		{
+			V.Snout->SetRelativeLocation(FVector(32.f, 0.f, 0.f));
+			V.Snout->SetRelativeScale3D(FVector(0.28f, 0.22f, 0.20f));
+		}
+		Followers.Add(V);
 	}
-	while (FollowerMeshes.Num() > Wanted)
+	while (Followers.Num() > Wanted)
 	{
-		UStaticMeshComponent* Comp = FollowerMeshes.Pop();
-		if (Comp)
-		{
-			Comp->DestroyComponent();
-		}
+		FHolypawFollowerVisual V = Followers.Pop();
+		if (V.Body) { V.Body->DestroyComponent(); }
+		if (V.EarL) { V.EarL->DestroyComponent(); }
+		if (V.EarR) { V.EarR->DestroyComponent(); }
+		if (V.Tail) { V.Tail->DestroyComponent(); }
+		if (V.EyeL) { V.EyeL->DestroyComponent(); }
+		if (V.EyeR) { V.EyeR->DestroyComponent(); }
+		if (V.Snout) { V.Snout->DestroyComponent(); }
 	}
 
-	for (int32 I = 0; I < FollowerMeshes.Num(); ++I)
+	for (int32 I = 0; I < Followers.Num(); ++I)
 	{
-		UStaticMeshComponent* Comp = FollowerMeshes[I];
-		if (!Comp)
+		FHolypawFollowerVisual& V = Followers[I];
+		if (!V.Body)
 		{
 			continue;
 		}
 		const HolypawAnim::FPartySlotPose Pose = HolypawAnim::EvaluateParty(
 			Trail, I, PartyAnim.Clock, PartyAnim.CelebrateT, GetActorLocation(), GetActorForwardVector());
-		const FVector NewLoc = FMath::VInterpTo(Comp->GetComponentLocation(), Pose.Location, DeltaSeconds, 10.f);
-		Comp->SetWorldLocation(NewLoc);
-		Comp->SetWorldScale3D(Pose.Scale);
-		Comp->SetWorldRotation(Pose.Rot);
+		const FVector NewLoc = FMath::VInterpTo(V.Body->GetComponentLocation(), Pose.Location, DeltaSeconds, 10.f);
+		V.Body->SetWorldLocation(NewLoc);
+		V.Body->SetWorldScale3D(Pose.Scale);
+		V.Body->SetWorldRotation(Pose.Rot);
+		if (V.EarL)
+		{
+			V.EarL->SetRelativeRotation(FRotator(12.f + FMath::Sin(PartyAnim.Clock * 6.f + I) * 10.f, 0.f, -16.f));
+		}
+		if (V.EarR)
+		{
+			V.EarR->SetRelativeRotation(FRotator(12.f + FMath::Sin(PartyAnim.Clock * 6.f + I + 1.f) * 10.f, 0.f, 16.f));
+		}
 	}
+}
+
+UStaticMeshComponent* AHolypawCharacter::MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach)
+{
+	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
+	if (!Comp)
+	{
+		return nullptr;
+	}
+	HolypawLook::PrepPart(Comp, Mesh);
+	Comp->SetMobility(EComponentMobility::Movable);
+	Comp->CreationMethod = EComponentCreationMethod::Instance;
+	AddInstanceComponent(Comp);
+	Comp->RegisterComponent();
+	USceneComponent* Parent = Attach ? Attach : RootComponent;
+	Comp->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
+	if (ShapeMat)
+	{
+		Comp->SetMaterial(0, ShapeMat);
+	}
+	Colorize(Comp, Color);
+	return Comp;
 }
 
 void AHolypawCharacter::UpdateZone()
@@ -2125,6 +2328,55 @@ void AHolypawCharacter::TickProcAnim(float DeltaSeconds)
 		}
 	}
 	HolypawAnim::ApplyTeddyPose(HolypawAnim::EvaluateTeddy(TeddyAnim, TeddyRest), TeddyParts());
+
+	const float Walk = TeddyAnim.Walk;
+	const float HugAmt = HolypawAnim::WrapAmount(TeddyAnim);
+	const float Stride = TeddyAnim.Clock * (7.4f + Walk * 5.6f);
+	auto DriveLimb = [](UStaticMeshComponent* Limb, UStaticMeshComponent* End,
+		const FVector& LimbBase, const FRotator& LimbRot,
+		const FVector& EndBase, const FRotator& EndRot,
+		const float Phase, const float WalkAmt, const float Hug, const float HugYaw)
+	{
+		const float Swing = FMath::Sin(Phase);
+		const float Lift = FMath::Max(0.f, -FMath::Cos(Phase));
+		const float Plant = FMath::Max(0.f, FMath::Cos(Phase));
+		if (Limb)
+		{
+			Limb->SetRelativeRotation(LimbRot + FRotator(Swing * WalkAmt * 26.f + Hug * 42.f, 0.f, HugYaw));
+			Limb->SetRelativeLocation(LimbBase + FVector(Hug * 8.f + Swing * WalkAmt * 3.f, 0.f, Lift * WalkAmt * 6.f - Plant * WalkAmt * 1.8f));
+		}
+		if (End)
+		{
+			End->SetRelativeRotation(EndRot + FRotator(Swing * WalkAmt * -16.f + Hug * 28.f, 0.f, HugYaw * 0.8f));
+			End->SetRelativeLocation(EndBase + FVector(0.f, 0.f, Lift * WalkAmt * 2.f));
+		}
+	};
+	DriveLimb(ArmL, nullptr, ArmLBase, ArmLRot, FVector::ZeroVector, FRotator::ZeroRotator, Stride + PI, Walk, HugAmt, HugAmt * 22.f);
+	DriveLimb(ArmR, nullptr, ArmRBase, ArmRRot, FVector::ZeroVector, FRotator::ZeroRotator, Stride, Walk, HugAmt, HugAmt * -22.f);
+	DriveLimb(LegL, FootL, LegLBase, LegLRot, FootLBase, FootLRot, Stride, Walk, 0.f, 0.f);
+	DriveLimb(LegR, FootR, LegRBase, LegRRot, FootRBase, FootRRot, Stride + PI, Walk, 0.f, 0.f);
+
+	const float EyeY = EyeL ? EyeL->GetRelativeScale3D().Z / FMath::Max(TeddyRest.EyeLScale.Z, 0.01f) : 1.f;
+	if (HighlightL)
+	{
+		HighlightL->SetRelativeScale3D(HighlightLScale * FMath::Clamp(EyeY, 0.f, 1.f));
+		HighlightL->SetHiddenInGame(EyeY < 0.4f);
+	}
+	if (HighlightR)
+	{
+		HighlightR->SetRelativeScale3D(HighlightRScale * FMath::Clamp(EyeY, 0.f, 1.f));
+		HighlightR->SetHiddenInGame(EyeY < 0.4f);
+	}
+	if (Camera && EyeY >= 0.4f)
+	{
+		const FVector CamLoc = Camera->GetComponentLocation();
+		HolypawLook::AimCatchlight(HighlightL, EyeL, CamLoc);
+		HolypawLook::AimCatchlight(HighlightR, EyeR, CamLoc);
+	}
+	if (Tail)
+	{
+		Tail->SetRelativeRotation(FRotator(FMath::Sin(TeddyAnim.Clock * 4.8f) * (8.f + Walk * 10.f), 0.f, 0.f));
+	}
 }
 
 FString AHolypawCharacter::GetClockLine() const

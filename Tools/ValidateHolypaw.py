@@ -436,9 +436,67 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("CanopyPuffs", WORLD, "world"),
+    ("GradeVolume", WORLD, "world"),
+    ("FillLight", WORLD, "world"),
+    ("earL", CHAR, "character"),
+    ("HaloLight", CHAR, "character"),
+    ("TickProcAnim", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")
+
+LOOK = ROOT / "Source/Holypaw/Look/HolypawLook.cpp"
+if not LOOK.exists():
+    errors.append("missing HolypawLook.cpp presentation bible")
+else:
+    look = LOOK.read_text()
+    for needle in ("GradeVolume", "DressSun", "DressClouds", "DressCamera", "Paint", "Lantern", "SampleHour", "AimCatchlight"):
+        if needle not in look:
+            errors.append(f"look missing {needle}")
+
+if "r.ContactShadows" not in ENGINE:
+    errors.append("DefaultEngine missing contact shadows")
+if "InnerEarL" not in (ROOT / "Source/Holypaw/Character/HolypawCharacter.h").read_text():
+    errors.append("teddy missing inner-ear sockets")
+if "Glow" not in (ROOT / "Source/Holypaw/Actors/TravelLantern.cpp").read_text():
+    errors.append("lanterns missing point light")
+if "EyeL" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing eyes")
+if "CanopyPuffs" not in WORLD:
+    errors.append("world missing layered canopies")
+if "SampleHour" not in WORLD:
+    errors.append("world lighting missing SampleHour")
+if "WindowWarm" not in WORLD:
+    errors.append("world missing warm windows")
+if "TEXT(\"tail\")" not in CHAR and "tail" not in CHAR:
+    errors.append("teddy missing tail socket")
+if "DriveLimb" not in CHAR:
+    errors.append("teddy missing heel-toe limb drive")
+if "CottageDoor" not in WORLD:
+    errors.append("cottage missing door")
+if "22.f, 24.f" not in (LOOK.read_text() if LOOK.exists() else ""):
+    errors.append("hour curve missing 22h night key")
+if "Hood" not in (ROOT / "Source/Holypaw/Actors/TravelLantern.cpp").read_text():
+    errors.append("lanterns missing hood")
+if "HindL" not in (ROOT / "Source/Holypaw/Actors/WildFluffy.cpp").read_text():
+    errors.append("fluffies missing hind paws")
+if "Cloak" not in (ROOT / "Source/Holypaw/Actors/HostilePet.cpp").read_text():
+    errors.append("villains missing cloak")
+if "Bangs" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing bangs")
+if "PlaceBed" not in INTERIOR:
+    errors.append("interior kit missing PlaceBed furniture")
+if "PlaceCampKit" not in INTERIOR:
+    errors.append("interior kit missing camp kit")
+if "PlaceAwningStall" not in INTERIOR:
+    errors.append("interior kit missing awning stall")
+if "DressCityPlaza" not in WORLD:
+    errors.append("towns missing plaza furniture")
+if "PlaceClothesline" not in WORLD:
+    errors.append("cottage yard missing clothesline")
+if "CottageHearth" not in INTERIOR:
+    errors.append("cottage missing hearth")
 
 if errors:
     print("FAIL")

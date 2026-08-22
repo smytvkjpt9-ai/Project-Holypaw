@@ -28,5 +28,8 @@ public:
 
 protected:
 	UStaticMesh* CubeMesh = nullptr;
+	UStaticMesh* SphereMesh = nullptr;
+	UStaticMesh* ConeMesh = nullptr;
+	UStaticMesh* CylMesh = nullptr;
 	UMaterialInterface* ShapeMat = nullptr;
 };

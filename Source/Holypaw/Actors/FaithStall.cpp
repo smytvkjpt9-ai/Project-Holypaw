@@ -1,5 +1,6 @@
 #include "Actors/FaithStall.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 #include "Components/AffectionComponent.h"
 
 AFaithStall::AFaithStall()
@@ -10,7 +11,7 @@ AFaithStall::AFaithStall()
 void AFaithStall::BeginPlay()
 {
 	Super::BeginPlay();
-	SetSolidColor(FLinearColor(0.95f, 0.78f, 0.35f));
+	SetSolidColor(HolypawLook::Gold);
 }
 
 FText AFaithStall::GetPrompt() const
