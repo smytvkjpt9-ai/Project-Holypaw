@@ -1,6 +1,7 @@
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
 #include "HolypawGameInstance.h"
+#include "HolypawTypes.h"
 #include "AI/HolypawSchedule.h"
 #include "Faith/HolypawFaithSim.h"
 #include "UObject/ConstructorHelpers.h"
@@ -146,6 +147,21 @@ void AHugHuman::ReceiveHug()
 	HugPulse = 1.f;
 }
 
+void AHugHuman::NoticeConvert(const FVector& At)
+{
+	if (bBeliever || bKnelt)
+	{
+		return;
+	}
+	HugPulse = FMath::Max(HugPulse, 0.7f);
+	NoticeHold = 1.5f;
+	const FVector Step = At - GetActorLocation();
+	if (Step.SizeSquared2D() > 4.f)
+	{
+		NoticeYaw = FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X));
+	}
+}
+
 FString AHugHuman::GetSkepticLine(int32 Pct) const
 {
 	if (Pct < 25)
@@ -165,11 +181,29 @@ FString AHugHuman::GetSkepticLine(int32 Pct) const
 
 FString AHugHuman::GetBelieverLine() const
 {
+	const FString Who = PersonName.ToString();
+	FString Quote = TEXT("The bear is correct. I was being so serious.");
+	if (const FHolypawTalkDef* Talk = HolypawCatalog::FindTalk(Who))
+	{
+		if (!Talk->Line.IsEmpty() && Talk->Speaker != TEXT("Default"))
+		{
+			Quote = Talk->Line;
+			int32 Dot = INDEX_NONE;
+			if (Quote.FindChar(TEXT('.'), Dot) && Dot > 12 && Dot < 92)
+			{
+				Quote = Quote.Left(Dot + 1);
+			}
+			else if (Quote.Len() > 88)
+			{
+				Quote = Quote.Left(85) + TEXT("…");
+			}
+		}
+	}
 	if (IsClapping())
 	{
-		return FString::Printf(TEXT("%s: \"The bear is correct. I was being so serious.\" *clap*"), *PersonName.ToString());
+		return FString::Printf(TEXT("%s: \"%s\" *clap*"), *Who, *Quote);
 	}
-	return FString::Printf(TEXT("%s: \"The bear is correct. I was being so serious.\""), *PersonName.ToString());
+	return FString::Printf(TEXT("%s: \"%s\""), *Who, *Quote);
 }
 
 bool AHugHuman::IsClapping() const
@@ -178,7 +212,7 @@ bool AHugHuman::IsClapping() const
 	{
 		return false;
 	}
-	if (ClapBurst > 0.f)
+	if (ClapBurst > 0.f || CelebrateHold > 0.f)
 	{
 		return true;
 	}
@@ -210,7 +244,8 @@ void AHugHuman::BecomeBeliever(const bool bCelebrate)
 	if (bCelebrate)
 	{
 		ClapBurst = 2.6f;
-		ParadeKick = 7.5f;
+		CelebrateHold = 1.25f;
+		ParadeKick = 8.5f;
 	}
 	if (Sash)
 	{
@@ -243,7 +278,11 @@ void AHugHuman::KneelInWorship()
 		return;
 	}
 	bKnelt = true;
-	BecomeBeliever();
+	BecomeBeliever(false);
+	ParadeKick = 0.f;
+	CelebrateHold = 0.f;
+	ClapBurst = 0.f;
+	NoticeHold = 0.f;
 	AddActorWorldRotation(FRotator(35.f, 0.f, 0.f));
 	BaseScale = FVector(1.f, 1.f, 0.72f);
 	SetActorScale3D(BaseScale);
@@ -260,6 +299,8 @@ void AHugHuman::ResetFaith()
 	bKnelt = false;
 	ClapBurst = 0.f;
 	ParadeKick = 0.f;
+	CelebrateHold = 0.f;
+	NoticeHold = 0.f;
 	BaseScale = FVector::OneVector;
 	SetActorScale3D(BaseScale);
 	SetActorLocation(HomeLocation);

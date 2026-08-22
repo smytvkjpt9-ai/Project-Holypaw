@@ -2,6 +2,7 @@
 #include "Actors/HugHuman.h"
 #include "Actors/HolypawShrine.h"
 #include "Actors/FaithStall.h"
+#include "Character/HolypawCharacter.h"
 #include "Faith/HolypawFaithSim.h"
 #include "EngineUtils.h"
 
@@ -79,6 +80,10 @@ namespace HolypawSchedule
 		const bool bDusk = Hour >= 17.f && Hour < 20.f;
 		if (Human.ParadeKick > 0.f && Human.bBeliever)
 		{
+			if (Human.bTendsStall)
+			{
+				return Human.HomeLocation;
+			}
 			return bDusk ? Human.ChapelGoal : Human.PlazaGoal;
 		}
 		if (!Human.bBeliever)
@@ -125,6 +130,20 @@ namespace HolypawSchedule
 		return Human.HomeLocation;
 	}
 
+	void FaceYaw(AHugHuman& Human, const float Yaw, const float DeltaSeconds)
+	{
+		Human.SetActorRotation(FMath::RInterpTo(Human.GetActorRotation(), FRotator(0.f, Yaw, 0.f), DeltaSeconds, 8.f));
+	}
+
+	void FaceToward(AHugHuman& Human, const FVector& At, const float DeltaSeconds)
+	{
+		const FVector Step = At - Human.GetActorLocation();
+		if (Step.SizeSquared2D() > 4.f)
+		{
+			FaceYaw(Human, FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X)), DeltaSeconds);
+		}
+	}
+
 	void WalkToward(AHugHuman& Human, FVector Goal, const float DeltaSeconds, const float Speed)
 	{
 		Goal.Z = Human.HomeLocation.Z;
@@ -134,8 +153,7 @@ namespace HolypawSchedule
 		Human.SetActorLocation(Next);
 		if (Step.SizeSquared2D() > 4.f)
 		{
-			const float Yaw = FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X));
-			Human.SetActorRotation(FMath::RInterpTo(Human.GetActorRotation(), FRotator(0.f, Yaw, 0.f), DeltaSeconds, 8.f));
+			FaceYaw(Human, FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X)), DeltaSeconds);
 		}
 	}
 
@@ -146,6 +164,24 @@ namespace HolypawSchedule
 			return;
 		}
 		EnsureAnchors(Human);
+		if (Human.CelebrateHold > 0.f)
+		{
+			Human.CelebrateHold = FMath::Max(0.f, Human.CelebrateHold - DeltaSeconds);
+			if (AHolypawCharacter* Teddy = HolypawFaith::FindTeddy(&Human))
+			{
+				FaceToward(Human, Teddy->GetActorLocation(), DeltaSeconds);
+			}
+			return;
+		}
+		if (Human.NoticeHold > 0.f)
+		{
+			Human.NoticeHold = FMath::Max(0.f, Human.NoticeHold - DeltaSeconds);
+			FaceYaw(Human, Human.NoticeYaw, DeltaSeconds);
+			if (Human.NoticeHold > 0.35f)
+			{
+				return;
+			}
+		}
 		if (Human.ParadeKick > 0.f)
 		{
 			Human.ParadeKick = FMath::Max(0.f, Human.ParadeKick - DeltaSeconds);

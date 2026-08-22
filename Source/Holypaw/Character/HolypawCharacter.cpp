@@ -636,7 +636,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		Human->BecomeBeliever();
 		Affection->AddMiracle(22.f);
-		const FString Pulse = AddCityHeart(CurrentZone);
+		const FString Pulse = AddCityHeart(HolypawFaith::CreditZone(Human, CurrentZone));
 		if (Story)
 		{
 			Story->NotifyConvert();
@@ -1383,7 +1383,7 @@ void AHolypawCharacter::TryMiracle()
 		{
 			H->BecomeBeliever();
 			++NewlyConvinced;
-			LastPulse = AddCityHeart(CurrentZone);
+			LastPulse = AddCityHeart(HolypawFaith::CreditZone(H, CurrentZone));
 			if (Story)
 			{
 				Story->NotifyConvert();
@@ -1596,7 +1596,7 @@ void AHolypawCharacter::CompleteBearFaith()
 		if (AHugHuman* H = *It)
 		{
 			H->ConvertProgress = 100.f;
-			H->BecomeBeliever();
+			H->BecomeBeliever(false);
 			H->KneelInWorship();
 		}
 	}

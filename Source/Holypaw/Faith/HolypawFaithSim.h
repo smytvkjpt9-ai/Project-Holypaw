@@ -59,4 +59,5 @@ namespace HolypawFaith
 	int32 HeartsAt(const UObject* WorldContext, EHolypawZone Zone);
 	int32 HeartsHere(const UObject* WorldContext, const FVector& WorldPos);
 	EHolypawZone ZoneAt(const UObject* WorldContext, const FVector& WorldPos);
+	EHolypawZone CreditZone(const class AHugHuman* Human, EHolypawZone Fallback);
 }

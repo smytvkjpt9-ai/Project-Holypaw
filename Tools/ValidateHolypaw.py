@@ -333,6 +333,16 @@ if "NotifyConvertPulse" not in PULSE:
     errors.append("conversion pulse missing nearby clap/banner drop")
 if "FountainPool" not in PULSE:
     errors.append("conversion pulse missing fountain look")
+if "DressOpenStall" not in INTERIOR:
+    errors.append("interior kit missing open plaza kiosk")
+if "CelebrateHold" not in SCHEDULE:
+    errors.append("schedule missing convert celebrate-hold")
+if "NoticeConvert" not in PULSE:
+    errors.append("conversion pulse missing skeptic look-at")
+if "Fountain Shopkeep" not in WORLD:
+    errors.append("world missing fountain shopkeep")
+if "CreditZone" not in CHAR:
+    errors.append("character missing home-city Heart credit")
 
 if not (ROOT / "Source/Holypaw/Actors/HolypawPickup.cpp").exists():
     errors.append("missing HolypawPickup.cpp")

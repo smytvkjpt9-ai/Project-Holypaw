@@ -1,4 +1,5 @@
 #include "Faith/HolypawFaithSim.h"
+#include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
 #include "HolypawWorldBuilder.h"
 #include "Kismet/GameplayStatics.h"
@@ -303,5 +304,14 @@ namespace HolypawFaith
 	int32 HeartsHere(const UObject* WorldContext, const FVector& WorldPos)
 	{
 		return HeartsAt(WorldContext, ZoneAt(WorldContext, WorldPos));
+	}
+
+	EHolypawZone CreditZone(const AHugHuman* Human, const EHolypawZone Fallback)
+	{
+		if (Human && Human->bHomeZoneReady)
+		{
+			return Human->HomeZone;
+		}
+		return Fallback;
 	}
 }

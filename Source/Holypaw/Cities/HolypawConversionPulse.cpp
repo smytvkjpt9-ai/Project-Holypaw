@@ -2,9 +2,11 @@
 #include "Actors/HolypawMillBanner.h"
 #include "Actors/FaithStall.h"
 #include "Actors/HugHuman.h"
+#include "Actors/HolypawShrine.h"
 #include "Actors/Signpost.h"
 #include "Faith/HolypawFaithSim.h"
 #include "HolypawGameInstance.h"
+#include "Save/HolypawSaveGame.h"
 #include "Character/HolypawCharacter.h"
 #include "Audio/HolypawAudio.h"
 #include "Components/AudioComponent.h"
@@ -137,13 +139,21 @@ void AHolypawWorldBuilder::NotifyConvertPulse(const FVector& At)
 	for (TActorIterator<AHugHuman> It(GetWorld()); It; ++It)
 	{
 		AHugHuman* H = *It;
-		if (!H || !H->bBeliever || H->IsKnelt())
+		if (!H || H->IsKnelt())
 		{
 			continue;
 		}
-		if (FVector::Dist(At, H->GetActorLocation()) < 1800.f)
+		const float Dist = FVector::Dist(At, H->GetActorLocation());
+		if (H->bBeliever)
 		{
-			H->ClapBurst = FMath::Max(H->ClapBurst, 1.8f);
+			if (Dist < 1800.f)
+			{
+				H->ClapBurst = FMath::Max(H->ClapBurst, 1.8f);
+			}
+		}
+		else if (Dist < 1100.f)
+		{
+			H->NoticeConvert(At);
 		}
 	}
 	for (AHolypawMillBanner* Banner : MillBanners)
@@ -182,10 +192,23 @@ void AHolypawWorldBuilder::TickConversionPulse(const float DeltaSeconds)
 	}
 	const bool bCity = HolypawCatalog::IsCityZone(Zone);
 	const bool bWantHymn = GI->IsDusk() && bCity && HolypawFaith::DuskHymnUnlocked(Hearts);
+	if (FountainJet)
+	{
+		const float T = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+		const float Rate = (GI->IsDusk() && HolypawFaith::ChoirOwnsDusk(RibbonHearts)) ? 3.2f : 1.7f;
+		const float Tall = HolypawFaith::MillBannersDown(RibbonHearts) ? 1.38f
+			: (HolypawFaith::ShopsOpen(RibbonHearts) ? 1.16f : 1.f);
+		const float Bob = 1.f + 0.1f * FMath::Sin(T * Rate);
+		FountainJet->SetWorldScale3D(FVector(0.35f, 0.35f, 1.1f * Tall * Bob));
+	}
 	if (GI->Settings && GI->Settings->bMuted)
 	{
 		HolypawAudio::StopTheme(HymnComp.Get());
 		HolypawAudio::StopTheme(ThemeComp.Get());
+		if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
+		{
+			ConversionLine = HolypawFaith::HudLine(Teddy->CurrentZone, Teddy->GetCityHearts(Teddy->CurrentZone));
+		}
 		return;
 	}
 
@@ -195,6 +218,22 @@ void AHolypawWorldBuilder::TickConversionPulse(const float DeltaSeconds)
 		{
 			HolypawAudio::PlayHymn(this, this, HymnComp);
 			bHymnPlaying = true;
+		}
+		if (HymnComp)
+		{
+			float HymnDist = 2800.f;
+			for (TActorIterator<AHolypawShrine> It(GetWorld()); It; ++It)
+			{
+				const AHolypawShrine* S = *It;
+				if (!S || S->Kind != EHolypawShrineKind::Chapel)
+				{
+					continue;
+				}
+				HymnDist = FMath::Min(HymnDist, FVector::Dist2D(Pawn->GetActorLocation(), S->GetActorLocation()));
+			}
+			const float Duck = FMath::GetMappedRangeValueClamped(FVector2D(600.f, 8200.f), FVector2D(1.f, 0.16f), HymnDist);
+			const float Mix = (GI->Settings) ? GI->Settings->MasterVolume : 1.f;
+			HymnComp->SetVolumeMultiplier(Mix * 0.62f * Duck);
 		}
 		if (ThemeComp)
 		{

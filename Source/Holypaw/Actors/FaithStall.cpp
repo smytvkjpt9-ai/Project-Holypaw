@@ -92,7 +92,9 @@ FText AFaithStall::GetPrompt() const
 	{
 		return FText::FromString(HolypawFaith::ShopClosedLine());
 	}
-	return FText::FromString(TEXT("E  Walk in · faith stall (buns, ribbons, jars)"));
+	return FText::FromString(bOpenAir
+		? TEXT("E  Open stall (buns, ribbons)")
+		: TEXT("E  Walk in · faith stall (buns, ribbons, jars)"));
 }
 
 bool AFaithStall::Interact(AHolypawCharacter* InstigatorPawn)

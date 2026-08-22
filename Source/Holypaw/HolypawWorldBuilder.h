@@ -160,10 +160,11 @@ protected:
 	void DressWorkshopRoom(const FVector& Origin);
 	void DressCottageRooms(const FVector& Origin, float GroundZ);
 	void DressShopRoom(const FVector& Origin);
+	void DressOpenStall(const FVector& Origin);
 	void DressMillHall(const FVector& Origin);
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
-	void PlaceStall(const FVector2D& XY);
+	void PlaceStall(const FVector2D& XY, bool bOpenAir = false, const TCHAR* KeepName = nullptr);
 	void PlaceSign(const FVector2D& XY, const FText& Message, FName LivingId = NAME_None);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;

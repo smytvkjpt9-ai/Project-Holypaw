@@ -100,6 +100,22 @@ namespace HolypawCatalog
 				TEXT("Shutters stay down until someone on this block believes. Convert them. Then I sell buns."),
 				TEXT("Hearts discount if you converted the block. I will pretend that is a coupon."),
 				TEXT("E on the rug. I is pockets. Night I sleep in the inn with the round people."));
+			Add(TEXT("Fountain Shopkeep"),
+				TEXT("I sold mill water in a pretty cup. Now I sell clap. Same fountain. Better government."),
+				TEXT("Hearts unlatched this counter. Buns if you converted the plaza. No beige theology."),
+				TEXT("Open stall by the fountain. Market rooms east. Chapel west if dusk starts singing."));
+			Add(TEXT("Market Shopkeep"),
+				TEXT("First Heart and the shutter forgets how to be beige. I sell buns that have opinions."),
+				TEXT("Hearts discount. I will pretend that is a coupon and not a coup."),
+				TEXT("Three rooms on this street. Walk in. Night I pile into the inn."));
+			Add(TEXT("Bun Shopkeep"),
+				TEXT("Every bun has a secret now. The mill asked for identical rolls. I sent crumbs."),
+				TEXT("Buy one. Be spherical. The plaza kiosk is for people who cannot wait."),
+				TEXT("Market east of the fountain. Poly Mill further east, still rude."));
+			Add(TEXT("Ribbon Shopkeep"),
+				TEXT("I keep handmade ribbons under the counter until the mill ads fall. Then I hang them."),
+				TEXT("Three Hearts and the poles wear our cloth. I will clap. I will not stamp."),
+				TEXT("Cloth quarter west if you want the tall banners. Plaza if you want the clap."));
 			Add(TEXT("Plaza Florist"),
 				TEXT("I sell roses that refuse to be identical. The mill asked for a bulk beige. I sent a thorn."),
 				TEXT("Toss a thought in the fountain. Faith comes back smelling like wet stone and hope."),
@@ -482,6 +498,17 @@ namespace HolypawCatalog
 		if (Found)
 		{
 			return Found;
+		}
+		if (Speaker.Contains(TEXT("Shopkeep"), ESearchCase::IgnoreCase))
+		{
+			Found = GetTalks().FindByPredicate([](const FHolypawTalkDef& T)
+			{
+				return T.Speaker == TEXT("Shopkeep");
+			});
+			if (Found)
+			{
+				return Found;
+			}
 		}
 		return GetTalks().FindByPredicate([](const FHolypawTalkDef& T) { return T.Speaker == TEXT("Default"); });
 	}

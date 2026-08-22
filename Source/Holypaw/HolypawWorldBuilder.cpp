@@ -856,10 +856,10 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	PlaceSign(Harbor + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistHarbor", "Harbor Steps  |  east to Tidewell and the Plush Sea"));
 	PlaceSign(Quiet + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistQuiet", "Quiet Rows  |  windows lit, few hostiles on the street"));
 
-	PlaceStall(Plaza + FVector2D(220.f, -260.f));
-	PlaceStall(Market);
-	PlaceStall(Market + FVector2D(260.f, 120.f));
-	PlaceStall(Market + FVector2D(-180.f, 200.f));
+	PlaceStall(Plaza + FVector2D(320.f, -280.f), true, TEXT("Fountain Shopkeep"));
+	PlaceStall(Market, false, TEXT("Market Shopkeep"));
+	PlaceStall(Market + FVector2D(260.f, 120.f), false, TEXT("Bun Shopkeep"));
+	PlaceStall(Market + FVector2D(-180.f, 200.f), false, TEXT("Ribbon Shopkeep"));
 
 	PlaceShrine(Plaza + FVector2D(-180.f, -220.f), EHolypawShrineKind::Wish, NSLOCTEXT("Holypaw", "Fountain", "Ribbon Fountain"));
 	PlaceShrine(Plaza + FVector2D(520.f, 180.f), EHolypawShrineKind::Inn, NSLOCTEXT("Holypaw", "InnName", "Spire Inn"));
@@ -1363,20 +1363,34 @@ FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
 	return FVector(XY.X + 420.f, XY.Y + 360.f, SampleHeight(XY.X, XY.Y) + 80.f);
 }
 
-void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY)
+void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY, const bool bOpenAir, const TCHAR* KeepName)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	DressShopRoom(FVector(XY.X, XY.Y, Z));
+	if (bOpenAir)
+	{
+		DressOpenStall(FVector(XY.X, XY.Y, Z));
+	}
+	else
+	{
+		DressShopRoom(FVector(XY.X, XY.Y, Z));
+	}
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	if (AFaithStall* S = GetWorld()->SpawnActor<AFaithStall>(FVector(XY.X, XY.Y + 40.f, Z + 18.f), FRotator::ZeroRotator, Sp))
 	{
+		S->bOpenAir = bOpenAir;
 		S->SetActorScale3D(FVector(1.1f, 1.1f, 0.25f));
 	}
 	if (AHugHuman* Keep = GetWorld()->SpawnActor<AHugHuman>(FVector(XY.X + 80.f, XY.Y + 90.f, Z + 50.f), FRotator::ZeroRotator, Sp))
 	{
-		Keep->PersonName = FText::FromString(TEXT("Shopkeep"));
+		FString Name = KeepName ? FString(KeepName) : FString();
+		if (Name.IsEmpty())
+		{
+			Name = FString::Printf(TEXT("Shopkeep %d"),
+				FMath::Abs(FMath::RoundToInt(XY.X * 0.01f) * 31 + FMath::RoundToInt(XY.Y * 0.01f)));
+		}
+		Keep->PersonName = FText::FromString(Name);
 		Keep->ShirtColor = FLinearColor(0.95f, 0.72f, 0.35f);
 		Keep->SetSolidColor(Keep->ShirtColor);
 		Keep->bTendsStall = true;

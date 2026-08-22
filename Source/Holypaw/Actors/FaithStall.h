@@ -23,6 +23,7 @@ public:
 	void SnapShutter();
 	EHolypawZone HomeZone = EHolypawZone::RibbonCity;
 	bool bHomeZoneReady = false;
+	bool bOpenAir = false;
 
 	UPROPERTY(EditAnywhere, Category = "Holypaw")
 	int32 ApCost = 10;

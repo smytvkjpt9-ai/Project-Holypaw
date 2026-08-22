@@ -38,6 +38,9 @@ public:
 	float ClapBurst = 0.f;
 	float ParadeKick = 0.f;
 	float ParadeSalt = 0.f;
+	float CelebrateHold = 0.f;
+	float NoticeHold = 0.f;
+	float NoticeYaw = 0.f;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
@@ -59,6 +62,7 @@ public:
 	void BecomeBeliever(bool bCelebrate = true);
 	void KneelInWorship();
 	void ReceiveHug();
+	void NoticeConvert(const FVector& At);
 	void ResetFaith();
 	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
 	bool IsKnelt() const { return bKnelt; }
