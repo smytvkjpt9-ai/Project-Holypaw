@@ -41,6 +41,7 @@ void AHugHuman::BeginPlay()
 	if (HeadMesh)
 	{
 		HumanRest.HeadLoc = HeadMesh->GetRelativeLocation();
+		HumanRest.HeadRot = HeadMesh->GetRelativeRotation();
 	}
 	if (ArmL)
 	{
@@ -78,6 +79,7 @@ void AHugHuman::Tick(float DeltaSeconds)
 	if (HeadMesh)
 	{
 		HeadMesh->SetRelativeLocation(Pose.HeadLoc);
+		HeadMesh->SetRelativeRotation(Pose.HeadRot);
 	}
 	if (ArmL)
 	{
@@ -90,13 +92,16 @@ void AHugHuman::Tick(float DeltaSeconds)
 		ArmR->SetRelativeLocation(Pose.ArmRLoc);
 	}
 
-	if (bBeliever && !bKnelt)
+	FVector Feet = GetActorLocation();
+	if (bBeliever && !bKnelt && !Pose.bHoldFeet)
 	{
 		const float Orbit = 160.f;
 		const float Ang = HumanAnim.Clock * 0.55f;
 		const FVector Parade = HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
-		SetActorLocation(FMath::VInterpTo(GetActorLocation(), Parade, DeltaSeconds, 1.6f));
+		Feet = FMath::VInterpTo(Feet, Parade, DeltaSeconds, 1.6f);
 	}
+	Feet.Z = HomeLocation.Z + Pose.DropZ;
+	SetActorLocation(Feet);
 }
 
 FText AHugHuman::GetPrompt() const
@@ -126,6 +131,11 @@ bool AHugHuman::Interact(AHolypawCharacter* InstigatorPawn)
 void AHugHuman::ReceiveHug()
 {
 	HolypawAnim::PlayHumanHug(HumanAnim);
+}
+
+void AHugHuman::ReceiveHug(const FVector& FromWorld)
+{
+	HolypawAnim::PlayHumanHug(HumanAnim, FromWorld - GetActorLocation());
 }
 
 FString AHugHuman::GetSkepticLine(int32 Pct) const

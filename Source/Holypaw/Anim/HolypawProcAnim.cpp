@@ -14,6 +14,15 @@ namespace HolypawAnim
 	};
 	const int32 WrapKeyCount = UE_ARRAY_COUNT(WrapKeys);
 
+	const FClipKey ReachKeys[5] = {
+		{0.00f, 0.00f},
+		{0.10f, 1.00f},
+		{0.20f, 0.45f},
+		{0.32f, 0.10f},
+		{0.70f, 0.00f},
+	};
+	const int32 ReachKeyCount = UE_ARRAY_COUNT(ReachKeys);
+
 	const FClipKey SqueezeKeys[6] = {
 		{0.00f, 0.00f},
 		{0.16f, 0.20f},
@@ -76,6 +85,23 @@ namespace HolypawAnim
 		{0.22f, 0.00f},
 	};
 	const int32 LandSquashKeyCount = UE_ARRAY_COUNT(LandSquashKeys);
+
+	const FClipKey PartyHopKeys[5] = {
+		{0.00f, 0.00f},
+		{0.14f, 1.00f},
+		{0.28f, 0.00f},
+		{0.40f, 0.00f},
+		{0.62f, 0.00f},
+	};
+	const int32 PartyHopKeyCount = UE_ARRAY_COUNT(PartyHopKeys);
+
+	const FClipKey CelebrateSpinKeys[4] = {
+		{0.00f, 0.00f},
+		{0.28f, 140.00f},
+		{0.62f, 300.00f},
+		{0.90f, 360.00f},
+	};
+	const int32 CelebrateSpinKeyCount = UE_ARRAY_COUNT(CelebrateSpinKeys);
 
 	FName ClipName(const EClip Clip)
 	{
@@ -143,9 +169,10 @@ namespace HolypawAnim
 
 	void Spring(float& Value, float& Vel, const float Target, const float Stiffness, const float Damping, const float Dt)
 	{
+		const float Step = FMath::Clamp(Dt, 0.f, 0.05f);
 		const float Accel = (Target - Value) * Stiffness - Vel * Damping;
-		Vel += Accel * Dt;
-		Value += Vel * Dt;
+		Vel += Accel * Step;
+		Value += Vel * Step;
 	}
 
 	static float Decay(float& Value, const float Dt, const float Rate)
@@ -155,6 +182,20 @@ namespace HolypawAnim
 			Value = FMath::Max(0.f, Value - Dt * Rate);
 		}
 		return Value;
+	}
+
+	static float BlinkClose(const FTeddyState& S)
+	{
+		float Close = 0.f;
+		if (S.BlinkT >= 0.f && S.BlinkT <= BlinkCloseSeconds)
+		{
+			Close = SampleClip(BlinkKeys, BlinkKeyCount, BlinkCloseSeconds - S.BlinkT);
+		}
+		if (S.ExtraBlink > 0.f)
+		{
+			Close = FMath::Max(Close, SampleClip(BlinkKeys, BlinkKeyCount, BlinkCloseSeconds - S.ExtraBlink));
+		}
+		return Close;
 	}
 
 	void CaptureTeddyRest(FTeddyRest& Rest, const FTeddyParts& Parts)
@@ -214,7 +255,8 @@ namespace HolypawAnim
 
 	void PlayHug(FTeddyState& S, const FVector& WorldToTarget)
 	{
-		S.HugT = HugSeconds;
+		S.bHugging = true;
+		S.HugAge = 0.f;
 		S.HugDir = WorldToTarget.GetSafeNormal2D();
 		if (S.HugDir.IsNearlyZero())
 		{
@@ -223,6 +265,22 @@ namespace HolypawAnim
 		S.ExtraBlink = BlinkCloseSeconds;
 		S.EarVL -= 90.f;
 		S.EarVR += 90.f;
+	}
+
+	void PlayConvert(FTeddyState& S)
+	{
+		S.bConvert = true;
+		S.ConvertT = 0.f;
+		S.bHugging = true;
+		if (S.HugAge <= 0.f || S.HugAge > 0.28f)
+		{
+			S.HugAge = 0.28f;
+		}
+		S.VictoryT = 0.f;
+		S.EarVL -= 40.f;
+		S.EarVR += 40.f;
+		S.ExtraBlink = BlinkCloseSeconds;
+		S.bDoubleBlink = true;
 	}
 
 	void PlayVictory(FTeddyState& S)
@@ -264,23 +322,63 @@ namespace HolypawAnim
 
 	bool IsWrapLocked(const FTeddyState& S)
 	{
-		return S.HugT > (HugSeconds - HugLockSeconds);
+		return (S.bHugging && S.HugAge < HugLockSeconds) || (S.bConvert && S.ConvertT < ConvertHoldSeconds);
 	}
 
 	float WrapAmount(const FTeddyState& S)
 	{
-		if (S.HugT <= 0.f)
+		if (S.bConvert && S.ConvertT < ConvertHoldSeconds)
+		{
+			return 1.f;
+		}
+		if (!S.bHugging)
 		{
 			return 0.f;
 		}
-		return SampleClip(WrapKeys, WrapKeyCount, HugSeconds - S.HugT);
+		return SampleClip(WrapKeys, WrapKeyCount, S.HugAge);
+	}
+
+	float ReachAmount(const FTeddyState& S)
+	{
+		if (S.bConvert && S.ConvertT < ConvertHoldSeconds)
+		{
+			return 0.f;
+		}
+		if (!S.bHugging)
+		{
+			return 0.f;
+		}
+		return SampleClip(ReachKeys, ReachKeyCount, S.HugAge);
 	}
 
 	void TickTeddy(FTeddyState& S, const FTeddyInput& In)
 	{
 		const float Dt = FMath::Max(0.f, In.DeltaSeconds);
 		S.Clock += Dt;
-		Decay(S.HugT, Dt, 1.f);
+		if (S.bHugging)
+		{
+			S.HugAge += Dt;
+		}
+		if (S.bConvert)
+		{
+			S.ConvertT += Dt;
+			if (S.ConvertT >= ConvertHoldSeconds)
+			{
+				S.bConvert = false;
+				S.bHugging = false;
+				S.HugAge = HugSeconds;
+				if (S.VictoryT <= 0.f)
+				{
+					PlayVictory(S);
+				}
+			}
+		}
+		if (S.bHugging && !S.bConvert && S.HugAge >= HugSeconds)
+		{
+			S.bHugging = false;
+			S.HugAge = HugSeconds;
+		}
+
 		Decay(S.VictoryT, Dt, 1.f);
 		Decay(S.HurtT, Dt, 1.f);
 		Decay(S.LandT, Dt, 1.f);
@@ -293,7 +391,7 @@ namespace HolypawAnim
 			if (S.bDoubleBlink)
 			{
 				S.bDoubleBlink = false;
-				S.BlinkT = BlinkCloseSeconds * 0.55f;
+				S.BlinkT = BlinkCloseSeconds;
 			}
 			else
 			{
@@ -317,55 +415,66 @@ namespace HolypawAnim
 		const float Walk = S.Walk;
 		const float Wrap = WrapAmount(S);
 		const float EarWalk = FMath::Sin(S.Clock * (5.4f + Walk * 6.f)) * (8.f + Walk * 14.f);
-		const float EarHug = Wrap * -22.f;
+		const float EarHug = Wrap * -26.f + ReachAmount(S) * 10.f;
 		const float EarVictory = (S.VictoryT > 0.f) ? FMath::Sin(S.Clock * 14.f) * 18.f : 0.f;
 		Spring(S.EarL, S.EarVL, EarWalk + EarHug + EarVictory, EarStiffness, EarDamping, Dt);
 		Spring(S.EarR, S.EarVR, -EarWalk - EarHug - EarVictory, EarStiffness, EarDamping, Dt);
+	}
+
+	static void PawWrap(const float Reach, const float Wrap, const float Squeeze, const float WalkSwing, const int32 Sign,
+		const FVector& RestLoc, const FRotator& RestRot, FVector& OutLoc, FRotator& OutRot)
+	{
+		const float Side = static_cast<float>(Sign);
+		OutLoc = RestLoc
+			+ FVector(Reach * 16.f + Wrap * 10.f, Side * (Reach * 12.f - Wrap * 16.f), Reach * 8.f + Wrap * 14.f + Squeeze * 3.f)
+			+ FVector(0.f, 0.f, WalkSwing * 2.f);
+		OutRot = RestRot + FRotator(
+			Reach * 22.f + Wrap * 58.f + Squeeze * 8.f + WalkSwing * 24.f,
+			Side * Wrap * 10.f,
+			Side * (Reach * 16.f + Wrap * 46.f));
 	}
 
 	FTeddyPose EvaluateTeddy(const FTeddyState& S, const FTeddyRest& Rest)
 	{
 		FTeddyPose P;
 		const float Wrap = WrapAmount(S);
-		const float Squeeze = (S.HugT > 0.f) ? SampleClip(SqueezeKeys, SqueezeKeyCount, HugSeconds - S.HugT) : 0.f;
+		const float Reach = ReachAmount(S);
+		const float Squeeze = S.bHugging ? SampleClip(SqueezeKeys, SqueezeKeyCount, S.bConvert ? 0.32f : S.HugAge) : 0.f;
 		const float HurtN = S.HurtT > 0.f ? S.HurtT / HurtSeconds : 0.f;
 		const float LandN = S.LandT > 0.f ? SampleClip(LandSquashKeys, LandSquashKeyCount, LandSeconds - S.LandT) : 0.f;
+		const bool bVictorious = S.VictoryT > 0.f && Wrap < 0.2f;
 		const float VicAge = S.VictoryT > 0.f ? VictorySeconds - S.VictoryT : 0.f;
-		const float VicSpin = S.VictoryT > 0.f ? SampleClip(VictorySpinKeys, VictorySpinKeyCount, VicAge) : 0.f;
-		const float VicHop = S.VictoryT > 0.f ? SampleClip(VictoryHopKeys, VictoryHopKeyCount, VicAge) : 0.f;
-		const float WalkAmt = FMath::Max(0.15f, S.Walk);
-		const float WalkBob = FMath::Sin(S.Clock * (7.2f + S.Walk * 5.f)) * 6.f * WalkAmt;
+		const float VicSpin = bVictorious ? SampleClip(VictorySpinKeys, VictorySpinKeyCount, VicAge) : 0.f;
+		const float VicHop = bVictorious ? SampleClip(VictoryHopKeys, VictoryHopKeyCount, VicAge) : 0.f;
+		const float Breath = FMath::Sin(S.Clock * 2.05f) * 1.3f;
+		const float WalkBob = S.Walk > 0.05f
+			? FMath::Sin(S.Clock * (7.2f + S.Walk * 5.f)) * 6.f * S.Walk
+			: Breath;
 		const float AirStretch = S.bWasAir ? 0.12f + S.JumpStretch * 0.18f : S.JumpStretch * 0.10f;
 		const float Squash = HurtN * 0.16f + LandN * 0.14f + Squeeze * 0.12f;
 		const float StretchZ = AirStretch - Squash;
+		const float Step = FMath::Sin(S.Clock * (6.8f + S.Walk * 5.5f));
+		const float Swing = S.Walk * (1.f - Wrap) * (1.f - Reach);
 
-		P.BodyLoc = Rest.BodyLoc + FVector(Wrap * 6.f, 0.f, WalkBob * 0.35f + VicHop - Squash * 8.f + AirStretch * 10.f);
+		P.BodyLoc = Rest.BodyLoc + FVector(Reach * 8.f + Wrap * 10.f, 0.f, WalkBob * 0.35f + VicHop - Squash * 8.f + AirStretch * 10.f);
 		P.BodyScale = Rest.BodyScale * FVector(1.f + Squash - AirStretch * 0.35f, 1.f + Squash - AirStretch * 0.25f, 1.f + StretchZ);
-		P.BodyRot = Rest.BodyRot + FRotator(Wrap * 14.f, VicSpin * 0.35f, FMath::Sin(S.Clock * 2.2f) * 2.f);
+		P.BodyRot = Rest.BodyRot + FRotator(Reach * 6.f + Wrap * 16.f, VicSpin * 0.35f, (S.Walk > 0.05f ? Step * 3.f : FMath::Sin(S.Clock * 1.6f)) * 1.5f);
 
-		P.HeadLoc = Rest.HeadLoc + FVector(Wrap * 4.f, 0.f, WalkBob * 0.22f + VicHop * 0.45f);
-		P.HeadRot = Rest.HeadRot + FRotator(Wrap * 8.f - Squeeze * 6.f, VicSpin, 0.f);
+		P.HeadLoc = Rest.HeadLoc + FVector(Reach * 3.f + Wrap * 5.f, 0.f, WalkBob * 0.22f + VicHop * 0.45f);
+		P.HeadRot = Rest.HeadRot + FRotator(Wrap * 10.f - Squeeze * 6.f, VicSpin, 0.f);
 
 		P.EarLLoc = Rest.EarLLoc + FVector(0.f, Wrap * 3.f, S.EarL * 0.04f);
 		P.EarRLoc = Rest.EarRLoc + FVector(0.f, Wrap * -3.f, S.EarR * 0.04f);
 		P.EarLRot = Rest.EarLRot + FRotator(S.EarL, Wrap * -8.f, Wrap * -16.f + S.EarL * 0.35f);
 		P.EarRRot = Rest.EarRRot + FRotator(S.EarR, Wrap * 8.f, Wrap * 16.f + S.EarR * 0.35f);
 
-		P.PawLLoc = Rest.PawLLoc + FVector(Wrap * 10.f, Wrap * 8.f, Wrap * 12.f + Squeeze * 4.f);
-		P.PawRLoc = Rest.PawRLoc + FVector(Wrap * 10.f, Wrap * -8.f, Wrap * 12.f + Squeeze * 4.f);
-		P.PawLRot = Rest.PawLRot + FRotator(Wrap * 52.f + Squeeze * 10.f, Wrap * 6.f, Wrap * 38.f);
-		P.PawRRot = Rest.PawRRot + FRotator(Wrap * 52.f + Squeeze * 10.f, Wrap * -6.f, Wrap * -38.f);
+		PawWrap(Reach, Wrap, Squeeze, Step * Swing, 1, Rest.PawLLoc, Rest.PawLRot, P.PawLLoc, P.PawLRot);
+		PawWrap(Reach, Wrap, Squeeze, -Step * Swing, -1, Rest.PawRLoc, Rest.PawRRot, P.PawRLoc, P.PawRRot);
 
 		P.SnoutLoc = Rest.SnoutLoc + FVector(Squeeze * 4.f + Wrap * 2.f, 0.f, Squeeze * -1.5f);
 		P.BellyScale = Rest.BellyScale * FVector(1.f + Squeeze * 0.18f, 1.f + Squeeze * 0.12f, 1.f - Squeeze * 0.08f);
 
-		float Close = 0.f;
-		if (S.BlinkT >= 0.f && S.BlinkT <= BlinkCloseSeconds)
-		{
-			Close = SampleClip(BlinkKeys, BlinkKeyCount, BlinkCloseSeconds - S.BlinkT);
-		}
-		Close = FMath::Max(Close, S.ExtraBlink > 0.f ? SampleClip(BlinkKeys, BlinkKeyCount, BlinkCloseSeconds - S.ExtraBlink) : 0.f);
-		Close = FMath::Max(Close, Squeeze * 0.85f);
+		const float Close = FMath::Max(BlinkClose(S), Squeeze * 0.85f);
 		const float EyeY = 1.f - Close * 0.88f;
 		P.EyeLScale = FVector(Rest.EyeLScale.X, Rest.EyeLScale.Y, Rest.EyeLScale.Z * EyeY);
 		P.EyeRScale = FVector(Rest.EyeRScale.X, Rest.EyeRScale.Y, Rest.EyeRScale.Z * EyeY);
@@ -434,6 +543,13 @@ namespace HolypawAnim
 		S.HugT = HugSeconds;
 	}
 
+	void PlayHumanHug(FHumanState& S, const FVector& WorldFromHumanToTeddy)
+	{
+		S.HugT = HugSeconds;
+		const FVector Dir = WorldFromHumanToTeddy.GetSafeNormal2D();
+		S.HugYaw = Dir.IsNearlyZero() ? S.HugYaw : Dir.Rotation().Yaw;
+	}
+
 	void PlayConvertBow(FHumanState& S)
 	{
 		S.Kneel = EHumanKneel::ConvertBow;
@@ -456,6 +572,7 @@ namespace HolypawAnim
 		S.Kneel = EHumanKneel::None;
 		S.bBeliever = false;
 		S.ConvertBurst = 0.f;
+		S.HugYaw = 0.f;
 	}
 
 	void TickHuman(FHumanState& S, const float DeltaSeconds)
@@ -501,20 +618,25 @@ namespace HolypawAnim
 			? 0.055f * FMath::Sin(S.Clock * 6.2f)
 			: 0.018f * FMath::Sin(S.Clock * 2.4f);
 		const float Burst = S.ConvertBurst * 0.08f;
+		P.bHoldFeet = S.Kneel != EHumanKneel::None || S.HugT > 0.f;
 
 		P.Scale = Rest.Scale * FVector(
-			1.f + Squeeze * 0.14f + Burst,
-			1.f + Squeeze * 0.14f + Burst,
-			1.f + Bounce - Squeeze * 0.42f - Kneel * 0.28f);
-		P.ActorRot = Rest.ActorRot + FRotator(Kneel * 36.f, 0.f, Wrap * 4.f);
+			1.f + Squeeze * 0.12f + Burst,
+			1.f + Squeeze * 0.12f + Burst,
+			1.f + Bounce - Squeeze * 0.28f - Kneel * 0.12f);
+		const float Face = Wrap * 0.85f;
+		const float YawToTeddy = FMath::FindDeltaAngleDegrees(Rest.ActorRot.Yaw, S.HugYaw) * Face;
+		P.ActorRot = Rest.ActorRot + FRotator(Kneel * 14.f, YawToTeddy, Wrap * 3.f);
+		P.HeadRot = Rest.HeadRot + FRotator(Kneel * 22.f + Wrap * 8.f - Squeeze * 4.f, 0.f, 0.f);
+		P.DropZ = -(Kneel * 22.f + Squeeze * 6.f);
 
-		const float Clap = (S.bBeliever && Kneel < 0.35f) ? FMath::Sin(S.Clock * 9.f) * 16.f : 0.f;
-		const float WorshipArms = Kneel * 42.f;
-		P.ArmL = FRotator(WorshipArms + Clap, Wrap * 12.f, 8.f + Wrap * 46.f + Kneel * 18.f);
-		P.ArmR = FRotator(WorshipArms + Clap, Wrap * -12.f, -8.f - Wrap * 46.f - Kneel * 18.f);
-		P.HeadLoc = Rest.HeadLoc + FVector(Wrap * 6.f + Kneel * 8.f, 0.f, Kneel * -10.f + Bounce * 20.f);
-		P.ArmLLoc = Rest.ArmLLoc + FVector(Wrap * 10.f, Wrap * 6.f, Wrap * 4.f + Kneel * 8.f);
-		P.ArmRLoc = Rest.ArmRLoc + FVector(Wrap * 10.f, Wrap * -6.f, Wrap * 4.f + Kneel * 8.f);
+		const float Clap = (S.bBeliever && Kneel < 0.25f && S.HugT <= 0.f) ? FMath::Sin(S.Clock * 9.f) * 16.f : 0.f;
+		const float WorshipArms = Kneel * 48.f;
+		P.ArmL = FRotator(WorshipArms + Clap, Wrap * 14.f, 8.f + Wrap * 52.f + Kneel * 12.f);
+		P.ArmR = FRotator(WorshipArms + Clap, Wrap * -14.f, -8.f - Wrap * 52.f - Kneel * 12.f);
+		P.HeadLoc = Rest.HeadLoc + FVector(Wrap * 6.f + Kneel * 10.f, 0.f, Kneel * -6.f + Bounce * 12.f);
+		P.ArmLLoc = Rest.ArmLLoc + FVector(Wrap * 12.f, Wrap * 4.f - Kneel * 4.f, Wrap * 6.f + Kneel * 10.f);
+		P.ArmRLoc = Rest.ArmRLoc + FVector(Wrap * 12.f, Wrap * -4.f + Kneel * 4.f, Wrap * 6.f + Kneel * 10.f);
 		return P;
 	}
 
@@ -529,6 +651,22 @@ namespace HolypawAnim
 		Decay(S.CelebrateT, DeltaSeconds, 1.f);
 	}
 
+	static FVector SampleTrail(const TArray<FVector>& Trail, const float Slot, const FVector& Fallback)
+	{
+		if (Trail.Num() == 0)
+		{
+			return Fallback;
+		}
+		if (Trail.Num() == 1)
+		{
+			return Trail[0];
+		}
+		const float Clamped = FMath::Clamp(Slot, 0.f, static_cast<float>(Trail.Num() - 1));
+		const int32 A = FMath::FloorToInt(Clamped);
+		const int32 B = FMath::Min(A + 1, Trail.Num() - 1);
+		return FMath::Lerp(Trail[A], Trail[B], Clamped - static_cast<float>(A));
+	}
+
 	FPartySlotPose EvaluateParty(
 		const TArray<FVector>& Trail,
 		const int32 Index,
@@ -538,35 +676,36 @@ namespace HolypawAnim
 		const FVector& TeddyForward)
 	{
 		FPartySlotPose P;
-		const int32 Sample = FMath::Min(Trail.Num() - 1, (Index + 1) * 12);
-		FVector Path = TeddyLoc;
-		FVector Tangent = TeddyForward.GetSafeNormal2D();
-		if (Trail.IsValidIndex(Sample))
+		const float Slot = static_cast<float>((Index + 1) * 11) + 3.f;
+		const FVector Path = SampleTrail(Trail, Slot, TeddyLoc);
+		const FVector Ahead = SampleTrail(Trail, Slot + 1.5f, Path + TeddyForward);
+		FVector Tangent = (Path - Ahead).GetSafeNormal2D();
+		if (Tangent.IsNearlyZero())
 		{
-			Path = Trail[Sample];
-		}
-		if (Trail.IsValidIndex(Sample + 1) && Trail.IsValidIndex(Sample))
-		{
-			Tangent = (Trail[Sample] - Trail[Sample + 1]).GetSafeNormal2D();
+			Tangent = TeddyForward.GetSafeNormal2D();
 		}
 		if (Tangent.IsNearlyZero())
 		{
 			Tangent = FVector::ForwardVector;
 		}
 		const FVector Side = FVector::CrossProduct(FVector::UpVector, Tangent).GetSafeNormal();
-		const float Lane = (Index % 2 == 0) ? 34.f : -34.f;
-		const float LaneScale = 1.f + (Index / 2) * 0.15f;
+		const float Lane = (Index % 2 == 0) ? 36.f : -36.f;
+		const float LaneScale = 1.f + (Index / 2) * 0.18f;
 
-		const float Phase = Index * 1.17f + 0.31f;
-		const float Wave = FMath::Sin(Clock * PartyHopHz * 2.f * PI + Phase);
-		const float Hop = FMath::Max(0.f, Wave) * (16.f + Celebrate * 22.f);
-		const float Ground = Wave < 0.f ? FMath::Abs(Wave) : 0.f;
-		const float Squash = Ground * 0.22f * (1.f - Celebrate * 0.4f);
+		const float Phase = Index * 0.19f;
+		const float HopN = SampleClip(PartyHopKeys, PartyHopKeyCount, Clock + Phase, true);
+		const float CelebrateAge = FMath::Max(0.f, CelebrateSeconds - Celebrate - Index * 0.08f);
+		const float CelebrateHop = Celebrate > 0.f ? SampleClip(PartyHopKeys, PartyHopKeyCount, CelebrateAge, false) : 0.f;
+		const float Hop = HopN * 16.f + CelebrateHop * 22.f;
+		const float Ground = 1.f - HopN;
+		const float Squash = Ground * 0.18f * (Celebrate > 0.f ? 0.65f : 1.f);
 
 		P.Location = Path + Side * Lane * LaneScale + FVector(0.f, 0.f, 28.f + Hop);
-		P.Scale = FVector(0.35f + Squash * 0.12f, 0.35f + Squash * 0.12f, 0.35f - Squash * 0.16f + Hop * 0.004f);
-		const float Spin = Celebrate * (120.f + Index * 40.f);
-		P.Rot = Tangent.Rotation() + FRotator(0.f, Clock * Spin, Wave * 8.f);
+		P.Scale = FVector(0.35f + Squash * 0.10f, 0.35f + Squash * 0.10f, 0.35f - Squash * 0.14f + Hop * 0.004f);
+		const FVector ToTeddy = (TeddyLoc - P.Location).GetSafeNormal2D();
+		const FRotator Face = (ToTeddy.IsNearlyZero() ? Tangent : ToTeddy).Rotation();
+		const float Spin = Celebrate > 0.f ? SampleClip(CelebrateSpinKeys, CelebrateSpinKeyCount, CelebrateAge) : 0.f;
+		P.Rot = Face + FRotator(HopN * -12.f, Spin, 0.f);
 		return P;
 	}
 
@@ -584,8 +723,9 @@ namespace HolypawAnim
 		const float Speed = Velocity.Size2D();
 		const float Walk = FMath::Clamp(Speed / 90.f, 0.f, 1.4f);
 		const float Flop = FMath::Sin(Clock * (4.8f + Walk * 5.f)) * (10.f + Walk * 16.f);
-		P.EarL = Rest.EarL + FRotator(Flop, 0.f, Flop * 0.4f);
-		P.EarR = Rest.EarR + FRotator(-Flop, 0.f, -Flop * 0.4f);
+		const float Kick = FMath::Sin(Clock * 9.2f) * Walk * 8.f;
+		P.EarL = Rest.EarL + FRotator(Flop + Kick, 0.f, Flop * 0.4f);
+		P.EarR = Rest.EarR + FRotator(-Flop + Kick, 0.f, -Flop * 0.4f);
 		P.TailLoc = Rest.TailLoc;
 		P.TailRot = FRotator(FMath::Sin(Clock * 7.5f) * 18.f, FMath::Sin(Clock * 5.2f) * 22.f, 0.f);
 		const float Bob = FMath::Abs(FMath::Sin(Clock * 6.4f)) * 0.06f * FMath::Max(0.2f, Walk);

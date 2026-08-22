@@ -13,6 +13,7 @@ namespace HolypawAnim
 {
 	constexpr float HugLockSeconds = 0.32f;
 	constexpr float HugSeconds = 0.70f;
+	constexpr float ConvertHoldSeconds = 0.55f;
 	constexpr float BlinkCloseSeconds = 0.12f;
 	constexpr float KneelSeconds = 0.72f;
 	constexpr float ConvertBowSeconds = 1.20f;
@@ -20,7 +21,7 @@ namespace HolypawAnim
 	constexpr float HurtSeconds = 0.34f;
 	constexpr float LandSeconds = 0.22f;
 	constexpr float CelebrateSeconds = 0.90f;
-	constexpr float PartyHopHz = 2.35f;
+	constexpr float PartyHopPeriod = 0.62f;
 	constexpr float EarStiffness = 48.f;
 	constexpr float EarDamping = 9.2f;
 	constexpr float WalkRefSpeed = 700.f;
@@ -53,9 +54,10 @@ namespace HolypawAnim
 		float Value = 0.f;
 	};
 
-	// Authored envelopes. Time is seconds inside the clip.
 	extern const FClipKey WrapKeys[7];
 	extern const int32 WrapKeyCount;
+	extern const FClipKey ReachKeys[5];
+	extern const int32 ReachKeyCount;
 	extern const FClipKey SqueezeKeys[6];
 	extern const int32 SqueezeKeyCount;
 	extern const FClipKey BlinkKeys[4];
@@ -70,6 +72,10 @@ namespace HolypawAnim
 	extern const int32 VictoryHopKeyCount;
 	extern const FClipKey LandSquashKeys[4];
 	extern const int32 LandSquashKeyCount;
+	extern const FClipKey PartyHopKeys[5];
+	extern const int32 PartyHopKeyCount;
+	extern const FClipKey CelebrateSpinKeys[4];
+	extern const int32 CelebrateSpinKeyCount;
 
 	FName ClipName(EClip Clip);
 	float SampleClip(const FClipKey* Keys, int32 Num, float Time, bool bLoop = false);
@@ -115,7 +121,10 @@ namespace HolypawAnim
 		float EarR = 0.f;
 		float EarVL = 0.f;
 		float EarVR = 0.f;
-		float HugT = 0.f;
+		float HugAge = 0.f;
+		bool bHugging = false;
+		bool bConvert = false;
+		float ConvertT = 0.f;
 		FVector HugDir = FVector::ForwardVector;
 		float VictoryT = 0.f;
 		float HurtT = 0.f;
@@ -166,6 +175,7 @@ namespace HolypawAnim
 
 	void CaptureTeddyRest(FTeddyRest& Rest, const FTeddyParts& Parts);
 	void PlayHug(FTeddyState& S, const FVector& WorldToTarget);
+	void PlayConvert(FTeddyState& S);
 	void PlayVictory(FTeddyState& S);
 	void PlayHurt(FTeddyState& S);
 	void PlayJump(FTeddyState& S);
@@ -173,6 +183,7 @@ namespace HolypawAnim
 	void PlayBlink(FTeddyState& S, bool bDouble);
 	bool IsWrapLocked(const FTeddyState& S);
 	float WrapAmount(const FTeddyState& S);
+	float ReachAmount(const FTeddyState& S);
 	void TickTeddy(FTeddyState& S, const FTeddyInput& In);
 	FTeddyPose EvaluateTeddy(const FTeddyState& S, const FTeddyRest& Rest);
 	void ApplyTeddyPose(const FTeddyPose& Pose, const FTeddyParts& Parts);
@@ -182,6 +193,7 @@ namespace HolypawAnim
 		FVector Scale = FVector::OneVector;
 		FRotator ActorRot = FRotator::ZeroRotator;
 		FVector HeadLoc = FVector::ZeroVector;
+		FRotator HeadRot = FRotator::ZeroRotator;
 		FVector ArmLLoc = FVector::ZeroVector;
 		FVector ArmRLoc = FVector::ZeroVector;
 	};
@@ -194,20 +206,25 @@ namespace HolypawAnim
 		EHumanKneel Kneel = EHumanKneel::None;
 		bool bBeliever = false;
 		float ConvertBurst = 0.f;
+		float HugYaw = 0.f;
 	};
 
 	struct FHumanPose
 	{
 		FVector Scale = FVector::OneVector;
 		FRotator ActorRot = FRotator::ZeroRotator;
+		FRotator HeadRot = FRotator::ZeroRotator;
 		FRotator ArmL = FRotator::ZeroRotator;
 		FRotator ArmR = FRotator::ZeroRotator;
 		FVector HeadLoc = FVector::ZeroVector;
 		FVector ArmLLoc = FVector::ZeroVector;
 		FVector ArmRLoc = FVector::ZeroVector;
+		float DropZ = 0.f;
+		bool bHoldFeet = false;
 	};
 
 	void PlayHumanHug(FHumanState& S);
+	void PlayHumanHug(FHumanState& S, const FVector& WorldFromHumanToTeddy);
 	void PlayConvertBow(FHumanState& S);
 	void PlayWorshipKneel(FHumanState& S);
 	void ResetHumanMotion(FHumanState& S);

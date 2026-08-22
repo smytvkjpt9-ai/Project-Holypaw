@@ -45,6 +45,7 @@ public:
 	void KneelInWorship();
 	void PlayConvertBow();
 	void ReceiveHug();
+	void ReceiveHug(const FVector& FromWorld);
 	void ResetFaith();
 	void RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt);
 	bool IsKnelt() const { return bKnelt; }

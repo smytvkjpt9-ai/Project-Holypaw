@@ -559,7 +559,7 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	}
 	HugLock = HolypawAnim::HugLockSeconds;
 	HolypawAnim::PlayHug(TeddyAnim, Human->GetActorLocation() - GetActorLocation());
-	Human->ReceiveHug();
+	Human->ReceiveHug(GetActorLocation());
 	PlayCue(TEXT("Hug"));
 
 	if (Human->bBeliever)
@@ -1243,8 +1243,6 @@ void AHolypawCharacter::TryMiracle()
 	Affection->AddFP(FpGain);
 	HaloMesh->SetHiddenInGame(false);
 	PlayCue(TEXT("Miracle"));
-	HolypawAnim::PlayVictory(TeddyAnim);
-	HolypawAnim::PlayCelebrate(PartyAnim);
 	int32 Heal = Skills->HasSkill(TEXT("peakLiturgy")) ? 30 : 15;
 	HP = FMath::Min(HPMax, HP + Heal);
 	int32 NewlyConvinced = 0;
@@ -1263,7 +1261,7 @@ void AHolypawCharacter::TryMiracle()
 		}
 		const bool bWasOpen = H->ConvertProgress < 100.f;
 		H->ConvertProgress = FMath::Min(100.f, H->ConvertProgress + Sermon);
-		H->ReceiveHug();
+		H->ReceiveHug(GetActorLocation());
 		if (bWasOpen && H->ConvertProgress >= 100.f)
 		{
 			H->BecomeBeliever();
@@ -1292,6 +1290,15 @@ void AHolypawCharacter::TryMiracle()
 			}
 		}
 	}
+	if (NewlyConvinced > 0)
+	{
+		HolypawAnim::PlayConvert(TeddyAnim);
+	}
+	else
+	{
+		HolypawAnim::PlayVictory(TeddyAnim);
+	}
+	HolypawAnim::PlayCelebrate(PartyAnim);
 	FString MiracleToast = FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
 		FpGain, NewlyConvinced);
 	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
@@ -2084,7 +2091,7 @@ HolypawAnim::FTeddyParts AHolypawCharacter::TeddyParts()
 
 void AHolypawCharacter::CelebrateConvert()
 {
-	HolypawAnim::PlayVictory(TeddyAnim);
+	HolypawAnim::PlayConvert(TeddyAnim);
 	HolypawAnim::PlayCelebrate(PartyAnim);
 }
 

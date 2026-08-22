@@ -267,6 +267,7 @@ for needle in (
     "VictorySpinKeys",
     "PlayHug",
     "PlayVictory",
+    "PlayConvert",
     "PlayConvertBow",
     "EvaluateParty",
     "EarStiffness",
@@ -276,6 +277,8 @@ for needle in (
         errors.append(f"proc anim missing {needle}")
 if "HolypawAnim::PlayHug" not in CHAR:
     errors.append("character missing hug wrap clip")
+if "HolypawAnim::PlayConvert" not in CHAR:
+    errors.append("character missing convert hold-then-victory")
 if "CelebrateConvert" not in CHAR:
     errors.append("character missing convert victory")
 if "EvaluateParty" not in CHAR:

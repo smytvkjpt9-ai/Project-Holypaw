@@ -79,7 +79,7 @@ Hug, Miracle, Party — six skills each (1–6 to buy the current tree). Phase 1
 
 This cloud VM cannot sculpt Nanite characters or ship a production FBX pipeline. Actors are **assembled engine primitives** (ears, snout, paws, eyes, human heads/arms, fluffy tails) in the Holypaw palette. Towns, roads, and seas use **instanced kits**. Sky Atmosphere, volumetric clouds, height fog, and a pastel post-process grade. **Zero Quixel / Megascans / Fab photoscans.** Drop real meshes in Unreal on your PC later; the C++ sockets are already named.
 
-**Animation is a separate system** (`Source/Holypaw/Anim/HolypawProcAnim.cpp`). Pretty meshes still feel like a prototype if they do not move. The conversion fantasy is authored clips: **wrap**, **blink**, **ear flop**, **kneel**, **party trail**, **victory**. Humans bow when they convert, kneel for the peak miracle, fluffies flop their ears while they wander, and party members hop along the teddy's trail. Clip names stay the contract for later skeletal anims.
+**Animation is a separate system** (`Source/Holypaw/Anim/HolypawProcAnim.cpp`). Pretty meshes still feel like a prototype if they do not move. The conversion fantasy is authored clips: **wrap**, **blink**, **ear flop**, **kneel**, **party trail**, **victory**. A convert holds the wrap while the human bows, then releases into the spin — they do not overlap. Paws reach out then close in. Idle is a breathe, not a walk. Party hops land on a cycle and look at the teddy. Clip names stay the contract for later skeletal anims.
 
 ## Testing without the editor
 

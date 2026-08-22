@@ -68,14 +68,18 @@ KneelSeconds = constexpr_float("KneelSeconds")
 ConvertBowSeconds = constexpr_float("ConvertBowSeconds")
 VictorySeconds = constexpr_float("VictorySeconds")
 HugLockSeconds = constexpr_float("HugLockSeconds")
+ConvertHoldSeconds = constexpr_float("ConvertHoldSeconds")
 
 wrap = parse_keys("WrapKeys")
+reach = parse_keys("ReachKeys")
 squeeze = parse_keys("SqueezeKeys")
 blink = parse_keys("BlinkKeys")
 kneel = parse_keys("KneelKeys")
 bow = parse_keys("BowKeys")
 spin = parse_keys("VictorySpinKeys")
 hop = parse_keys("VictoryHopKeys")
+party_hop = parse_keys("PartyHopKeys")
+cele_spin = parse_keys("CelebrateSpinKeys")
 
 near(HugSeconds, 0.70, 0.001, "HugSeconds")
 near(BlinkCloseSeconds, 0.12, 0.001, "BlinkCloseSeconds")
@@ -83,6 +87,15 @@ near(KneelSeconds, 0.72, 0.001, "KneelSeconds")
 near(VictorySeconds, 0.95, 0.001, "VictorySeconds")
 if HugLockSeconds >= HugSeconds:
     errors.append("hug lock must be shorter than the wrap clip so mash-protect is not the whole hug")
+if ConvertHoldSeconds < 0.4:
+    errors.append("convert hold is too short — wrap would release before the bow reads")
+
+if reach:
+    if sample(reach, 0.10) < 0.9:
+        errors.append("reach should peak before the wrap closes")
+    if sample(reach, 0.32) > 0.25:
+        errors.append("reach should be finished by the wrap close so paws go around, not out")
+    near(sample(reach, 0.0), 0.0, 0.02, "reach start")
 
 if wrap:
     near(sample(wrap, 0.0), 0.0, 0.02, "wrap start")
@@ -147,23 +160,35 @@ if "EvaluateParty" not in SOURCE:
     errors.append("party trail evaluator missing")
 if "Spring(" not in SOURCE:
     errors.append("ear flop spring missing")
-if "PlayHug" not in SOURCE or "PlayVictory" not in SOURCE:
-    errors.append("teddy hug/victory plays missing")
+if "PlayHug" not in SOURCE or "PlayVictory" not in SOURCE or "PlayConvert" not in SOURCE:
+    errors.append("teddy hug/convert/victory plays missing")
+if "PawWrap" not in SOURCE:
+    errors.append("wrap arc missing — paws must reach out then close in")
+if "bVictorious" not in SOURCE:
+    errors.append("victory must wait until wrap releases")
 
-# Party hop is always non-negative: max(0, sin).
-import math
+if party_hop:
+    hops = [sample(party_hop, t / 100.0) for t in range(63)]
+    if min(hops) < -1e-6:
+        errors.append("party hop went negative")
+    if max(hops) < 0.95:
+        errors.append("party hop never leaves the ground")
+    if hops[0] > 0.05:
+        errors.append("party hop should start on the ground")
 
-party_hops = [max(0.0, math.sin(clock * 2.35 * 2.0 * math.pi + 1.17)) * 16.0 for clock in (i / 20.0 for i in range(40))]
-if min(party_hops) < -1e-6:
-    errors.append("party hop went negative")
-if max(party_hops) < 10.0:
-    errors.append("party hop never leaves the ground")
+if cele_spin:
+    near(sample(cele_spin, 0.0), 0.0, 1.0, "celebrate spin start")
+    near(sample(cele_spin, 0.90), 360.0, 1.0, "celebrate spin end")
+    if "Clock * Spin" in SOURCE:
+        errors.append("party celebrate still spins from world clock (pops)")
 
 char = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
 human = (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text()
 fluffy = (ROOT / "Source/Holypaw/Actors/WildFluffy.cpp").read_text()
 if "HolypawAnim::PlayHug" not in char:
     errors.append("character does not play wrap")
+if "HolypawAnim::PlayConvert" not in char:
+    errors.append("character still fires victory during the wrap")
 if "CelebrateConvert" not in char:
     errors.append("character missing convert victory hook")
 if "EvaluateParty" not in char:
@@ -172,6 +197,8 @@ if "PlayConvertBow" not in human:
     errors.append("human missing convert kneel bow")
 if "PlayWorshipKneel" not in human:
     errors.append("human missing endgame kneel")
+if "bHoldFeet" not in human:
+    errors.append("humans still parade during the hug/bow")
 if "EvaluateFluffy" not in fluffy:
     errors.append("wild fluffy missing ear flop")
 
