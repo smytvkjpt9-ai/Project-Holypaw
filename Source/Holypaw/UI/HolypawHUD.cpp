@@ -26,7 +26,7 @@ namespace
 		Widget->AddToViewport(ZOrder);
 		Widget->SetAnchorsInViewport(FAnchors(0.f, 0.f, 1.f, 1.f));
 		Widget->SetAlignmentInViewport(FVector2D(0.f, 0.f));
-		Widget->SetOffsets(FMargin(0.f));
+		Widget->SetPositionInViewport(FVector2D::ZeroVector, false);
 		Widget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 		int32 ViewX = 0;
