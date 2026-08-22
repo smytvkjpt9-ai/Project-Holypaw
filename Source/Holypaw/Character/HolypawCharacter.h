@@ -358,6 +358,7 @@ protected:
 	void MoveRight(float Value);
 	void TurnAtRate(float Value);
 	void LookUpAtRate(float Value);
+	void CameraZoom(float Value);
 	void Interact();
 
 	void UpdateZone();
@@ -387,7 +388,9 @@ protected:
 	bool bSeamBrace = false;
 	bool bPartyBrace = false;
 	bool bHeardChoirHour = false;
-	float ExploreArm = 300.f;
+	float ExploreArm = 460.f;
+	float ExploreArmMin = 260.f;
+	float ExploreArmMax = 820.f;
 	float BattleArm = 220.f;
 	FTimerHandle BattleTimer;
 

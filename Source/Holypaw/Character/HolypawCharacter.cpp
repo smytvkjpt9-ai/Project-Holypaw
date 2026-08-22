@@ -397,6 +397,7 @@ void AHolypawCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AHolypawCharacter::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis(TEXT("TurnRate"), this, &AHolypawCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis(TEXT("LookUpRate"), this, &AHolypawCharacter::LookUpAtRate);
+	PlayerInputComponent->BindAxis(TEXT("CameraZoom"), this, &AHolypawCharacter::CameraZoom);
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AHolypawCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AHolypawCharacter::Interact);
@@ -450,6 +451,23 @@ void AHolypawCharacter::TurnAtRate(float Value)
 void AHolypawCharacter::LookUpAtRate(float Value)
 {
 	AddControllerPitchInput(Value * 45.f * GetWorld()->GetDeltaSeconds());
+}
+
+void AHolypawCharacter::CameraZoom(float Value)
+{
+	if (FMath::IsNearlyZero(Value))
+	{
+		return;
+	}
+	if (Mode != EHolypawPawnMode::Play && Mode != EHolypawPawnMode::Title)
+	{
+		return;
+	}
+	ExploreArm = FMath::Clamp(ExploreArm - Value * 48.f, ExploreArmMin, ExploreArmMax);
+	if (SpringArm)
+	{
+		SpringArm->TargetArmLength = ExploreArm;
+	}
 }
 
 void AHolypawCharacter::Tick(float DeltaSeconds)
