@@ -780,6 +780,8 @@ if '"ModelContextProtocol"' in uproject and re.search(
     errors.append("ModelContextProtocol should stay disabled so a missing plugin cannot block editor load")
 if not (ROOT / "Tools/BuildHolypaw.bat").exists():
     errors.append("missing Tools/BuildHolypaw.bat")
+if not (ROOT / "GenerateHolypawSln.bat").exists():
+    errors.append("missing GenerateHolypawSln.bat")
 
 if errors:
     print("FAIL")

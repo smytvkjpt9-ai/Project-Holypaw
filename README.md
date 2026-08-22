@@ -26,7 +26,10 @@ Do **not** keep clicking Yes. Compile from Visual Studio (or the script below) s
 
 1. Install **Unreal Engine 5.8** via the Epic Launcher (Windows recommended).
 2. Install **Visual Studio 2022** with the **Game Development with C++** workload, plus a Windows 10/11 SDK. Without that toolchain the editor rebuild fails with no message. On Mac, install Xcode.
-3. Right-click `Holypaw.uproject` → **Generate Visual Studio project files** (or Xcode on Mac), or run `Tools\GenerateProjectFiles.bat "C:\Program Files\Epic Games\UE_5.8"`.
+3. There is **no `Holypaw.sln` in the download**. Git ignores it. Create it on your PC:
+   - Double-click `GenerateHolypawSln.bat` in this folder, **or**
+   - Right-click `Holypaw.uproject` → **Generate Visual Studio project files**.
+   The `.sln` appears next to `Holypaw.uproject`. If the right-click item is missing, UE 5.8 is not installed or `.uproject` is not associated with Unreal Version Selector.
 4. Open `Holypaw.sln` → set configuration **Development Editor** / **Win64** → build **HolypawEditor**. Opening the `.uproject` first will only produce “Holypaw could not be found” until this build succeeds. Or from a Developer Command Prompt:
 
    ```
