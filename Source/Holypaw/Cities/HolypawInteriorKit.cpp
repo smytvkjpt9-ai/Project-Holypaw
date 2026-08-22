@@ -1,5 +1,6 @@
 #include "HolypawWorldBuilder.h"
 #include "Actors/HolypawShrine.h"
+#include "Actors/FaithStall.h"
 #include "Engine/PointLight.h"
 #include "Components/PointLightComponent.h"
 #include "EngineUtils.h"
@@ -133,6 +134,55 @@ void AHolypawWorldBuilder::DressCottageRooms(const FVector& Origin, const float 
 	SpawnLamp(this, Base + FVector(0.f, 0.f, 210.f), FLinearColor(1.f, 0.84f, 0.6f), 2400.f);
 }
 
+void AHolypawWorldBuilder::DressShopRoom(const FVector& Origin)
+{
+	const FLinearColor Wall(0.95f, 0.78f, 0.42f);
+	const FLinearColor Floor(0.78f, 0.62f, 0.38f);
+	const FLinearColor Trim(0.72f, 0.48f, 0.22f);
+	DressRoomShell(Origin, Wall, Floor, Trim);
+	PlaceCube(Origin + FVector(0.f, 90.f, 58.f), FVector(2.2f, 0.55f, 0.75f), FLinearColor(0.62f, 0.42f, 0.28f), MakeName(TEXT("ShopCounter")));
+	PlaceCube(Origin + FVector(-130.f, 40.f, 90.f), FVector(0.45f, 0.35f, 1.5f), FLinearColor(0.55f, 0.4f, 0.32f), MakeName(TEXT("JarShelf")));
+	PlaceCube(Origin + FVector(-130.f, 40.f, 70.f), FVector(0.28f, 0.28f, 0.28f), FLinearColor(0.85f, 0.55f, 0.9f), MakeName(TEXT("FaithJar")));
+	PlaceCube(Origin + FVector(-130.f, 40.f, 110.f), FVector(0.28f, 0.28f, 0.28f), FLinearColor(0.95f, 0.72f, 0.45f), MakeName(TEXT("FaithJar")));
+	PlaceCube(Origin + FVector(120.f, 20.f, 48.f), FVector(0.7f, 0.55f, 0.55f), FLinearColor(0.98f, 0.82f, 0.55f), MakeName(TEXT("BunBasket")));
+	PlaceCube(Origin + FVector(40.f, -70.f, 28.f), FVector(1.1f, 0.8f, 0.08f), FLinearColor(0.92f, 0.45f, 0.5f), MakeName(TEXT("ShopRug")));
+	PlaceCube(Origin + FVector(140.f, 110.f, 80.f), FVector(0.22f, 0.22f, 0.7f), FLinearColor(0.95f, 0.55f, 0.72f), MakeName(TEXT("RibbonSpool")));
+	SpawnLamp(this, Origin + FVector(0.f, 20.f, 188.f), FLinearColor(1.f, 0.88f, 0.55f), 3000.f);
+}
+
+void AHolypawWorldBuilder::DressOpenStall(const FVector& Origin)
+{
+	PlaceCube(Origin + FVector(0.f, 36.f, 10.f), FVector(1.7f, 1.15f, 0.1f), FLinearColor(0.78f, 0.62f, 0.38f), MakeName(TEXT("KioskDeck")));
+	PlaceCube(Origin + FVector(0.f, 88.f, 52.f), FVector(1.8f, 0.45f, 0.7f), FLinearColor(0.62f, 0.42f, 0.28f), MakeName(TEXT("ShopCounter")));
+	PlaceCube(Origin + FVector(0.f, 18.f, 142.f), FVector(2.05f, 1.45f, 0.08f), FLinearColor(0.95f, 0.55f, 0.62f), MakeName(TEXT("KioskAwning")));
+	PlaceCube(Origin + FVector(-72.f, -22.f, 78.f), FVector(0.12f, 0.12f, 1.35f), FLinearColor(0.42f, 0.3f, 0.22f), MakeName(TEXT("AwningPole")));
+	PlaceCube(Origin + FVector(72.f, -22.f, 78.f), FVector(0.12f, 0.12f, 1.35f), FLinearColor(0.42f, 0.3f, 0.22f), MakeName(TEXT("AwningPole")));
+	PlaceCube(Origin + FVector(68.f, 18.f, 40.f), FVector(0.55f, 0.45f, 0.45f), FLinearColor(0.98f, 0.82f, 0.55f), MakeName(TEXT("BunBasket")));
+	PlaceCube(Origin + FVector(-52.f, 52.f, 68.f), FVector(0.22f, 0.22f, 0.55f), FLinearColor(0.95f, 0.55f, 0.72f), MakeName(TEXT("RibbonSpool")));
+}
+
+void AHolypawWorldBuilder::DressMillHall(const FVector& Origin)
+{
+	const FLinearColor Wall(0.58f, 0.54f, 0.5f);
+	const FLinearColor Floor(0.42f, 0.4f, 0.38f);
+	const FLinearColor Trim(0.72f, 0.28f, 0.38f);
+	PlaceCube(Origin + FVector(0.f, 0.f, 8.f), FVector(7.2f, 5.2f, 0.16f), Floor, MakeName(TEXT("MillFloor")));
+	PlaceCube(Origin + FVector(360.f, 0.f, 140.f), FVector(0.2f, 5.2f, 2.7f), Wall, MakeName(TEXT("MillBack")));
+	PlaceCube(Origin + FVector(0.f, 260.f, 140.f), FVector(7.2f, 0.2f, 2.7f), Wall, MakeName(TEXT("MillNorth")));
+	PlaceCube(Origin + FVector(0.f, -260.f, 140.f), FVector(7.2f, 0.2f, 2.7f), Wall, MakeName(TEXT("MillSouth")));
+	PlaceCube(Origin + FVector(-360.f, -150.f, 140.f), FVector(0.2f, 2.2f, 2.7f), Wall, MakeName(TEXT("MillWestL")));
+	PlaceCube(Origin + FVector(-360.f, 150.f, 140.f), FVector(0.2f, 2.2f, 2.7f), Wall, MakeName(TEXT("MillWestR")));
+	PlaceCube(Origin + FVector(-360.f, 0.f, 250.f), FVector(0.2f, 0.9f, 0.55f), Trim, MakeName(TEXT("MillLintel")));
+	PlaceCube(Origin + FVector(0.f, 0.f, 280.f), FVector(7.4f, 5.4f, 0.12f), Wall * 0.8f, MakeName(TEXT("MillCeiling")));
+	PlaceCube(Origin + FVector(-40.f, 80.f, 42.f), FVector(4.4f, 0.7f, 0.22f), FLinearColor(0.35f, 0.34f, 0.32f), MakeName(TEXT("MillConveyor")));
+	PlaceCube(Origin + FVector(80.f, -70.f, 55.f), FVector(0.9f, 0.9f, 0.9f), FLinearColor(0.62f, 0.58f, 0.48f), MakeName(TEXT("PolyVat")));
+	PlaceCube(Origin + FVector(180.f, -70.f, 55.f), FVector(0.9f, 0.9f, 0.9f), FLinearColor(0.62f, 0.58f, 0.48f), MakeName(TEXT("PolyVat")));
+	PlaceCube(Origin + FVector(120.f, 120.f, 40.f), FVector(1.1f, 0.8f, 0.55f), FLinearColor(0.78f, 0.72f, 0.55f), MakeName(TEXT("PolyBale")));
+	PlaceCube(Origin + FVector(-80.f, -120.f, 36.f), FVector(1.1f, 0.8f, 0.55f), FLinearColor(0.78f, 0.72f, 0.55f), MakeName(TEXT("PolyBale")));
+	PlaceCube(Origin + FVector(200.f, 0.f, 90.f), FVector(0.35f, 1.6f, 1.4f), FLinearColor(0.32f, 0.3f, 0.28f), MakeName(TEXT("MillPress")));
+	SpawnLamp(this, Origin + FVector(0.f, 0.f, 210.f), FLinearColor(0.95f, 0.72f, 0.42f), 2200.f);
+}
+
 bool AHolypawWorldBuilder::IsPlayerIndoors(const FVector& WorldPos) const
 {
 	if (!GetWorld())
@@ -161,6 +211,28 @@ bool AHolypawWorldBuilder::IsPlayerIndoors(const FVector& WorldPos) const
 	if (FMath::Abs(C.X) < 280.f && FMath::Abs(C.Y) < 250.f && C.Z > -80.f && C.Z < 280.f)
 	{
 		return true;
+	}
+	const FVector Mill(RibbonCity.X + 5200.f, RibbonCity.Y - 800.f, WorldPos.Z);
+	if (FMath::Abs(WorldPos.X - Mill.X) < 360.f && FMath::Abs(WorldPos.Y - Mill.Y) < 260.f)
+	{
+		return true;
+	}
+	for (TActorIterator<AFaithStall> StallIt(GetWorld()); StallIt; ++StallIt)
+	{
+		const AFaithStall* Stall = *StallIt;
+		if (!Stall)
+		{
+			continue;
+		}
+		if (Stall->bOpenAir)
+		{
+			continue;
+		}
+		const FVector D = WorldPos - Stall->GetActorLocation();
+		if (FMath::Abs(D.X) < 200.f && FMath::Abs(D.Y) < 200.f && D.Z > -40.f && D.Z < 250.f)
+		{
+			return true;
+		}
 	}
 	return false;
 }

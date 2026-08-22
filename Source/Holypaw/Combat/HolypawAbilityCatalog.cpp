@@ -31,6 +31,12 @@ namespace HolypawCatalog
 			Add(TEXT("polyRip"), TEXT("Poly Rip"), TEXT("Bonus vs mill faction. Still a swipe if they are handmade."), 4, 4, 0, 1);
 			Add(TEXT("lullaby"), TEXT("Lullaby"), TEXT("Sing them to skip. More reliable than Hymn's side-effect."), 10, 5, 0, 1);
 			Add(TEXT("seamGuard"), TEXT("Seam Guard"), TEXT("Brace like Guard, but the seam holds tighter this turn."), 0, 6, 6, 1);
+			Add(TEXT("cheer"), TEXT("Cheer"), TEXT("Party trick. Tucks stuffing based on how many fluffies you remembered."), 0, 1, 0, 2);
+			Add(TEXT("tuck"), TEXT("Tuck"), TEXT("Fold a seam in. Guard plus a little stitch."), 0, 2, 3, 2);
+			Add(TEXT("fluffBurst"), TEXT("Fluff Burst"), TEXT("Everybody jumps. Damage scales with the party."), 0, 3, 0, 2);
+			Add(TEXT("millHymn"), TEXT("Mill Hymn"), TEXT("A hymn aimed at polyester. Heals a bit. Rude to mills."), 8, 4, 0, 2);
+			Add(TEXT("ribbonBind"), TEXT("Ribbon Bind"), TEXT("Tie their special. Next hit staggers the kit."), 6, 5, 0, 2);
+			Add(TEXT("spareBun"), TEXT("Spare Bun"), TEXT("Eat a thought. Stitch stuffing. No FP."), 0, 6, 10, 2);
 			return Out;
 		}();
 		return All;

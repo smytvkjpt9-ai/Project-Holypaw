@@ -17,4 +17,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
 	FText Message;
+
+	UPROPERTY(EditAnywhere, Category = "Holypaw")
+	FName LivingId;
+
+	void RefreshFromHearts(int32 Hearts);
 };

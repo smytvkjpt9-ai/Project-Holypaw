@@ -54,6 +54,13 @@ public:
 	void RequestDress(EHolypawZone Zone);
 	bool IsPlayerIndoors(const FVector& WorldPos) const;
 	void RefreshCityTheme();
+	void PlaceMillBanner(const FVector2D& XY, float Yaw = 0.f);
+	void PlaceRibbonMillBanners();
+	void TickConversionPulse(float DeltaSeconds);
+	void SnapConversionLook();
+	void ApplyRibbonLook(int32 Hearts);
+	void NotifyConvertPulse(const FVector& At);
+	FString GetConversionLine() const;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProceduralMeshComponent> TerrainMesh;
@@ -152,10 +159,13 @@ protected:
 	void DressChapelRoom(const FVector& Origin);
 	void DressWorkshopRoom(const FVector& Origin);
 	void DressCottageRooms(const FVector& Origin, float GroundZ);
+	void DressShopRoom(const FVector& Origin);
+	void DressOpenStall(const FVector& Origin);
+	void DressMillHall(const FVector& Origin);
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
-	void PlaceStall(const FVector2D& XY);
-	void PlaceSign(const FVector2D& XY, const FText& Message);
+	void PlaceStall(const FVector2D& XY, bool bOpenAir = false, const TCHAR* KeepName = nullptr);
+	void PlaceSign(const FVector2D& XY, const FText& Message, FName LivingId = NAME_None);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;
 	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
@@ -219,7 +229,30 @@ protected:
 	TArray<EHolypawZone> DressedCities;
 	EHolypawZone ThemeZone = EHolypawZone::ForestCottage;
 	bool bThemeInterior = false;
+	bool bRibbonBannersPlaced = false;
+	bool bHymnPlaying = false;
+	FString ConversionLine;
 
 	UPROPERTY()
 	TObjectPtr<UAudioComponent> ThemeComp;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> HymnComp;
+
+	UPROPERTY()
+	TArray<TObjectPtr<class AHolypawMillBanner>> MillBanners;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> FountainPool;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> FountainJet;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> HandmadeBanners;
+
+	UPROPERTY()
+	TArray<TObjectPtr<class ASignpost>> LivingSigns;
+
+	int32 LastRibbonLook = -1;
 };

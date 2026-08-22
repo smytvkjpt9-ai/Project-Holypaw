@@ -16,6 +16,7 @@
 #include "Save/HolypawSaveCodec.h"
 #include "Audio/HolypawAudio.h"
 #include "Anim/HolypawProcAnim.h"
+#include "Faith/HolypawFaithSim.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -306,6 +307,28 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	if (Mode == EHolypawPawnMode::Play)
 	{
 		UpdateZone();
+		if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+		{
+			if (GI->IsDusk() && !bHeardChoirHour)
+			{
+				bHeardChoirHour = true;
+				const bool bCity = HolypawCatalog::IsCityZone(CurrentZone);
+				const int32 Hearts = GetCityHearts(CurrentZone);
+				Toast(HolypawFaith::DuskLine(Hearts, bCity));
+				if (HolypawFaith::ChoirOwnsDusk(Hearts) && bCity)
+				{
+					PlayCue(TEXT("DuskHymn"));
+				}
+				else
+				{
+					PlayCue(TEXT("Talk"));
+				}
+			}
+			if (!GI->IsDusk())
+			{
+				bHeardChoirHour = false;
+			}
+		}
 		if (AActor* Near = FindNearestInteractable(420.f))
 		{
 			if (AHolypawInteractable* I = Cast<AHolypawInteractable>(Near))
@@ -433,7 +456,8 @@ TArray<FString> AHolypawCharacter::GetMapLines() const
 	}
 	Lines.Add(FString::Printf(TEXT("Villain Codex  %d seen  %d fell  / %d  (V)"),
 		SeenVillains.Num(), DefeatedVillains.Num(), GetCodexTotal()));
-	Lines.Add(FString::Printf(TEXT("City Hearts here  %d    Tab cycle lanterns  E travel"), GetCityHearts(CurrentZone)));
+	Lines.Add(GetFaithLine());
+	Lines.Add(HolypawFaith::BannerStateLine(GetCityHearts(CurrentZone)));
 	for (const FString& Line : GetTravelLines())
 	{
 		Lines.Add(Line);
@@ -532,6 +556,8 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	M.Color = Fluffy->Type.Color;
 	M.Attack = Fluffy->Type.Attack;
 	M.Rarity = Fluffy->Type.Rarity;
+	M.FluffyId = Fluffy->Type.Id;
+	M.Role = UPartyComponent::RoleFor(Fluffy->Type.Id);
 	Party->TryAdd(M);
 	Fluffy->bRecruited = true;
 	Fluffy->SetActorHiddenInGame(true);
@@ -542,7 +568,9 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	{
 		Story->NotifyRecruit();
 	}
-	Toast(FString::Printf(TEXT("%s joined! Tiny hench-fluff acquired."), *Fluffy->Type.DisplayName.ToString()));
+	Toast(FString::Printf(TEXT("%s joined as %s. Tiny hench-fluff acquired."),
+		*Fluffy->Type.DisplayName.ToString(),
+		UPartyComponent::RoleLabel(M.Role)));
 	PlayCue(TEXT("Talk"));
 	return true;
 }
@@ -595,13 +623,19 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 		Human->PlayConvertBow();
 		CelebrateConvert();
 		Affection->AddMiracle(22.f);
-		AddCityHeart(CurrentZone);
+		const FString Pulse = AddCityHeart(HolypawFaith::CreditZone(Human, CurrentZone));
 		if (Story)
 		{
 			Story->NotifyConvert();
 		}
-		Toast(FString::Printf(TEXT("%s's last serious thought fell out. %s"),
-			*Human->PersonName.ToString(), *Human->GetBelieverLine()));
+		FString Line = FString::Printf(TEXT("%s's last serious thought fell out. %s"),
+			*Human->PersonName.ToString(), *Human->GetBelieverLine());
+		if (!Pulse.IsEmpty())
+		{
+			Line += TEXT("  ");
+			Line += Pulse;
+		}
+		Toast(Line);
 		PlayCue(TEXT("Convert"));
 	}
 	else
@@ -634,6 +668,7 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	EnemyRipTurns = 0;
 	MillTurns = 0;
 	bSeamBrace = false;
+	bPartyBrace = false;
 	if (SpringArm)
 	{
 		SpringArm->TargetArmLength = BattleArm;
@@ -669,7 +704,8 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	if (Kind == TEXT("flee"))
 	{
 		const float Chance = HolypawBattleDirector::FleeChance(
-			Skills->HasSkill(TEXT("haloStep")), E->bBlocksFlee, E->IsBoss());
+			Skills->HasSkill(TEXT("haloStep")), E->bBlocksFlee, E->IsBoss())
+			+ (Party->CountRole(EPartyRole::Scout) > 0 ? 0.12f : 0.f);
 		if (FMath::FRand() < Chance)
 		{
 			BattleLog = TEXT("You scampered away!");
@@ -749,6 +785,42 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		return;
 	}
 
+	if (Kind == TEXT("cheer") || Kind == TEXT("spareBun"))
+	{
+		int32 Heal = Kind == TEXT("cheer") ? (6 + Party->Members.Num() * 2) : 10;
+		HP = FMath::Min(HPMax, HP + Heal);
+		BattleLog = Kind == TEXT("cheer")
+			? FString::Printf(TEXT("Cheer tucks %d stuffing. %s"), Heal, *Party->DescribeRoles())
+			: FString::Printf(TEXT("Spare bun. +%d stuffing."), Heal);
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.55f, false);
+		return;
+	}
+
+	if (Kind == TEXT("tuck"))
+	{
+		bGuarding = true;
+		bSeamBrace = true;
+		HP = FMath::Min(HPMax, HP + 3);
+		BattleLog = TEXT("Tuck. Seams fold in.");
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.5f, false);
+		return;
+	}
+
+	if (Kind == TEXT("ribbonBind"))
+	{
+		const int32 Cost = FMath::Max(6, HolypawBattleDirector::AbilityFpCost(TEXT("ribbonBind")));
+		if (!Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP to bind."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		bEnemyStaggered = true;
+		BattleLog = TEXT("Ribbon Bind. Their special fumbles next.");
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.65f, false);
+		return;
+	}
+
 	int32 Dmg = 0;
 	if (Kind == TEXT("slap"))
 	{
@@ -789,19 +861,29 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		}
 		const float Mult = Skills->HasSkill(TEXT("partyBond")) ? 1.4f : 1.f;
 		Dmg = FMath::FloorToInt(Base * Mult) + FMath::RandRange(0, 4);
+		Dmg += Party->AssaultBonus(E->GetDef().Faction == EHolypawFaction::PolyMill);
 		if (Skills->HasSkill(TEXT("choirAssault")))
 		{
 			Dmg += Dmg / 2;
 		}
+		const int32 Choir = Party->CountRole(EPartyRole::Choir);
+		if (Choir > 0)
+		{
+			HP = FMath::Min(HPMax, HP + Choir * 2);
+		}
+		if (Party->CountRole(EPartyRole::Brace) > 0)
+		{
+			bPartyBrace = true;
+		}
 		if (bPartyCut)
 		{
 			Dmg = FMath::Max(1, Dmg / 2);
-			BattleLog = FString::Printf(TEXT("Snipped Party Assault deals %d."), Dmg);
+			BattleLog = FString::Printf(TEXT("Snipped Party Assault deals %d. %s"), Dmg, *Party->DescribeRoles());
 		}
 		else
 		{
 			BattleLog = Party->Members.Num() > 0
-				? FString::Printf(TEXT("Party Assault deals %d!"), Dmg)
+				? FString::Printf(TEXT("Party Assault deals %d! %s"), Dmg, *Party->DescribeRoles())
 				: FString::Printf(TEXT("Lonely swipe for %d. Find fluffies!"), Dmg);
 		}
 	}
@@ -862,6 +944,28 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		{
 			BattleLog = FString::Printf(TEXT("Poly Rip shrugs off handmade seams (%d)."), Dmg);
 		}
+	}
+	else if (Kind == TEXT("fluffBurst"))
+	{
+		Dmg = Attack + Party->TotalAttack() + FMath::RandRange(0, 4);
+		BattleLog = FString::Printf(TEXT("Fluff Burst pops for %d! %s"), Dmg, *Party->DescribeRoles());
+	}
+	else if (Kind == TEXT("millHymn"))
+	{
+		const int32 Cost = FMath::Max(8, HolypawBattleDirector::AbilityFpCost(TEXT("millHymn")));
+		if (!Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP for a mill hymn."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		Dmg = FMath::FloorToInt(Attack * 1.6f) + FMath::RandRange(0, 4);
+		if (E->GetDef().Faction == EHolypawFaction::PolyMill)
+		{
+			Dmg += 8;
+		}
+		HP = FMath::Min(HPMax, HP + 4);
+		BattleLog = FString::Printf(TEXT("Mill Hymn deals %d and tucks 4."), Dmg);
 	}
 
 	if (E->GetDef().Faction == EHolypawFaction::PolyMill && Skills->HasSkill(TEXT("polyRip")))
@@ -966,7 +1070,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	Req.bPhaseTwo = En->bPhaseTwo;
 	Req.BattleTurn = BattleTurn;
 	Req.bStaggered = bEnemyStaggered;
-	Req.bGuarding = bGuarding;
+	Req.bGuarding = bGuarding || bPartyBrace;
 	Req.bSeamGuard = Skills->HasSkill(TEXT("seamGuard")) || bSeamBrace;
 	Req.HymnShield = HymnShield;
 	Req.bFaithArmor = Skills->HasSkill(TEXT("faithArmor"));
@@ -1004,6 +1108,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	{
 		bGuarding = false;
 		bSeamBrace = false;
+		bPartyBrace = false;
 	}
 	if (In.MillTurns > 0)
 	{
@@ -1246,6 +1351,7 @@ void AHolypawCharacter::TryMiracle()
 	int32 Heal = Skills->HasSkill(TEXT("peakLiturgy")) ? 30 : 15;
 	HP = FMath::Min(HPMax, HP + Heal);
 	int32 NewlyConvinced = 0;
+	FString LastPulse;
 	const float Sermon = Skills->HasSkill(TEXT("bearCreed")) ? 40.f : 14.f;
 	const float SermonRange = Skills->HasSkill(TEXT("bearCreed")) ? 2800.f : 1600.f;
 	for (TActorIterator<AHugHuman> It(GetWorld()); It; ++It)
@@ -1267,7 +1373,7 @@ void AHolypawCharacter::TryMiracle()
 			H->BecomeBeliever();
 			H->PlayConvertBow();
 			++NewlyConvinced;
-			AddCityHeart(CurrentZone);
+			LastPulse = AddCityHeart(HolypawFaith::CreditZone(H, CurrentZone));
 			if (Story)
 			{
 				Story->NotifyConvert();
@@ -1301,6 +1407,11 @@ void AHolypawCharacter::TryMiracle()
 	HolypawAnim::PlayCelebrate(PartyAnim);
 	FString MiracleToast = FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
 		FpGain, NewlyConvinced);
+	if (!LastPulse.IsEmpty())
+	{
+		MiracleToast += TEXT("  ");
+		MiracleToast += LastPulse;
+	}
 	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
 	{
 		if (GI->IsDusk())
@@ -1419,10 +1530,19 @@ void AHolypawCharacter::CycleSkillTree()
 	}
 	if (Mode == EHolypawPawnMode::Battle)
 	{
-		BattlePage = 1 - BattlePage;
-		Toast(BattlePage == 0
-			? TEXT("Commands: Slap Beam Party Flee Guard Hymn  (Tab: overflow)")
-			: TEXT("Overflow: Unstuff ButtonBeam Stitch PolyRip Lullaby SeamGuard"));
+		BattlePage = (BattlePage + 1) % 3;
+		if (BattlePage == 0)
+		{
+			Toast(TEXT("Commands: Slap Beam Party Flee Guard Hymn  (Tab: overflow)"));
+		}
+		else if (BattlePage == 1)
+		{
+			Toast(TEXT("Overflow: Unstuff ButtonBeam Stitch PolyRip Lullaby SeamGuard"));
+		}
+		else
+		{
+			Toast(TEXT("Party tricks: Cheer Tuck FluffBurst MillHymn RibbonBind SpareBun"));
+		}
 		return;
 	}
 	if (bMapOpen)
@@ -1475,7 +1595,7 @@ void AHolypawCharacter::CompleteBearFaith()
 		if (AHugHuman* H = *It)
 		{
 			H->ConvertProgress = 100.f;
-			H->BecomeBeliever();
+			H->BecomeBeliever(false);
 			H->KneelInWorship();
 		}
 	}
@@ -1743,6 +1863,7 @@ void AHolypawCharacter::ResetForNewGame()
 	CityHearts.Reset();
 	UnlockedTravel.Reset();
 	UnlockTravel(EHolypawZone::ForestCottage);
+	PulseLivingWorld(true);
 	Inventory.Reset();
 	AddItem(TEXT("stuffingBun"), 1);
 	QuestActive.Reset();
@@ -1764,6 +1885,29 @@ void AHolypawCharacter::SetCodex(const TArray<EHolypawVillain>& Seen, const TArr
 void AHolypawCharacter::SetHeartRecords(const TArray<FHolypawHeartRecord>& Records)
 {
 	CityHearts = Records;
+	PulseLivingWorld(true);
+}
+
+void AHolypawCharacter::PulseLivingWorld(const bool bSnap)
+{
+	if (!GetWorld())
+	{
+		return;
+	}
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		if (bSnap)
+		{
+			It->SnapConversionLook();
+		}
+		It->TickConversionPulse(0.f);
+		break;
+	}
+}
+
+FString AHolypawCharacter::GetFaithLine() const
+{
+	return HolypawFaith::HudLine(CurrentZone, GetCityHearts(CurrentZone));
 }
 
 void AHolypawCharacter::SetUnlockedTravel(const TArray<EHolypawZone>& Zones)
@@ -1792,26 +1936,54 @@ int32 AHolypawCharacter::GetCityHearts(EHolypawZone Zone) const
 	return 0;
 }
 
-void AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
+FString AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
 {
 	if (!HolypawCatalog::IsCityZone(Zone) && Zone != EHolypawZone::ForestCottage)
 	{
 		Zone = CurrentZone;
 	}
+	const EHolypawFaithStage Before = HolypawFaith::StageForHearts(GetCityHearts(Zone));
+	int32 Now = 0;
+	bool bFound = false;
 	for (FHolypawHeartRecord& Rec : CityHearts)
 	{
 		if (Rec.Zone == Zone)
 		{
 			Rec.Hearts += Amount;
-			UnlockTravel(Zone);
-			return;
+			Now = Rec.Hearts;
+			bFound = true;
+			break;
 		}
 	}
-	FHolypawHeartRecord Rec;
-	Rec.Zone = Zone;
-	Rec.Hearts = Amount;
-	CityHearts.Add(Rec);
+	if (!bFound)
+	{
+		FHolypawHeartRecord Rec;
+		Rec.Zone = Zone;
+		Rec.Hearts = Amount;
+		Now = Rec.Hearts;
+		CityHearts.Add(Rec);
+	}
 	UnlockTravel(Zone);
+	PulseLivingWorld();
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
+	{
+		It->NotifyConvertPulse(GetActorLocation());
+		break;
+	}
+	const EHolypawFaithStage After = HolypawFaith::StageForHearts(Now);
+	if (After == Before)
+	{
+		return FString();
+	}
+	if (HolypawFaith::ShopsOpen(Now) && !HolypawFaith::ShopsOpen(HolypawFaith::HeartsForStage(Before)))
+	{
+		PlayCue(TEXT("ShopOpen"));
+	}
+	else if (HolypawFaith::MillBannersDown(Now))
+	{
+		PlayCue(TEXT("BannerDown"));
+	}
+	return HolypawFaith::StageToast(After, Zone);
 }
 
 void AHolypawCharacter::OpenFastTravel(EHolypawZone FromZone)
@@ -2295,11 +2467,16 @@ void AHolypawCharacter::OpenShop()
 	{
 		return;
 	}
+	if (!HolypawFaith::ShopsOpen(GetCityHearts(CurrentZone)))
+	{
+		Toast(HolypawFaith::ShopClosedLine());
+		return;
+	}
 	SetPanel(bShopOpen);
 	PlayCue(TEXT("Shop"));
-	Toast(GetCityHearts(CurrentZone) >= 1
-		? TEXT("Hearts discount. The stall likes you.")
-		: TEXT("Faith stall. Convert locals for cheaper buns."));
+	Toast(HolypawFaith::MillBannersDown(GetCityHearts(CurrentZone))
+		? TEXT("Hearts discount. Mill banners are down. Buy something handmade.")
+		: TEXT("Hearts discount. The stall likes you."));
 }
 
 void AHolypawCharacter::BuyShopSlot(int32 Index)
@@ -2477,7 +2654,16 @@ TArray<FString> AHolypawCharacter::GetTalkLines() const
 TArray<FString> AHolypawCharacter::GetShopLines() const
 {
 	TArray<FString> Lines;
-	Lines.Add(GetCityHearts(CurrentZone) >= 1 ? TEXT("Faith stall  (Hearts discount)") : TEXT("Faith stall"));
+	const int32 Hearts = GetCityHearts(CurrentZone);
+	if (!HolypawFaith::ShopsOpen(Hearts))
+	{
+		Lines.Add(TEXT("Faith stall  (shutters down)"));
+		Lines.Add(HolypawFaith::ShopClosedLine());
+		return Lines;
+	}
+	Lines.Add(HolypawFaith::MillBannersDown(Hearts)
+		? TEXT("Faith stall  (Hearts discount · mill banners down)")
+		: TEXT("Faith stall  (Hearts discount)"));
 	Lines.Add(FString::Printf(TEXT("1  Faith jar     %d AP -> 8 FP"), ShopPrice(10)));
 	if (const FHolypawItemDef* Bun = HolypawCatalog::FindItem(TEXT("stuffingBun")))
 	{

@@ -8,7 +8,7 @@ You are a **handmade teddy**. The **Poly Mill** mass-produces cheap polyester co
 
 The world is also a **plush Earth**: continents, oceans, deserts, ice caps, and **26 cities** generated at Play from `HolypawAtlas.cpp` (no binary `.umap`).
 
-**The joke:** you hug humans until their last serious thought falls out. The HUD **Hearts** counter is how many people now believe a teddy should run things. Miracles sermon the neighborhood. It is cute. It is also a coup.
+**The joke:** you hug humans until their last serious thought falls out. **Hearts** are not a score — they change the city. First Heart opens shops. Third Heart drops mill banners and unlocks the dusk hymn. Believers clap and walk. Miracles sermon the neighborhood. It is cute. It is also a coup.
 
 The old browser toy is archived at [`legacy/web-prototype/index.html`](legacy/web-prototype/index.html).
 
@@ -28,7 +28,7 @@ This cloud repo is source + a runtime world builder, not a double-click `.exe`.
    ```
 
    That places `AHolypawWorldBuilder` in the current level. Play still generates cottage, path, city, and biomes at BeginPlay even if you skip this.
-5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, walk inside for bed and kitchen, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or a walk-in **inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **talk**. Stalls sell snacks (**I** for pockets). Walk into a **chapel** to fill Miracle Charge. **Fountain** wishes grant FP. Miracles at **dusk** grant extra Faith; the sun, fog, mill smog, and a TEMP city-theme pad follow the clock. F6 mutes the temp stingers. In battle, **Tab** flips the overflow command page.
+5. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, walk inside for bed and kitchen, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or a walk-in **inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **clap, walk, and talk**. Stalls stay shuttered until a Heart opens them (**I** for pockets). Walk into a **chapel** to fill Miracle Charge. **Fountain** wishes grant FP. Three Hearts in Ribbon drop the mill banners; dusk then plays a hymn pad. The sun, fog, mill smog, and a TEMP city-theme pad follow the clock. F6 mutes the temp stingers. In battle, **Tab** flips the overflow command page.
 6. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). Epic’s stock plugin is a server framework; add tools or Python locally if you want the Editor to place actors from Cursor.
 
 Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**, **ModelContextProtocol** (optional).
@@ -69,7 +69,7 @@ Wild biomes fill the land between cities: Stuffed Park, Nursery Hills, Cozy Home
 
 ## Combat (UMG)
 
-Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands **1–6** on the current page. **Tab in battle** cycles the basic page (Slap / Beam / Party / Flee / Guard / Hymn) and the overflow page (Unstuff / Button Beam / Deep Stitch / Poly Rip / Lullaby / Seam Guard). Slap builds a combo; crits **stagger** and hit-stop. Elites and bosses enter **phase two** under half stuffing; campaign bosses run an authored extra in `HolypawBossScript`. Beam and Button Beam slip armor plates. Frost / poison / hymn shield / rip DoT / mill polyester show on the overlay.
+Turn-based overlay (C++ `UHolypawBattleWidget`). Camera pulls in. Commands **1–6** on the current page. **Tab in battle** cycles three pages: basics, overflow (Unstuff / Button Beam / …), and party tricks (Cheer / Tuck / Fluff Burst / Mill Hymn / Ribbon Bind / Spare Bun). Recruited fluffies have **roles** (Choir, Brace, Ripper, Scout) that change Party Assault, flee, and heals. Elites and bosses enter **phase two**; campaign bosses run `HolypawBossScript`. Frost / poison / hymn shield / rip DoT / mill polyester show on the overlay.
 
 ## Three skill trees (K, Tab to cycle)
 
@@ -115,8 +115,8 @@ Checks villain/mission catalogs, 26-city atlas bounds, UMG overlay, Ribbon distr
 | V | Villain Codex |
 | 1–6 in battle | Current page (Tab cycles basic / overflow) |
 
-Faith stalls: **E** opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
+Faith stalls: shutters stay down until the city has a Heart. **E** then opens a shop (faith jars, stuffing buns, hymn ribbons). Convert locals for a Hearts discount. **I** opens pockets. 1–4 buys/uses.
 
-Converted humans **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Some believers have a **third quiet line** if your Faith is high enough. Journal (**J**) lists errands across Home Sewn, Globe Trek, Old World, and the Sand Belt.
+Converted humans **clap and walk**, then **talk**. **1** listen **2** ask the way **3** turn in **4** take a job. Some believers have a **third quiet line** if your Faith is high enough. Journal (**J**) lists errands across Home Sewn, Globe Trek, Old World, and the Sand Belt.
 
-Dressed cities: **all 26**. Each has districts, an inn, a font or chapel, a pickup, and an errand. Inns, chapels, and workshops are **walk-in rooms** (floor, walls, doorway, furniture) with the old E-pad inside; the forest cottage opens the same way. Far cities **stream in** when you walk or lantern-hop within ~1.5× city radius (Ribbon dresses at Play so the opening road still lands in a finished town). Talk runs through `HolypawDialogueVM`. Combat incoming specials, lullaby, hit-stop, ability pages, and boss kits run through `HolypawBattleDirector` + `HolypawBossScript`. City theme pads are procedural sines (TEMP — swap for WAV on your PC). Still not schedules, Nanite, or a Shipping `.exe`.
+Dressed cities: **all 26**. Each has districts, a walk-in inn, a walk-in shop, a font or chapel, a pickup, and an errand. The **Poly Mill** is a hall you enter (conveyors, vats, west door toward Ribbon). **Ribbon conversion is visible in the plaza:** an open fountain kiosk unlatches (no shop room on the fountain), nearby mill ads sag then fall, the fountain jet bobs and turns rose, converted people clap in place then walk, shopkeeps stay at the counter they just opened, nearby skeptics look over, signs rewrite, dusk hymn grows as you near the chapel. Hearts credit the convert's home city. Humans follow a **day / dusk / night** beat: wander, chapel hymn, inn pile-in. Talk runs through `HolypawDialogueVM`. Combat pages, roles, and boss kits run through the director. City theme pads are procedural sines (TEMP). Still not 24 NPCs per city, Nanite, or a Shipping `.exe`.

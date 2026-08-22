@@ -141,7 +141,9 @@ public:
 	void SetUnlockedTravel(const TArray<EHolypawZone>& Zones);
 	void UnlockTravel(EHolypawZone Zone);
 	int32 GetCityHearts(EHolypawZone Zone) const;
-	void AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	FString AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	void PulseLivingWorld(bool bSnap = false);
+	FString GetFaithLine() const;
 	const TArray<FHolypawItemStack>& GetInventory() const { return Inventory; }
 	void SetInventory(const TArray<FHolypawItemStack>& Stacks);
 	int32 GetItemCount(FName Id) const;
@@ -283,6 +285,8 @@ protected:
 	int32 EnemyRipTurns = 0;
 	int32 MillTurns = 0;
 	bool bSeamBrace = false;
+	bool bPartyBrace = false;
+	bool bHeardChoirHour = false;
 	float ExploreArm = 540.f;
 	float BattleArm = 300.f;
 	FTimerHandle BattleTimer;

@@ -40,7 +40,7 @@ namespace HolypawCatalog
 				TEXT("North of the plaza the Silk Magistrate holds cheap court."));
 			Add(TEXT("Mayor"),
 				TEXT("Ribbon City hereby recognizes the Bear Faith as extremely reasonable. I did not take a bribe. I took a hug."),
-				TEXT("Hearts open shops. Convert my people and the lanterns get friendlier."),
+				TEXT("Hearts open shops. Convert my people and the mill banners come down. Dusk will hymn if you earn it."),
 				TEXT("Poly Mill sits east of town. Polyester, no soul, excellent to unstuff."));
 			Add(TEXT("Market Hawker"),
 				TEXT("Faith jars, ribbons, buns — not factory smiles. Touch anything handmade. Leave the polyester."),
@@ -48,7 +48,7 @@ namespace HolypawCatalog
 				TEXT("Cloth Quarter is west. Harbor Steps splash east."));
 			Add(TEXT("Cloth Dyer"),
 				TEXT("I dye banners the color of leftover sunset. The mill dyes everything beige and calls it efficiency."),
-				TEXT("Handmade thread remembers fingers. Cheap thread remembers meetings."),
+				TEXT("When Hearts stick, their mill ads sag, then fall. I hang rose ribbons on the empty poles."),
 				TEXT("Quiet Rows south of the plaza. People there convert softly."));
 			Add(TEXT("Harbor Kid"),
 				TEXT("I can skip a stone three times. I can skip a serious thought forever now."),
@@ -61,7 +61,9 @@ namespace HolypawCatalog
 			Add(TEXT("Innkeep"),
 				TEXT("Beds here remember the last person who was serious. We washed that out."),
 				TEXT("Rest is a political act if the mill wants you exhausted and identical."),
-				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."));
+				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."),
+				TEXT("Dusk they hymn. Night they sleep here. I count round heads like sheep."),
+				8);
 			Add(TEXT("Choir Bear"),
 				TEXT("I am not a bear. I am a person in a choir that aspires. Close enough."),
 				TEXT("The chapel fills Miracle Charge. Bring the cellar hymn sheet and press 3. Dusk sings along."),
@@ -84,8 +86,36 @@ namespace HolypawCatalog
 				TEXT("Plaza fountain. E to wish. Inn east, chapel west, mill rude and further east."));
 			Add(TEXT("Mill Whistleblower"),
 				TEXT("I filed a complaint that polyester has no soul. They offered a coupon. I took a hymn."),
-				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap. Key 3 if you have some."),
-				TEXT("Poly Mill, grey sheds, red stack. Handmade not polyester — the sign is not subtle."));
+				TEXT("Three Hearts and our mill banners come down. I will clap. I will not stamp."),
+				TEXT("Poly Mill, grey hall, red stack. Walk in. Handmade not polyester — the sign is not subtle."),
+				TEXT("The hall is beige on purpose. Rippers in your party make the vats nervous."),
+				10);
+			Add(TEXT("Floor Foreman"),
+				TEXT("I scheduled identical smiles. Then a bear walked into my mill and the clipboard got round."),
+				TEXT("Conveyors still run. They convey nothing useful. Clap anyway."),
+				TEXT("West door faces Ribbon. Vats, bales, a crate. Unstuff the petbots first."),
+				TEXT("Night shift is just the beige getting darker. I stay. Someone has to be wrong here."),
+				12);
+			Add(TEXT("Shopkeep"),
+				TEXT("Shutters stay down until someone on this block believes. Convert them. Then I sell buns."),
+				TEXT("Hearts discount if you converted the block. I will pretend that is a coupon."),
+				TEXT("E on the rug. I is pockets. Night I sleep in the inn with the round people."));
+			Add(TEXT("Fountain Shopkeep"),
+				TEXT("I sold mill water in a pretty cup. Now I sell clap. Same fountain. Better government."),
+				TEXT("Hearts unlatched this counter. Buns if you converted the plaza. No beige theology."),
+				TEXT("Open stall by the fountain. Market rooms east. Chapel west if dusk starts singing."));
+			Add(TEXT("Market Shopkeep"),
+				TEXT("First Heart and the shutter forgets how to be beige. I sell buns that have opinions."),
+				TEXT("Hearts discount. I will pretend that is a coupon and not a coup."),
+				TEXT("Three rooms on this street. Walk in. Night I pile into the inn."));
+			Add(TEXT("Bun Shopkeep"),
+				TEXT("Every bun has a secret now. The mill asked for identical rolls. I sent crumbs."),
+				TEXT("Buy one. Be spherical. The plaza kiosk is for people who cannot wait."),
+				TEXT("Market east of the fountain. Poly Mill further east, still rude."));
+			Add(TEXT("Ribbon Shopkeep"),
+				TEXT("I keep handmade ribbons under the counter until the mill ads fall. Then I hang them."),
+				TEXT("Three Hearts and the poles wear our cloth. I will clap. I will not stamp."),
+				TEXT("Cloth quarter west if you want the tall banners. Plaza if you want the clap."));
 			Add(TEXT("Plaza Florist"),
 				TEXT("I sell roses that refuse to be identical. The mill asked for a bulk beige. I sent a thorn."),
 				TEXT("Toss a thought in the fountain. Faith comes back smelling like wet stone and hope."),
@@ -468,6 +498,17 @@ namespace HolypawCatalog
 		if (Found)
 		{
 			return Found;
+		}
+		if (Speaker.Contains(TEXT("Shopkeep"), ESearchCase::IgnoreCase))
+		{
+			Found = GetTalks().FindByPredicate([](const FHolypawTalkDef& T)
+			{
+				return T.Speaker == TEXT("Shopkeep");
+			});
+			if (Found)
+			{
+				return Found;
+			}
 		}
 		return GetTalks().FindByPredicate([](const FHolypawTalkDef& T) { return T.Speaker == TEXT("Default"); });
 	}

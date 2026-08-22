@@ -11,5 +11,6 @@ namespace HolypawAudio
 {
 	void PlayCue(const UObject* WorldContext, FName Cue);
 	void PlayTheme(const UObject* WorldContext, AActor* Owner, TObjectPtr<UAudioComponent>& Comp, EHolypawZone Zone, bool bInterior);
+	void PlayHymn(const UObject* WorldContext, AActor* Owner, TObjectPtr<UAudioComponent>& Comp);
 	void StopTheme(UAudioComponent* Comp);
 }

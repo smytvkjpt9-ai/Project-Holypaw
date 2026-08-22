@@ -15,6 +15,7 @@ RIM = (ROOT / "Source/Holypaw/Cities/HolypawRimCities.cpp").read_text() if (ROOT
 INTERIOR = (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawInteriorKit.cpp").exists() else ""
 STREAM = (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").read_text() if (ROOT / "Source/Holypaw/World/HolypawWorldStream.cpp").exists() else ""
 BOSS = (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").read_text() if (ROOT / "Source/Holypaw/Combat/HolypawBossScript.cpp").exists() else ""
+SCHEDULE = (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").read_text() if (ROOT / "Source/Holypaw/AI/HolypawSchedule.cpp").exists() else ""
 SKILLS = (ROOT / "Source/Holypaw/HolypawSkillCatalog.cpp").read_text()
 MISSIONS = (ROOT / "Source/Holypaw/HolypawMissionCatalog.cpp").read_text()
 CHAR = (ROOT / "Source/Holypaw/Character/HolypawCharacter.cpp").read_text()
@@ -235,6 +236,10 @@ if "FHolypawHeartRecord" not in TYPES:
     errors.append("types missing FHolypawHeartRecord")
 if "AddCityHeart" not in CHAR:
     errors.append("character missing city Hearts")
+if "PulseLivingWorld" not in CHAR:
+    errors.append("character missing living-world pulse")
+if "GetFaithLine" not in CHAR:
+    errors.append("character missing conversion HUD line")
 if "OpenFastTravel" not in CHAR:
     errors.append("character missing lantern fast travel")
 if "ResetForNewGame" not in CHAR:
@@ -307,8 +312,68 @@ if 'ActionName="Inventory"' not in INPUT:
     errors.append("DefaultInput missing Inventory")
 if "OpenShop" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text():
     errors.append("stall missing shop panel")
+if "Shutter" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text():
+    errors.append("stall missing Hearts shutter")
+if "IsUnlatched" not in (ROOT / "Source/Holypaw/Actors/FaithStall.cpp").read_text():
+    errors.append("stall missing Hearts gate")
 if "StartTalk" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
     errors.append("believers should talk, not re-hug")
+if "ClapBurst" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("believers missing clap burst")
+if "IsClapping" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("believers missing clap")
+if "Sash" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("believers missing sash outfit")
+
+FAITH = (ROOT / "Source/Holypaw/Faith/HolypawFaithSim.cpp").read_text() if (ROOT / "Source/Holypaw/Faith/HolypawFaithSim.cpp").exists() else ""
+BANNER = (ROOT / "Source/Holypaw/Actors/HolypawMillBanner.cpp").read_text() if (ROOT / "Source/Holypaw/Actors/HolypawMillBanner.cpp").exists() else ""
+PULSE = (ROOT / "Source/Holypaw/Cities/HolypawConversionPulse.cpp").read_text() if (ROOT / "Source/Holypaw/Cities/HolypawConversionPulse.cpp").exists() else ""
+if not FAITH:
+    errors.append("missing HolypawFaithSim.cpp")
+if not BANNER:
+    errors.append("missing HolypawMillBanner.cpp")
+if not PULSE:
+    errors.append("missing HolypawConversionPulse.cpp")
+if "ShopOpenNeed" not in FAITH:
+    errors.append("faith sim missing shop Heart gate")
+if "BannerFallNeed" not in FAITH:
+    errors.append("faith sim missing mill banner Heart gate")
+if "DuskHymnNeed" not in FAITH:
+    errors.append("faith sim missing dusk hymn Heart gate")
+if "Mill banners down" not in FAITH:
+    errors.append("faith sim missing banner-down copy")
+if "HandmadeRibbon" not in BANNER:
+    errors.append("mill banners missing handmade replacement")
+if "PlaceRibbonMillBanners" not in PULSE:
+    errors.append("conversion pulse missing Ribbon mill banners")
+if "PlayHymn" not in PULSE:
+    errors.append("conversion pulse missing dusk hymn pad")
+if "PlayHymn" not in (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").read_text():
+    errors.append("audio missing dusk hymn pad")
+if "ParadeGoal" not in SCHEDULE:
+    errors.append("schedule missing believer parade goals")
+if "PlazaGoal" not in SCHEDULE:
+    errors.append("schedule missing plaza clap-walk")
+if "VInterpConstantTo" not in SCHEDULE:
+    errors.append("schedule missing real walk (not a slide)")
+if "ParadeSalt" not in SCHEDULE:
+    errors.append("schedule missing staggered parade")
+if "LivingSign" not in FAITH:
+    errors.append("faith sim missing living sign copy")
+if "NotifyConvertPulse" not in PULSE:
+    errors.append("conversion pulse missing nearby clap/banner drop")
+if "FountainPool" not in PULSE:
+    errors.append("conversion pulse missing fountain look")
+if "DressOpenStall" not in INTERIOR:
+    errors.append("interior kit missing open plaza kiosk")
+if "CelebrateHold" not in SCHEDULE:
+    errors.append("schedule missing convert celebrate-hold")
+if "NoticeConvert" not in PULSE:
+    errors.append("conversion pulse missing skeptic look-at")
+if "Fountain Shopkeep" not in WORLD:
+    errors.append("world missing fountain shopkeep")
+if "CreditZone" not in CHAR:
+    errors.append("character missing home-city Heart credit")
 
 if not (ROOT / "Source/Holypaw/Actors/HolypawPickup.cpp").exists():
     errors.append("missing HolypawPickup.cpp")
@@ -436,6 +501,23 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("TickHuman", SCHEDULE, "schedule"),
+    ("ChapelGoal", SCHEDULE, "schedule"),
+    ("ParadeGoal", SCHEDULE, "schedule"),
+    ("DressShopRoom", INTERIOR, "interior kit"),
+    ("DressMillHall", INTERIOR, "interior kit"),
+    ("MillConveyor", INTERIOR, "interior kit"),
+    ("ShopCounter", INTERIOR, "interior kit"),
+    ("Floor Foreman", WORLD, "world"),
+    ("Shopkeep", (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").read_text(), "dialogue"),
+    ("RoleFor", (ROOT / "Source/Holypaw/Components/PartyComponent.cpp").read_text(), "party"),
+    ("fluffBurst", CHAR, "character"),
+    ("DuskHymn", CHAR, "character"),
+    ("PulseLivingWorld", CHAR, "character"),
+    ("PlaceRibbonMillBanners", WORLD, "world"),
+    ("ShopClosedLine", CHAR, "character"),
+    ("NotifyConvertPulse", CHAR, "character"),
+    ("ribbonPlaza", WORLD, "world"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")

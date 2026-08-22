@@ -61,6 +61,7 @@ void AHolypawHUD::DrawHUD()
 	if (!P->GetClockLine().IsEmpty())
 	{
 		DrawLabel(W - 280.f, 24.f, P->GetClockLine(), FLinearColor(1.f, 0.86f, 0.62f), 1.05f);
+		DrawLabel(W - 420.f, 52.f, P->GetFaithLine(), FLinearColor(1.f, 0.78f, 0.82f), 0.92f);
 	}
 
 	const FString Stats = FString::Printf(TEXT("AP %d    FP %d    LVL %d    HP %d/%d    Hearts %d    City %d"),
