@@ -784,8 +784,8 @@ if not (ROOT / "GenerateHolypawSln.bat").exists():
     errors.append("missing GenerateHolypawSln.bat")
 if not (ROOT / "BuildHolypaw.bat").exists():
     errors.append("missing BuildHolypaw.bat")
-if not (ROOT / "Docs/BUILD_ON_WINDOWS.md").exists():
-    errors.append("missing Docs/BUILD_ON_WINDOWS.md")
+if "PublicIncludePaths.Add(ModuleDirectory)" not in (ROOT / "Source/Holypaw/Holypaw.Build.cs").read_text():
+    errors.append("Holypaw.Build.cs must add ModuleDirectory to include paths for Actors/UI includes")
 
 if errors:
     print("FAIL")
