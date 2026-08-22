@@ -15,6 +15,7 @@ namespace HolypawAudio
 	void StopTheme(UAudioComponent* Comp);
 	void SetCombat(const UObject* WorldContext, bool bActive, bool bBoss, bool bPhaseTwo = false);
 	void NotifyJumped(const UObject* WorldContext);
+	void NotifyVictory(const UObject* WorldContext);
 	void ApplyMute(const UObject* WorldContext);
 	void RestartMix(const UObject* WorldContext);
 }

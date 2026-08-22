@@ -44,6 +44,9 @@ namespace HolypawSynth
 	void ToPcm16(const FStereo& S, TArray<uint8>& Out, float PeakDb = -9.f);
 	void AddDelayWidth(FStereo& S, int32 Samples, float Mix);
 	void SoftLimit(FStereo& S);
+	void DcBlock(FStereo& S, float CutHz = 70.f);
+	void MakeSeamless(FStereo& S, int32 CrossSamples);
+	float LoopSeconds(float Bpm, int32 Bars);
 }
 
 namespace HolypawCues
@@ -60,7 +63,8 @@ namespace HolypawScore
 	FHolypawScore Title();
 	FHolypawScore Combat(EHolypawZone Zone, bool bBoss, bool bPhaseTwo);
 	FHolypawScore Victory();
-	void Render(const FHolypawScore& Score, float Seconds, bool bCombat, HolypawSynth::FStereo& Out);
+	float LoopSeconds(const FHolypawScore& Score);
+	void Render(const FHolypawScore& Score, float Seconds, bool bCombat, HolypawSynth::FStereo& Out, bool bIncludeBed);
 	void RenderBed(EHolypawBed Kind, float Seconds, float Gain, HolypawSynth::FStereo& Out);
 	void RenderMill(float Seconds, HolypawSynth::FStereo& Out);
 }
@@ -70,4 +74,5 @@ namespace HolypawSfx
 	void RenderCue(FName Cue, uint32 Seed, HolypawSynth::FStereo& Out);
 	void RenderAbility(FName Kind, bool bCrit, bool bStagger, uint32 Seed, HolypawSynth::FStereo& Out);
 	void RenderFootstep(EHolypawZone Zone, bool bInterior, uint32 Seed, HolypawSynth::FStereo& Out);
+	int32 FootSurface(EHolypawZone Zone, bool bInterior);
 }

@@ -33,6 +33,7 @@ public:
 	void SetTitle(bool bTitle);
 	void StopAll();
 	void NotifyJumped();
+	void NotifyVictory();
 	void RestartMix();
 
 protected:
@@ -49,6 +50,12 @@ protected:
 	void RebuildMill();
 	void PlayPcm(TArray<uint8>&& Pcm, float Seconds, EHolypawBus Bus, float ExtraGain, float Pitch = 1.f);
 	void Keep(USoundWaveProcedural* Wave);
+	void KeepStem(USoundWaveProcedural* Wave);
+	void ApplyTone();
+	void PlayCachedFootstep();
+	uint32 ExploreKey() const;
+	uint32 CombatKey() const;
+	uint32 AmbientKey() const;
 
 	UPROPERTY()
 	TObjectPtr<AHolypawAudioRig> Rig;
@@ -56,11 +63,20 @@ protected:
 	UPROPERTY()
 	TArray<TObjectPtr<USoundWaveProcedural>> LiveWaves;
 
+	UPROPERTY()
+	TArray<TObjectPtr<USoundWaveProcedural>> StemWaves;
+
 	TArray<uint8> MusicPcmA;
 	TArray<uint8> MusicPcmB;
 	TArray<uint8> CombatPcm;
 	TArray<uint8> AmbientPcm;
 	TArray<uint8> MillPcm;
+
+	TMap<uint32, FHolypawLoopCache> ExploreCache;
+	TMap<uint32, FHolypawLoopCache> CombatCache;
+	TMap<uint32, FHolypawLoopCache> AmbientCache;
+	TArray<uint8> FootPool[6][4];
+	bool bFootPoolReady = false;
 
 	EHolypawZone ExploreZone = EHolypawZone::ForestCottage;
 	EHolypawDayPart ExploreDay = EHolypawDayPart::Day;
@@ -69,11 +85,15 @@ protected:
 	bool bBoss = false;
 	bool bPhaseTwo = false;
 	bool bTitle = true;
+	bool bVictory = false;
+	bool bPaused = false;
 	bool bMusicOnA = true;
 	float MusicFade = 1.f;
 	float CombatMix = 0.f;
 	float ExploreMix = 1.f;
+	float PhaseBoost = 0.f;
 	float FootAcc = 0.f;
+	float RebuildCool = 0.f;
 	bool bWasFalling = false;
 	int32 SeedCursor = 1;
 };

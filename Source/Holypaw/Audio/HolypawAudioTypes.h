@@ -92,3 +92,9 @@ struct FHolypawScore
 	float Bed = 0.20f;
 	EHolypawBed BedKind = EHolypawBed::Forest;
 };
+
+struct FHolypawLoopCache
+{
+	TArray<uint8> Pcm;
+	float Seconds = 8.f;
+};

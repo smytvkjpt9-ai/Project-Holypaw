@@ -450,26 +450,32 @@ namespace HolypawScore
 		R += Filt * G * (0.7f + Pan);
 	}
 
+	float LoopSeconds(const FHolypawScore& Score)
+	{
+		return HolypawSynth::LoopSeconds(Score.Bpm, Score.ChordCount);
+	}
+
 	void RenderBed(const EHolypawBed Kind, const float Seconds, const float Gain, HolypawSynth::FStereo& Out)
 	{
 		using namespace HolypawSynth;
 		InitLut();
-		const int32 N = FMath::Max(64, FMath::RoundToInt(Seconds * SampleRate));
+		const int32 Cross = FMath::RoundToInt(0.1f * SampleRate);
+		const int32 N = FMath::Max(64, FMath::RoundToInt(Seconds * SampleRate)) + Cross;
 		Out.Zero(N);
 		FOnePole Air;
 		uint32 Rng = 0xBEEFu + static_cast<uint32>(Kind) * 17u;
 		for (int32 I = 0; I < N; ++I)
 		{
 			const float T = static_cast<float>(I) / static_cast<float>(SampleRate);
-			const float Fade = FMath::Min(T / 0.2f, FMath::Min(1.f, (Seconds - T) / 0.2f));
 			float L = 0.f;
 			float R = 0.f;
-			RenderBedKind(Kind, I, T, Rng, Air, L, R, Gain * Fade);
+			RenderBedKind(Kind, I, T, Rng, Air, L, R, Gain);
 			Out.L[I] = L;
 			Out.R[I] = R;
 		}
 		AddDelayWidth(Out, 420, 0.12f);
-		SoftLimit(Out);
+		DcBlock(Out, 40.f);
+		MakeSeamless(Out, Cross);
 	}
 
 	void RenderMill(const float Seconds, HolypawSynth::FStereo& Out)
@@ -477,65 +483,98 @@ namespace HolypawScore
 		RenderBed(EHolypawBed::Mill, Seconds, 1.f, Out);
 		using namespace HolypawSynth;
 		const int32 N = Out.Num();
+		float LoomP = 0.f;
+		float LoomP2 = 0.f;
 		for (int32 I = 0; I < N; ++I)
 		{
+			LoomP += 36.f / static_cast<float>(SampleRate);
+			LoomP2 += 72.1f / static_cast<float>(SampleRate);
 			const float T = static_cast<float>(I) / static_cast<float>(SampleRate);
-			const float Loom = OscWarm(36.f * T, 0.7f) * 0.18f + OscSine(72.1f * T) * 0.08f;
+			const float Loom = OscWarm(LoomP, 0.7f) * 0.18f + OscSine(LoomP2) * 0.08f;
 			const float Clack = ExpDecay(FMath::Fmod(T * 3.2f, 1.f), 14.f) * OscSine(180.f * T) * 0.07f;
 			Out.L[I] += Loom * 0.9f + Clack;
 			Out.R[I] += Loom * 1.05f + Clack * 0.7f;
 		}
-		SoftLimit(Out);
+		DcBlock(Out, 35.f);
 	}
 
-	void Render(const FHolypawScore& Score, const float Seconds, const bool bCombat, HolypawSynth::FStereo& Out)
+	void Render(const FHolypawScore& Score, const float Seconds, const bool bCombat, HolypawSynth::FStereo& Out, const bool bIncludeBed)
 	{
 		using namespace HolypawSynth;
 		InitLut();
-		const int32 N = FMath::Max(64, FMath::RoundToInt(Seconds * SampleRate));
+		const int32 Cross = FMath::RoundToInt(0.09f * SampleRate);
+		const int32 N = FMath::Max(64, FMath::RoundToInt(Seconds * SampleRate)) + Cross;
 		Out.Zero(N);
 		const float Beat = 60.f / FMath::Max(40.f, Score.Bpm);
 		const float Bar = Beat * 4.f;
+		const float InvSr = 1.f / static_cast<float>(SampleRate);
+		const float FreqSmooth = 1.f - FMath::Exp(-InvSr / 0.022f);
 		FOnePole PadL;
 		FOnePole PadR;
 		FOnePole Air;
+		FOnePole HpL;
+		FOnePole HpR;
 		uint32 Rng = 0x51A3u * static_cast<uint32>(Score.RootMidi + 11);
-		const float Cut = (bCombat ? 4200.f : 2800.f) * FMath::Clamp(0.45f + Score.Bright, 0.3f, 1.2f);
+		const float Cut = (bCombat ? 3800.f : 2600.f) * FMath::Clamp(0.45f + Score.Bright, 0.3f, 1.15f);
 		const float Coeff = OnePoleCoeff(Cut);
+		const float HpCoeff = OnePoleCoeff(bCombat ? 55.f : 72.f);
+
+		float Ph0L = 0.f, Ph0R = 0.f, Ph3L = 0.f, Ph3R = 0.f, Ph5L = 0.f, Ph5R = 0.f;
+		float Ch0 = 0.f, Ch3 = 0.f, Ch5 = 0.f, Ch8 = 0.f;
+		float BassP = 0.f, SubP = 0.f, KickP = 0.f;
+		float F0 = NoteHz(Score.RootMidi, Score.Scale, Score.Chord[0], 0);
+		float F3 = NoteHz(Score.RootMidi, Score.Scale, Score.Chord[0] + 2, 0);
+		float F5 = NoteHz(Score.RootMidi, Score.Scale, Score.Chord[0] + 4, 0);
+		int32 LastBeatI = -1;
 
 		for (int32 I = 0; I < N; ++I)
 		{
-			const float T = static_cast<float>(I) / static_cast<float>(SampleRate);
-			const float Fade = FMath::Min(T / 0.14f, FMath::Min(1.f, (Seconds - T) / 0.16f));
+			const float T = static_cast<float>(I) * InvSr;
 			const int32 BarI = FMath::FloorToInt(T / Bar);
 			const int32 ChordDeg = Score.Chord[((BarI % Score.ChordCount) + Score.ChordCount) % Score.ChordCount];
-			const float F0 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg, 0);
-			const float F3 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg + 2, 0);
-			const float F5 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg + 4, 0);
+			const float T0 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg, 0);
+			const float T3 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg + 2, 0);
+			const float T5 = NoteHz(Score.RootMidi, Score.Scale, ChordDeg + 4, 0);
+			F0 += (T0 - F0) * FreqSmooth;
+			F3 += (T3 - F3) * FreqSmooth;
+			F5 += (T5 - F5) * FreqSmooth;
+
+			Ph0L += F0 * InvSr;
+			Ph0R += F0 * 1.002f * InvSr;
+			Ph3L += F3 * 0.998f * InvSr;
+			Ph3R += F3 * InvSr;
+			Ph5L += F5 * 0.5f * InvSr;
+			Ph5R += F5 * 0.501f * InvSr;
+			Ch0 += F0 * 2.f * InvSr;
+			Ch3 += F3 * 2.003f * InvSr;
+			Ch5 += F5 * 2.f * InvSr;
+			Ch8 += F0 * 3.f * InvSr;
+			BassP += F0 * 0.5f * InvSr;
+			SubP += F0 * 0.25f * InvSr;
+
 			const float Trem = 0.94f + 0.06f * FastSin(T * 0.23f * 2.f * PI);
 			float L = 0.f;
 			float R = 0.f;
 
-			const float PadG = Score.Pad * Trem * Fade;
-			L += OscWarm(F0 * T, Score.Bright) * PadG * 0.38f;
-			R += OscWarm(F0 * 1.002f * T, Score.Bright) * PadG * 0.38f;
-			L += OscWarm(F3 * 0.998f * T, Score.Bright * 0.85f) * PadG * 0.28f;
-			R += OscWarm(F3 * T, Score.Bright * 0.85f) * PadG * 0.28f;
-			L += OscSine(F5 * 0.5f * T) * PadG * 0.18f;
-			R += OscSine(F5 * 0.501f * T) * PadG * 0.18f;
+			const float PadG = Score.Pad * Trem;
+			L += OscWarm(Ph0L, Score.Bright) * PadG * 0.38f;
+			R += OscWarm(Ph0R, Score.Bright) * PadG * 0.38f;
+			L += OscWarm(Ph3L, Score.Bright * 0.85f) * PadG * 0.28f;
+			R += OscWarm(Ph3R, Score.Bright * 0.85f) * PadG * 0.28f;
+			L += OscSine(Ph5L) * PadG * 0.18f;
+			R += OscSine(Ph5R) * PadG * 0.18f;
 
-			const float ChoirG = Score.Choir * Fade * (0.85f + 0.15f * FastSin(T * 0.09f));
-			L += OscSine(F0 * 2.f * T) * ChoirG * 0.16f;
-			R += OscSine(F3 * 2.003f * T) * ChoirG * 0.16f;
-			L += OscSine(F5 * 2.f * T) * ChoirG * 0.12f;
-			R += OscSine(F0 * 3.f * T) * ChoirG * 0.08f;
+			const float ChoirG = Score.Choir * (0.85f + 0.15f * FastSin(T * 0.09f));
+			L += OscSine(Ch0) * ChoirG * 0.16f;
+			R += OscSine(Ch3) * ChoirG * 0.16f;
+			L += OscSine(Ch5) * ChoirG * 0.12f;
+			R += OscSine(Ch8) * ChoirG * 0.08f;
 
-			const float BassHz = F0 * 0.5f;
-			const float BassEnv = Score.Bass * Fade * (0.7f + 0.3f * ExpDecay(FMath::Fmod(T, Beat), 3.5f));
-			L += OscSine(BassHz * T) * BassEnv * 0.55f;
-			R += OscSine(BassHz * 1.001f * T) * BassEnv * 0.55f;
-			L += OscSine(BassHz * 0.5f * T) * BassEnv * 0.22f;
-			R += OscSine(BassHz * 0.5f * T) * BassEnv * 0.22f;
+			const float BassEnv = Score.Bass * (0.7f + 0.3f * ExpDecay(FMath::Fmod(T, Beat), 3.5f));
+			L += OscSine(BassP) * BassEnv * 0.55f;
+			R += OscSine(BassP + 0.002f) * BassEnv * 0.55f;
+			L += OscSine(SubP) * BassEnv * 0.20f;
+			R += OscSine(SubP) * BassEnv * 0.20f;
 
 			const float Step = Beat * 0.5f;
 			const int32 StepI = FMath::FloorToInt(T / Step);
@@ -544,7 +583,7 @@ namespace HolypawScore
 			{
 				const float MT = T - static_cast<float>(StepI) * Step;
 				const float MHz = NoteHz(Score.RootMidi, Score.Scale, Mot, bCombat ? 0 : 1);
-				const float MG = (bCombat ? Score.Arp * 1.4f : Score.Bell) * EnvADSR(MT, Step * 0.95f, 0.01f, 0.08f, 0.35f, 0.12f) * Fade;
+				const float MG = (bCombat ? Score.Arp * 1.4f : Score.Bell) * EnvADSR(MT, Step * 0.95f, 0.012f, 0.08f, 0.32f, 0.14f);
 				const float Bell = OscBell(MHz, MT, bCombat ? 0.8f : 1.6f);
 				const float Pan = (Mot % 3 == 0) ? -0.2f : 0.2f;
 				L += Bell * MG * (0.75f - Pan);
@@ -558,9 +597,9 @@ namespace HolypawScore
 				const int32 ArpDeg = ChordDeg + (AStep % 3) * 2;
 				const float AT = T - static_cast<float>(AStep) * Sixteenth;
 				const float AHz = NoteHz(Score.RootMidi, Score.Scale, ArpDeg, 1);
-				const float AG = Score.Arp * ExpDecay(AT, 18.f) * Fade * (bCombat ? 1.1f : 0.7f);
-				L += OscTri(AHz * T) * AG * 0.22f;
-				R += OscTri(AHz * 1.004f * T) * AG * 0.22f;
+				const float AG = Score.Arp * ExpDecay(AT, 18.f) * (bCombat ? 1.1f : 0.7f);
+				L += OscTri(AHz * AT) * AG * 0.22f;
+				R += OscTri(AHz * 1.004f * AT) * AG * 0.22f;
 			}
 
 			if (Score.Pulse > 0.01f || bCombat)
@@ -568,10 +607,16 @@ namespace HolypawScore
 				const float Pulse = FMath::Max(Score.Pulse, bCombat ? 0.45f : 0.f);
 				const float BT = FMath::Fmod(T, Beat);
 				const int32 BeatI = FMath::FloorToInt(T / Beat);
+				if (BeatI != LastBeatI)
+				{
+					KickP = 0.f;
+					LastBeatI = BeatI;
+				}
 				if ((BeatI % 2) == 0)
 				{
 					const float KHz = FMath::Lerp(150.f, 42.f, FMath::Clamp(BT / 0.09f, 0.f, 1.f));
-					const float Kick = OscSine(KHz * BT) * ExpDecay(BT, 14.f) * Pulse;
+					KickP += KHz * InvSr;
+					const float Kick = OscSine(KickP) * ExpDecay(BT, 14.f) * Pulse;
 					L += Kick * 0.7f;
 					R += Kick * 0.7f;
 				}
@@ -586,12 +631,18 @@ namespace HolypawScore
 				}
 			}
 
-			RenderBedKind(Score.BedKind, I, T, Rng, Air, L, R, Score.Bed * Fade);
+			if (bIncludeBed)
+			{
+				RenderBedKind(Score.BedKind, I, T, Rng, Air, L, R, Score.Bed);
+			}
 
+			L -= HpL.Tick(L, HpCoeff);
+			R -= HpR.Tick(R, HpCoeff);
 			Out.L[I] = PadL.Tick(L, Coeff);
 			Out.R[I] = PadR.Tick(R, Coeff);
 		}
-		AddDelayWidth(Out, bCombat ? 180 : 520, bCombat ? 0.08f : 0.16f);
-		SoftLimit(Out);
+		AddDelayWidth(Out, bCombat ? 180 : 480, bCombat ? 0.08f : 0.14f);
+		DcBlock(Out, 60.f);
+		MakeSeamless(Out, Cross);
 	}
 }

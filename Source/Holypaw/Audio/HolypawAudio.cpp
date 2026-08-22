@@ -87,7 +87,8 @@ namespace HolypawAudio
 			return;
 		}
 		HolypawSynth::FStereo Stereo;
-		HolypawScore::Render(HolypawScore::ForZone(Zone, bInterior, EHolypawDayPart::Day), 8.f, false, Stereo);
+		const FHolypawScore Score = HolypawScore::ForZone(Zone, bInterior, EHolypawDayPart::Day);
+		HolypawScore::Render(Score, HolypawScore::LoopSeconds(Score), false, Stereo, false);
 		TArray<uint8> Pcm;
 		HolypawSynth::ToPcm16(Stereo, Pcm, -12.f);
 		USoundWaveProcedural* Pad = NewObject<USoundWaveProcedural>(Owner);
@@ -140,6 +141,16 @@ namespace HolypawAudio
 			return;
 		}
 		PlayCue(WorldContext, TEXT("Jump"));
+	}
+
+	void NotifyVictory(const UObject* WorldContext)
+	{
+		if (UHolypawAudioSubsystem* Sys = UHolypawAudioSubsystem::Get(WorldContext))
+		{
+			Sys->NotifyVictory();
+			return;
+		}
+		PlayCue(WorldContext, TEXT("BattleWin"));
 	}
 
 	void ApplyMute(const UObject* WorldContext)

@@ -420,6 +420,41 @@ namespace HolypawSfx
 		}
 		Thump(Out, 0.f, Hz, Hz * 0.45f, Amp, 22.f);
 		NoiseBurst(Out, Rng, 0.f, Amp * 0.7f, 30.f, Cut);
-		SoftLimit(Out);
+	}
+
+	int32 FootSurface(const EHolypawZone Zone, const bool bInterior)
+	{
+		if (bInterior)
+		{
+			return 1;
+		}
+		switch (Zone)
+		{
+		case EHolypawZone::Snowveil:
+		case EHolypawZone::Snow:
+		case EHolypawZone::Ice:
+		case EHolypawZone::TundraParish:
+		case EHolypawZone::FeltIceCamp:
+		case EHolypawZone::AuroraBorough:
+			return 3;
+		case EHolypawZone::Desert:
+		case EHolypawZone::DustMesa:
+		case EHolypawZone::SandHymn:
+		case EHolypawZone::PalmaDusk:
+			return 4;
+		case EHolypawZone::Ocean:
+		case EHolypawZone::Tidewell:
+		case EHolypawZone::Coast:
+		case EHolypawZone::CoralChoir:
+		case EHolypawZone::CapePlush:
+			return 5;
+		case EHolypawZone::RibbonCity:
+		case EHolypawZone::Clockhaven:
+		case EHolypawZone::MarbleForum:
+		case EHolypawZone::LanternAngeles:
+			return 2;
+		default:
+			return 0;
+		}
 	}
 }

@@ -139,6 +139,15 @@ void UHolypawAudioSubsystem::Keep(USoundWaveProcedural* Wave)
 	}
 }
 
+void UHolypawAudioSubsystem::KeepStem(USoundWaveProcedural* Wave)
+{
+	if (!Wave)
+	{
+		return;
+	}
+	StemWaves.AddUnique(Wave);
+}
+
 USoundWaveProcedural* UHolypawAudioSubsystem::MakeWave(TArray<uint8>& Pcm, const float Seconds, const bool bLoop, UObject* Outer)
 {
 	USoundWaveProcedural* Wave = NewObject<USoundWaveProcedural>(Outer ? Outer : GetTransientPackage());
@@ -163,7 +172,7 @@ USoundWaveProcedural* UHolypawAudioSubsystem::MakeWave(TArray<uint8>& Pcm, const
 			}
 		});
 	}
-	Keep(Wave);
+	KeepStem(Wave);
 	return Wave;
 }
 
@@ -249,6 +258,57 @@ void UHolypawAudioSubsystem::PlayAbility(const FName Kind, const bool bCrit, con
 		FMath::Pow(2.f, FMath::FRandRange(-40.f, 40.f) / 1200.f));
 }
 
+uint32 UHolypawAudioSubsystem::ExploreKey() const
+{
+	return static_cast<uint32>(ExploreZone)
+		| (bInterior ? 1u << 8 : 0)
+		| (bTitle ? 1u << 9 : 0);
+}
+
+uint32 UHolypawAudioSubsystem::CombatKey() const
+{
+	return static_cast<uint32>(ExploreZone) | (bBoss ? 1u << 8 : 0);
+}
+
+uint32 UHolypawAudioSubsystem::AmbientKey() const
+{
+	const FHolypawScore Score = HolypawScore::ForZone(ExploreZone, bInterior, ExploreDay);
+	return static_cast<uint32>(Score.BedKind) | (bInterior ? 1u << 8 : 0);
+}
+
+void UHolypawAudioSubsystem::ApplyTone()
+{
+	if (!Rig)
+	{
+		return;
+	}
+	float Hz = 9000.f;
+	if (bInterior)
+	{
+		Hz = 1550.f;
+	}
+	else if (ExploreDay == EHolypawDayPart::Night)
+	{
+		Hz = 2100.f;
+	}
+	else if (ExploreDay == EHolypawDayPart::Dusk)
+	{
+		Hz = 3300.f;
+	}
+	auto Tone = [Hz](UAudioComponent* C)
+	{
+		if (!C)
+		{
+			return;
+		}
+		C->SetLowPassFilterEnabled(Hz < 8000.f);
+		C->SetLowPassFilterFrequency(Hz);
+	};
+	Tone(Rig->MusicA.Get());
+	Tone(Rig->MusicB.Get());
+	Tone(Rig->Ambient.Get());
+}
+
 void UHolypawAudioSubsystem::RebuildExplore()
 {
 	EnsureRig();
@@ -256,18 +316,27 @@ void UHolypawAudioSubsystem::RebuildExplore()
 	{
 		return;
 	}
-	const FHolypawScore Score = bTitle
-		? HolypawScore::Title()
-		: HolypawScore::ForZone(ExploreZone, bInterior, ExploreDay);
-	HolypawSynth::FStereo Stereo;
-	HolypawScore::Render(Score, 16.f, false, Stereo);
+	const uint32 Key = ExploreKey();
+	FHolypawLoopCache* Cached = ExploreCache.Find(Key);
+	if (!Cached)
+	{
+		const FHolypawScore Score = bTitle ? HolypawScore::Title() : HolypawScore::ForZone(ExploreZone, bInterior, EHolypawDayPart::Day);
+		HolypawSynth::FStereo Stereo;
+		const float Sec = HolypawScore::LoopSeconds(Score);
+		HolypawScore::Render(Score, Sec, false, Stereo, false);
+		FHolypawLoopCache Fresh;
+		HolypawSynth::ToPcm16(Stereo, Fresh.Pcm, -12.f);
+		Fresh.Seconds = Stereo.Num() / static_cast<float>(HolypawSynth::SampleRate);
+		Cached = &ExploreCache.Add(Key, MoveTemp(Fresh));
+	}
 	TArray<uint8>& Pcm = bMusicOnA ? MusicPcmB : MusicPcmA;
-	HolypawSynth::ToPcm16(Stereo, Pcm, -12.f);
-	USoundWaveProcedural* Wave = MakeWave(Pcm, 16.f, true, Rig);
+	Pcm = Cached->Pcm;
+	USoundWaveProcedural* Wave = MakeWave(Pcm, Cached->Seconds, true, Rig);
 	UAudioComponent* Incoming = bMusicOnA ? Rig->MusicB.Get() : Rig->MusicA.Get();
 	StartStem(Incoming, Wave, 0.f);
 	bMusicOnA = !bMusicOnA;
 	MusicFade = 0.f;
+	ApplyTone();
 }
 
 void UHolypawAudioSubsystem::RebuildCombat()
@@ -277,11 +346,21 @@ void UHolypawAudioSubsystem::RebuildCombat()
 	{
 		return;
 	}
-	const FHolypawScore Score = HolypawScore::Combat(ExploreZone, bBoss, bPhaseTwo);
-	HolypawSynth::FStereo Stereo;
-	HolypawScore::Render(Score, 10.f, true, Stereo);
-	HolypawSynth::ToPcm16(Stereo, CombatPcm, -10.f);
-	USoundWaveProcedural* Wave = MakeWave(CombatPcm, 10.f, true, Rig);
+	const uint32 Key = CombatKey();
+	FHolypawLoopCache* Cached = CombatCache.Find(Key);
+	if (!Cached)
+	{
+		const FHolypawScore Score = HolypawScore::Combat(ExploreZone, bBoss, false);
+		HolypawSynth::FStereo Stereo;
+		const float Sec = HolypawScore::LoopSeconds(Score);
+		HolypawScore::Render(Score, Sec, true, Stereo, false);
+		FHolypawLoopCache Fresh;
+		HolypawSynth::ToPcm16(Stereo, Fresh.Pcm, -10.f);
+		Fresh.Seconds = Stereo.Num() / static_cast<float>(HolypawSynth::SampleRate);
+		Cached = &CombatCache.Add(Key, MoveTemp(Fresh));
+	}
+	CombatPcm = Cached->Pcm;
+	USoundWaveProcedural* Wave = MakeWave(CombatPcm, Cached->Seconds, true, Rig);
 	StartStem(Rig->CombatComp.Get(), Wave, 0.f);
 }
 
@@ -292,12 +371,22 @@ void UHolypawAudioSubsystem::RebuildAmbient()
 	{
 		return;
 	}
-	const FHolypawScore Score = HolypawScore::ForZone(ExploreZone, bInterior, ExploreDay);
-	HolypawSynth::FStereo Stereo;
-	HolypawScore::RenderBed(Score.BedKind, 8.f, 1.f, Stereo);
-	HolypawSynth::ToPcm16(Stereo, AmbientPcm, -16.f);
-	USoundWaveProcedural* Wave = MakeWave(AmbientPcm, 8.f, true, Rig);
+	const uint32 Key = AmbientKey();
+	FHolypawLoopCache* Cached = AmbientCache.Find(Key);
+	if (!Cached)
+	{
+		const FHolypawScore Score = HolypawScore::ForZone(ExploreZone, bInterior, ExploreDay);
+		HolypawSynth::FStereo Stereo;
+		HolypawScore::RenderBed(Score.BedKind, 8.f, 1.f, Stereo);
+		FHolypawLoopCache Fresh;
+		HolypawSynth::ToPcm16(Stereo, Fresh.Pcm, -16.f);
+		Fresh.Seconds = Stereo.Num() / static_cast<float>(HolypawSynth::SampleRate);
+		Cached = &AmbientCache.Add(Key, MoveTemp(Fresh));
+	}
+	AmbientPcm = Cached->Pcm;
+	USoundWaveProcedural* Wave = MakeWave(AmbientPcm, Cached->Seconds, true, Rig);
 	StartStem(Rig->Ambient.Get(), Wave, 0.f);
+	ApplyTone();
 }
 
 void UHolypawAudioSubsystem::RebuildMill()
@@ -334,18 +423,27 @@ void UHolypawAudioSubsystem::SetExplore(const EHolypawZone Zone, const bool bIn)
 
 void UHolypawAudioSubsystem::SetCombat(const bool bActive, const bool bIsBoss, const bool bPhase)
 {
-	const bool bNew = bActive != bCombat || (bActive && (bIsBoss != bBoss || bPhase != bPhaseTwo));
+	const bool bWasCombat = bCombat;
+	const bool bWasPhase = bPhaseTwo;
 	bCombat = bActive;
 	bBoss = bIsBoss;
 	bPhaseTwo = bPhase;
-	if (bActive && bNew)
+	if (!bActive)
+	{
+		bVictory = false;
+		PhaseBoost = 0.f;
+		return;
+	}
+	bVictory = false;
+	if (!bWasCombat)
 	{
 		RebuildCombat();
-		PlayCue(bPhase ? TEXT("BossPhase") : TEXT("BattleStart"));
+		PlayCue(TEXT("BattleStart"));
 	}
-	if (!bActive && Rig && Rig->CombatComp)
+	else if (bPhase && !bWasPhase)
 	{
-		// mix fades in Tick
+		PhaseBoost = 1.f;
+		PlayCue(TEXT("BossPhase"));
 	}
 }
 
@@ -357,10 +455,6 @@ void UHolypawAudioSubsystem::SetTitle(const bool bOn)
 	}
 	bTitle = bOn;
 	RebuildExplore();
-	if (bOn)
-	{
-		PlayCue(TEXT("Title"));
-	}
 }
 
 void UHolypawAudioSubsystem::RestartMix()
@@ -377,6 +471,13 @@ void UHolypawAudioSubsystem::RestartMix()
 void UHolypawAudioSubsystem::NotifyJumped()
 {
 	PlayCue(TEXT("Jump"));
+}
+
+void UHolypawAudioSubsystem::NotifyVictory()
+{
+	bVictory = true;
+	bCombat = false;
+	PhaseBoost = 0.f;
 }
 
 void UHolypawAudioSubsystem::StopAll()
@@ -410,15 +511,17 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 	{
 		return;
 	}
+	RebuildCool = FMath::Max(0.f, RebuildCool - DeltaTime);
 	if (IsMuted())
 	{
 		StopAll();
 		return;
 	}
-	if (Rig->MusicA && !Rig->MusicA->IsPlaying() && Rig->MusicB && !Rig->MusicB->IsPlaying())
+	if (RebuildCool <= 0.f && Rig->MusicA && !Rig->MusicA->IsPlaying() && Rig->MusicB && !Rig->MusicB->IsPlaying())
 	{
 		RebuildExplore();
 		RebuildAmbient();
+		RebuildCool = 1.25f;
 	}
 
 	AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
@@ -429,22 +532,25 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 		{
 			SetTitle(bNowTitle);
 		}
+		bPaused = Pawn->Mode == EHolypawPawnMode::Pause;
 		const bool bNowCombat = Pawn->Mode == EHolypawPawnMode::Battle;
-		if (bNowCombat != bCombat && !bNowCombat)
+		if (!bNowCombat && bCombat && !bVictory)
 		{
 			bCombat = false;
 		}
 	}
 
-	const float WantCombat = bCombat ? 1.f : 0.f;
-	const float WantExplore = bCombat ? 0.14f : (bTitle ? 1.f : 1.f);
-	CombatMix = FMath::FInterpTo(CombatMix, WantCombat, DeltaTime, 2.6f);
+	const float WantCombat = (bCombat && !bVictory) ? 1.f : 0.f;
+	const float WantExplore = bCombat ? 0.12f : 1.f;
+	CombatMix = FMath::FInterpTo(CombatMix, WantCombat, DeltaTime, bVictory ? 4.2f : 2.6f);
 	ExploreMix = FMath::FInterpTo(ExploreMix, WantExplore, DeltaTime, 2.2f);
+	PhaseBoost = FMath::FInterpTo(PhaseBoost, bPhaseTwo ? 1.f : 0.f, DeltaTime, 1.8f);
 	MusicFade = FMath::Clamp(MusicFade + DeltaTime / 1.35f, 0.f, 1.f);
 
-	const float MusicBus = BusGain(EHolypawBus::Music);
-	const float InVol = MusicBus * ExploreMix * MusicFade * (bTitle ? 0.72f : 0.58f);
-	const float OutVol = MusicBus * ExploreMix * (1.f - MusicFade) * (bTitle ? 0.72f : 0.58f);
+	const float PauseDuck = bPaused ? 0.42f : 1.f;
+	const float MusicBus = BusGain(EHolypawBus::Music) * PauseDuck;
+	const float InVol = MusicBus * ExploreMix * MusicFade * (bTitle ? 0.70f : 0.56f);
+	const float OutVol = MusicBus * ExploreMix * (1.f - MusicFade) * (bTitle ? 0.70f : 0.56f);
 	if (bMusicOnA)
 	{
 		if (Rig->MusicA) { Rig->MusicA->SetVolumeMultiplier(InVol); }
@@ -457,7 +563,7 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 	}
 	if (Rig->CombatComp)
 	{
-		Rig->CombatComp->SetVolumeMultiplier(BusGain(EHolypawBus::Combat) * CombatMix * 0.62f);
+		Rig->CombatComp->SetVolumeMultiplier(BusGain(EHolypawBus::Combat) * CombatMix * (0.58f + PhaseBoost * 0.14f));
 		if (CombatMix < 0.02f && !bCombat && Rig->CombatComp->IsPlaying())
 		{
 			Rig->CombatComp->Stop();
@@ -467,9 +573,10 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 	const float AmbientWant = (bTitle || bCombat) ? 0.08f : (bInterior ? 0.35f : 0.7f);
 	if (Rig->Ambient)
 	{
-		if (!Rig->Ambient->IsPlaying() && AmbientPcm.Num() > 0)
+		if (!Rig->Ambient->IsPlaying() && AmbientPcm.Num() > 0 && RebuildCool <= 0.f)
 		{
 			RebuildAmbient();
+			RebuildCool = 1.f;
 		}
 		Rig->Ambient->SetVolumeMultiplier(BusGain(EHolypawBus::Ambient) * AmbientWant);
 	}
@@ -513,11 +620,7 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 			if (FootAcc >= 1.f)
 			{
 				FootAcc -= 1.f;
-				HolypawSynth::FStereo Stereo;
-				HolypawSfx::RenderFootstep(Pawn->CurrentZone, bInterior, static_cast<uint32>(++SeedCursor), Stereo);
-				TArray<uint8> Pcm;
-				HolypawSynth::ToPcm16(Stereo, Pcm, -18.f);
-				PlayPcm(MoveTemp(Pcm), Stereo.Num() / static_cast<float>(HolypawSynth::SampleRate), EHolypawBus::Foley, 0.55f);
+				PlayCachedFootstep();
 			}
 		}
 		else
@@ -530,7 +633,39 @@ void UHolypawAudioSubsystem::Tick(const float DeltaTime)
 	if (!bTitle && Now != ExploreDay)
 	{
 		ExploreDay = Now;
-		RebuildExplore();
-		RebuildAmbient();
+		ApplyTone();
 	}
+}
+
+void UHolypawAudioSubsystem::PlayCachedFootstep()
+{
+	AHolypawCharacter* Pawn = Cast<AHolypawCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!Pawn)
+	{
+		return;
+	}
+	if (!bFootPoolReady)
+	{
+		for (int32 Surf = 0; Surf < 6; ++Surf)
+		{
+			for (int32 V = 0; V < 4; ++V)
+			{
+				HolypawSynth::FStereo Stereo;
+				const EHolypawZone Fake = (Surf == 3) ? EHolypawZone::Snow
+					: (Surf == 4) ? EHolypawZone::Desert
+					: (Surf == 5) ? EHolypawZone::Ocean
+					: (Surf == 2) ? EHolypawZone::RibbonCity
+					: EHolypawZone::ForestCottage;
+				HolypawSfx::RenderFootstep(Fake, Surf == 1, 0xB00u + static_cast<uint32>(Surf) * 17u + static_cast<uint32>(V), Stereo);
+				HolypawSynth::ToPcm16(Stereo, FootPool[Surf][V], -18.f);
+			}
+		}
+		bFootPoolReady = true;
+	}
+	const int32 Surf = FMath::Clamp(HolypawSfx::FootSurface(Pawn->CurrentZone, bInterior), 0, 5);
+	const int32 Var = (++SeedCursor) & 3;
+	TArray<uint8> Copy = FootPool[Surf][Var];
+	const float Sec = Copy.Num() / (static_cast<float>(HolypawSynth::SampleRate) * 4.f);
+	PlayPcm(MoveTemp(Copy), Sec, EHolypawBus::Foley, 0.5f,
+		FMath::Pow(2.f, FMath::FRandRange(-70.f, 70.f) / 1200.f));
 }

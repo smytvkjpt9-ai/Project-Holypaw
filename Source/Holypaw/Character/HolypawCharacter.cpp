@@ -945,6 +945,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 			: Def.DefeatLine;
 		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
 		PlayCue(TEXT("BattleWin"));
+		HolypawAudio::NotifyVictory(this);
 		return;
 	}
 
@@ -965,6 +966,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 			}
 			GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EndBattle, 0.9f, false);
 			PlayCue(TEXT("BattleWin"));
+			HolypawAudio::NotifyVictory(this);
 			return;
 		}
 	}

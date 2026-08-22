@@ -195,9 +195,49 @@ namespace HolypawSynth
 		{
 			const float DL = White(Dither) * (1.f / 32768.f);
 			const float DR = White(Dither) * (1.f / 32768.f);
-			Dst[I * 2] = static_cast<int16>(FMath::Clamp(SoftClip(S.L[I] * G) + DL, -1.f, 1.f) * 32700.f);
-			Dst[I * 2 + 1] = static_cast<int16>(FMath::Clamp(SoftClip(S.R[I] * G) + DR, -1.f, 1.f) * 32700.f);
+			Dst[I * 2] = static_cast<int16>(FMath::Clamp(S.L[I] * G + DL, -1.f, 1.f) * 32700.f);
+			Dst[I * 2 + 1] = static_cast<int16>(FMath::Clamp(S.R[I] * G + DR, -1.f, 1.f) * 32700.f);
 		}
+	}
+
+	void DcBlock(FStereo& S, const float CutHz)
+	{
+		FOnePole LpL;
+		FOnePole LpR;
+		const float C = OnePoleCoeff(CutHz);
+		const int32 N = S.Num();
+		for (int32 I = 0; I < N; ++I)
+		{
+			S.L[I] -= LpL.Tick(S.L[I], C);
+			S.R[I] -= LpR.Tick(S.R[I], C);
+		}
+	}
+
+	void MakeSeamless(FStereo& S, int32 CrossSamples)
+	{
+		const int32 N = S.Num();
+		CrossSamples = FMath::Clamp(CrossSamples, 32, N / 3);
+		if (N <= CrossSamples * 2)
+		{
+			return;
+		}
+		for (int32 I = 0; I < CrossSamples; ++I)
+		{
+			const float W = static_cast<float>(I) / static_cast<float>(CrossSamples);
+			const float A = FMath::Sin(W * 0.5f * PI);
+			const float B = FMath::Cos(W * 0.5f * PI);
+			const int32 Tail = N - CrossSamples + I;
+			S.L[I] = S.L[I] * A + S.L[Tail] * B;
+			S.R[I] = S.R[I] * A + S.R[Tail] * B;
+		}
+		S.L.SetNum(N - CrossSamples);
+		S.R.SetNum(N - CrossSamples);
+	}
+
+	float LoopSeconds(const float Bpm, const int32 Bars)
+	{
+		const float Bar = 240.f / FMath::Max(40.f, Bpm);
+		return FMath::Clamp(static_cast<float>(FMath::Max(2, Bars)) * Bar, 6.f, 13.5f);
 	}
 
 	void AddDelayWidth(FStereo& S, const int32 Samples, const float Mix)

@@ -288,6 +288,16 @@ if "UHolypawAudioSubsystem" not in AUDIO_SYS:
     errors.append("audio subsystem missing class body")
 if "RebuildCombat" not in AUDIO_SYS:
     errors.append("audio subsystem missing combat stem")
+if "MakeSeamless" not in (ROOT / "Source/Holypaw/Audio/HolypawSynth.cpp").read_text():
+    errors.append("synth missing seamless loop crossfade")
+if "KeepStem" not in AUDIO_SYS:
+    errors.append("audio subsystem missing stem retain")
+if "NotifyVictory" not in AUDIO_SYS:
+    errors.append("audio subsystem missing victory fade")
+if "PlayCachedFootstep" not in AUDIO_SYS:
+    errors.append("audio subsystem missing footstep pool")
+if "FootSurface" not in AUDIO_SFX:
+    errors.append("sfx bank missing foot surface ids")
 if "RenderMill" not in AUDIO_SCORE:
     errors.append("music score missing mill drone")
 if "PlayAbility" not in CHAR:
