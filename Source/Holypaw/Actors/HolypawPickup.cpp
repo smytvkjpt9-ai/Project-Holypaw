@@ -49,6 +49,7 @@ bool AHolypawPickup::Interact(AHolypawCharacter* InstigatorPawn)
 		return true;
 	}
 	InstigatorPawn->AddItem(ItemId, 1);
+	InstigatorPawn->PlayCue(TEXT("Pickup"));
 	InstigatorPawn->Toast(FString::Printf(TEXT("Pocketed %s."), *Label.ToString()));
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);

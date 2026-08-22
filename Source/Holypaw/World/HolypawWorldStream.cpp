@@ -152,6 +152,7 @@ void AHolypawWorldBuilder::RefreshCityTheme()
 		if (GI->Settings && GI->Settings->bMuted)
 		{
 			HolypawAudio::StopTheme(ThemeComp.Get());
+			HolypawAudio::ApplyMute(this);
 			return;
 		}
 	}

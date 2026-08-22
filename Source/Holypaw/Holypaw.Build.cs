@@ -24,7 +24,8 @@ public class Holypaw : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
 			"RenderCore",
-			"RHI"
+			"RHI",
+			"AudioMixer"
 		});
 	}
 }

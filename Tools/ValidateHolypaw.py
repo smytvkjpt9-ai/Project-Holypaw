@@ -256,6 +256,50 @@ if "UHolypawTitleWidget" not in HUD:
 
 if not (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").exists():
     errors.append("missing procedural audio")
+if not (ROOT / "Source/Holypaw/Audio/HolypawAudioSubsystem.cpp").exists():
+    errors.append("missing audio subsystem")
+if not (ROOT / "Source/Holypaw/Audio/HolypawMusicScore.cpp").exists():
+    errors.append("missing city music scores")
+if not (ROOT / "Source/Holypaw/Audio/HolypawSfxBank.cpp").exists():
+    errors.append("missing sfx bank")
+if not (ROOT / "Source/Holypaw/Audio/HolypawAudioCueTable.cpp").exists():
+    errors.append("missing audio cue table")
+
+AUDIO_SCORE = (ROOT / "Source/Holypaw/Audio/HolypawMusicScore.cpp").read_text() if (ROOT / "Source/Holypaw/Audio/HolypawMusicScore.cpp").exists() else ""
+AUDIO_CUES = (ROOT / "Source/Holypaw/Audio/HolypawAudioCueTable.cpp").read_text() if (ROOT / "Source/Holypaw/Audio/HolypawAudioCueTable.cpp").exists() else ""
+AUDIO_SYS = (ROOT / "Source/Holypaw/Audio/HolypawAudioSubsystem.cpp").read_text() if (ROOT / "Source/Holypaw/Audio/HolypawAudioSubsystem.cpp").exists() else ""
+AUDIO_SFX = (ROOT / "Source/Holypaw/Audio/HolypawSfxBank.cpp").read_text() if (ROOT / "Source/Holypaw/Audio/HolypawSfxBank.cpp").exists() else ""
+
+for z in zone_enum:
+    if f"EHolypawZone::{z}" not in AUDIO_SCORE:
+        errors.append(f"music score missing zone {z}")
+
+for cue in (
+    "Hug", "Convert", "Miracle", "Save", "Shop", "Talk", "Title", "Door", "Travel",
+    "BattleStart", "BattleHit", "BattleCrit", "BattleStagger", "BattleWin", "BattleLose",
+    "Hurt", "Slap", "Beam", "Party", "Guard", "Hymn", "Lullaby", "Unstuff", "PolyRip",
+    "Flee", "BossPhase", "Jump", "Land", "Pickup", "Chapel", "Fountain", "Inn", "Lantern",
+    "UiOpen", "UiConfirm", "FootstepSoft",
+):
+    if f'TEXT("{cue}")' not in AUDIO_CUES:
+        errors.append(f"cue table missing {cue}")
+
+if "UHolypawAudioSubsystem" not in AUDIO_SYS:
+    errors.append("audio subsystem missing class body")
+if "RebuildCombat" not in AUDIO_SYS:
+    errors.append("audio subsystem missing combat stem")
+if "RenderMill" not in AUDIO_SCORE:
+    errors.append("music score missing mill drone")
+if "PlayAbility" not in CHAR:
+    errors.append("character missing PlayAbility combat audio")
+if "SetCombat" not in CHAR:
+    errors.append("character missing combat music hook")
+if "MusicVolume" not in (ROOT / "Source/Holypaw/Save/HolypawSaveGame.h").read_text():
+    errors.append("settings missing MusicVolume bus")
+if "OscBell" not in AUDIO_SFX:
+    errors.append("sfx bank missing layered bell hits")
+if "RenderFootstep" not in AUDIO_SFX:
+    errors.append("sfx bank missing footsteps")
 if not (ROOT / "Source/Holypaw/HolypawDialogueCatalog.cpp").exists():
     errors.append("missing dialogue catalog")
 if not (ROOT / "Source/Holypaw/HolypawItemCatalog.cpp").exists():
@@ -399,6 +443,8 @@ for needle, blob, label in (
     ("BuildCarnivalBahiaDistricts", STREAM, "world stream"),
     ("BuildFeltIceCampDistricts", STREAM, "world stream"),
     ("PlayTheme", (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").read_text(), "audio"),
+    ("SetCombat", (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").read_text(), "audio"),
+    ("PlayAbility", (ROOT / "Source/Holypaw/Audio/HolypawAudio.cpp").read_text(), "audio"),
     ("FindAbilityBySlot", (ROOT / "Source/Holypaw/Combat/HolypawAbilityCatalog.cpp").read_text(), "ability catalog"),
     ("SilkMagistrate", BOSS, "boss script"),
     ("MiracleEater", BOSS, "boss script"),

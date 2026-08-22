@@ -168,6 +168,18 @@ public:
 	float MasterVolume = 1.f;
 
 	UPROPERTY()
+	float MusicVolume = 0.85f;
+
+	UPROPERTY()
+	float SfxVolume = 1.f;
+
+	UPROPERTY()
+	float AmbientVolume = 0.7f;
+
+	UPROPERTY()
+	float UiVolume = 0.8f;
+
+	UPROPERTY()
 	bool bSubtitles = true;
 
 	UPROPERTY()
