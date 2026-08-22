@@ -5,6 +5,8 @@
 #include "HolypawTypes.h"
 #include "TravelLantern.generated.h"
 
+class UPointLightComponent;
+
 UCLASS()
 class HOLYPAW_API ATravelLantern : public AHolypawInteractable
 {
@@ -16,7 +18,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Holypaw")
 	EHolypawZone AnchorZone = EHolypawZone::ForestCottage;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> Globe;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPointLightComponent> Glow;
+
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual FText GetPrompt() const override;
 	virtual bool Interact(class AHolypawCharacter* InstigatorPawn) override;
 };

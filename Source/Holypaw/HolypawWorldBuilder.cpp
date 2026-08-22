@@ -11,12 +11,15 @@
 #include "Actors/TravelLantern.h"
 #include "Actors/HolypawPickup.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Components/VolumetricCloudComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/SkyLight.h"
 #include "Engine/ExponentialHeightFog.h"
@@ -92,6 +95,23 @@ AHolypawWorldBuilder::AHolypawWorldBuilder()
 	Cacti->SetupAttachment(RootComponent);
 	Cacti->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	CanopyPuffs = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("CanopyPuffs"));
+	CanopyPuffs->SetupAttachment(RootComponent);
+	CanopyPuffs->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Flowers = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Flowers"));
+	Flowers->SetupAttachment(RootComponent);
+	Flowers->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Windows = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Windows"));
+	Windows->SetupAttachment(RootComponent);
+	Windows->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Chimneys = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Chimneys"));
+	Chimneys->SetupAttachment(RootComponent);
+	Chimneys->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Chimneys->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeFinder(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
@@ -125,52 +145,21 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		return;
 	}
 	const float Hour = GI->GetWorldHour();
-	float SunInt = 9.5f;
-	FLinearColor SunCol(1.f, 0.93f, 0.82f);
-	float SkyInt = 1.15f;
-	FLinearColor FogCol(0.78f, 0.84f, 0.95f);
-	if (Hour >= 17.f && Hour < 20.f)
-	{
-		SunInt = 4.2f;
-		SunCol = FLinearColor(1.f, 0.55f, 0.38f);
-		SkyInt = 0.7f;
-		FogCol = FLinearColor(0.92f, 0.62f, 0.48f);
-	}
-	else if (Hour < 5.f || Hour >= 20.f)
-	{
-		SunInt = 0.55f;
-		SunCol = FLinearColor(0.45f, 0.55f, 0.95f);
-		SkyInt = 0.28f;
-		FogCol = FLinearColor(0.22f, 0.28f, 0.48f);
-	}
-	else if (Hour >= 5.f && Hour < 8.f)
-	{
-		SunInt = 6.5f;
-		SunCol = FLinearColor(1.f, 0.78f, 0.62f);
-		SkyInt = 0.9f;
-	}
-
-	float FogDensity = 0.016f;
-	if (Hour >= 17.f && Hour < 20.f)
-	{
-		FogDensity = 0.022f;
-	}
-	else if (Hour < 5.f || Hour >= 20.f)
-	{
-		FogDensity = 0.028f;
-	}
-
-	float Pitch = 18.f;
-	if (Hour >= 5.f && Hour < 20.f)
-	{
-		const float T = (Hour - 5.f) / 15.f;
-		Pitch = FMath::Lerp(-12.f, -70.f, FMath::Sin(T * PI));
-	}
+	float SunInt = HolypawLook::HourSunIntensity(Hour);
+	FLinearColor SunCol = HolypawLook::HourSunColor(Hour);
+	float SkyInt = HolypawLook::HourSkyIntensity(Hour);
+	FLinearColor FogCol = HolypawLook::HourFogColor(Hour);
+	float FogDensity = HolypawLook::HourFogDensity(Hour);
+	const float Pitch = HolypawLook::HourSunPitch(Hour);
+	float MoonInt = HolypawLook::HourMoonIntensity(Hour);
+	bool bIndoors = false;
+	float MillW = 0.f;
 
 	if (APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
 		if (IsPlayerIndoors(Pawn->GetActorLocation()))
 		{
+			bIndoors = true;
 			SunInt *= 0.42f;
 			SkyInt *= 0.55f;
 			FogDensity += 0.01f;
@@ -182,10 +171,10 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 		const float Dist = FVector2D::Distance(P, Mill);
 		if (Dist < 6200.f)
 		{
-			const float W = 1.f - Dist / 6200.f;
-			FogDensity += 0.034f * W;
-			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), W);
-			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), W * 0.45f);
+			MillW = 1.f - Dist / 6200.f;
+			FogDensity += 0.034f * MillW;
+			FogCol = FMath::Lerp(FogCol, FLinearColor(0.58f, 0.54f, 0.48f), MillW);
+			SunCol = FMath::Lerp(SunCol, FLinearColor(0.78f, 0.72f, 0.62f), MillW * 0.45f);
 		}
 		if (const AHolypawCharacter* Teddy = Cast<AHolypawCharacter>(Pawn))
 		{
@@ -272,6 +261,22 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			C->SetLightColor(SunCol);
 		}
 	}
+	if (FillLight)
+	{
+		FillLight->SetActorRotation(FRotator(-28.f, 215.f, 0.f));
+		if (UDirectionalLightComponent* C = FillLight->FindComponentByClass<UDirectionalLightComponent>())
+		{
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, bIndoors ? 0.45f : 1.35f, DeltaSeconds, 1.2f));
+		}
+	}
+	if (MoonLight)
+	{
+		MoonLight->SetActorRotation(FRotator(-48.f, 200.f, 0.f));
+		if (UDirectionalLightComponent* C = MoonLight->FindComponentByClass<UDirectionalLightComponent>())
+		{
+			C->SetIntensity(FMath::FInterpTo(C->Intensity, MoonInt, DeltaSeconds, 1.2f));
+		}
+	}
 	if (SkyLight)
 	{
 		if (USkyLightComponent* C = SkyLight->FindComponentByClass<USkyLightComponent>())
@@ -287,6 +292,7 @@ void AHolypawWorldBuilder::TickClockLighting(float DeltaSeconds)
 			C->SetFogDensity(FogDensity);
 		}
 	}
+	HolypawLook::TickGrade(GradeVolume, Hour, bIndoors, MillW);
 }
 
 void AHolypawWorldBuilder::GenerateWorld()
@@ -346,55 +352,42 @@ void AHolypawWorldBuilder::SpawnAtmosphere()
 	if (ADirectionalLight* Sun = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42.f, 35.f, 0.f), Sp))
 	{
 		SunLight = Sun;
-		if (UDirectionalLightComponent* C = Sun->FindComponentByClass<UDirectionalLightComponent>())
-		{
-			C->SetIntensity(9.5f);
-			C->SetLightColor(FLinearColor(1.f, 0.93f, 0.82f));
-			C->SetAtmosphereSunLight(true);
-			C->SetCastShadows(true);
-			C->SetDynamicShadowDistanceMovableLight(90000.f);
-		}
+		HolypawLook::DressSun(Sun->FindComponentByClass<UDirectionalLightComponent>());
+	}
+	if (ADirectionalLight* Fill = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-28.f, 215.f, 0.f), Sp))
+	{
+		FillLight = Fill;
+		HolypawLook::DressFill(Fill->FindComponentByClass<UDirectionalLightComponent>());
+	}
+	if (ADirectionalLight* Moon = GetWorld()->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-48.f, 200.f, 0.f), Sp))
+	{
+		MoonLight = Moon;
+		HolypawLook::DressMoon(Moon->FindComponentByClass<UDirectionalLightComponent>());
 	}
 	if (ASkyLight* Sky = GetWorld()->SpawnActor<ASkyLight>(FVector(0.f, 0.f, 400.f), FRotator::ZeroRotator, Sp))
 	{
 		SkyLight = Sky;
-		if (USkyLightComponent* C = Sky->FindComponentByClass<USkyLightComponent>())
-		{
-			C->SetIntensity(1.15f);
-			C->SetLightColor(FLinearColor(0.72f, 0.82f, 0.98f));
-			C->bRealTimeCapture = true;
-		}
+		HolypawLook::DressSky(Sky->FindComponentByClass<USkyLightComponent>());
 	}
 	if (AExponentialHeightFog* Fog = GetWorld()->SpawnActor<AExponentialHeightFog>(FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator, Sp))
 	{
 		HeightFog = Fog;
-		if (UExponentialHeightFogComponent* C = Fog->FindComponentByClass<UExponentialHeightFogComponent>())
-		{
-			C->SetFogDensity(0.016f);
-			C->SetFogHeightFalloff(0.12f);
-			C->SetFogInscatteringColor(FLinearColor(0.78f, 0.84f, 0.95f));
-			C->SetVolumetricFog(true);
-		}
+		HolypawLook::DressFog(Fog->FindComponentByClass<UExponentialHeightFogComponent>());
 	}
-	GetWorld()->SpawnActor<ASkyAtmosphere>(FVector::ZeroVector, FRotator::ZeroRotator, Sp);
-	GetWorld()->SpawnActor<AVolumetricCloud>(FVector::ZeroVector, FRotator::ZeroRotator, Sp);
-
+	if (ASkyAtmosphere* Atmo = GetWorld()->SpawnActor<ASkyAtmosphere>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+	{
+		SkyAtmo = Atmo;
+		HolypawLook::DressAtmosphere(Atmo->FindComponentByClass<USkyAtmosphereComponent>());
+	}
+	if (AVolumetricCloud* Cloud = GetWorld()->SpawnActor<AVolumetricCloud>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
+	{
+		Clouds = Cloud;
+		HolypawLook::DressClouds(Cloud->FindComponentByClass<UVolumetricCloudComponent>());
+	}
 	if (APostProcessVolume* PP = GetWorld()->SpawnActor<APostProcessVolume>(FVector::ZeroVector, FRotator::ZeroRotator, Sp))
 	{
-		PP->bUnbound = true;
-		PP->BlendWeight = 1.f;
-		PP->Settings.bOverride_AutoExposureBias = true;
-		PP->Settings.AutoExposureBias = 0.35f;
-		PP->Settings.bOverride_ColorSaturation = true;
-		PP->Settings.ColorSaturation = FVector4(1.06f, 1.02f, 1.08f, 1.f);
-		PP->Settings.bOverride_BloomIntensity = true;
-		PP->Settings.BloomIntensity = 0.35f;
-		PP->Settings.bOverride_VignetteIntensity = true;
-		PP->Settings.VignetteIntensity = 0.28f;
-		PP->Settings.bOverride_FilmGrainIntensity = true;
-		PP->Settings.FilmGrainIntensity = 0.04f;
-		PP->Settings.bOverride_ColorGain = true;
-		PP->Settings.ColorGain = FVector4(1.02f, 0.98f, 1.05f, 1.f);
+		GradeVolume = PP;
+		HolypawLook::GradeVolume(PP);
 	}
 }
 
@@ -568,11 +561,7 @@ void AHolypawWorldBuilder::BuildTerrain()
 
 void AHolypawWorldBuilder::ColorMesh(UStaticMeshComponent* Mesh, const FLinearColor& Color)
 {
-	if (!Mesh || !ShapeMat) { return; }
-	if (UMaterialInstanceDynamic* Mid = Mesh->CreateDynamicMaterialInstance(0, ShapeMat))
-	{
-		Mid->SetVectorParameterValue(TEXT("Color"), Color);
-	}
+	HolypawLook::Paint(Mesh, Color);
 }
 
 void AHolypawWorldBuilder::BindKits()
@@ -588,18 +577,22 @@ void AHolypawWorldBuilder::BindKits()
 			ISM->SetMaterial(0, Mid);
 		}
 	};
-	Bind(Trees, CylMesh ? CylMesh : CubeMesh, FLinearColor(0.38f, 0.24f, 0.16f));
-	Bind(Canopies, ConeMesh ? ConeMesh : SphereMesh, FLinearColor(0.28f, 0.52f, 0.32f));
-	Bind(Grass, CubeMesh, FLinearColor(0.40f, 0.68f, 0.36f));
-	Bind(Rocks, SphereMesh ? SphereMesh : CubeMesh, FLinearColor(0.55f, 0.52f, 0.48f));
+	Bind(Trees, CylMesh ? CylMesh : CubeMesh, HolypawLook::Wood);
+	Bind(Canopies, ConeMesh ? ConeMesh : SphereMesh, HolypawLook::MintDeep);
+	Bind(CanopyPuffs, SphereMesh ? SphereMesh : CubeMesh, HolypawLook::Mint);
+	Bind(Grass, CubeMesh, HolypawLook::GrassTuft);
+	Bind(Rocks, SphereMesh ? SphereMesh : CubeMesh, FLinearColor(0.58f, 0.54f, 0.50f));
 	Bind(Reeds, CubeMesh, FLinearColor(0.35f, 0.42f, 0.28f));
-	Bind(WallRose, CubeMesh, FLinearColor(0.85f, 0.62f, 0.58f));
-	Bind(WallMint, CubeMesh, FLinearColor(0.62f, 0.75f, 0.70f));
-	Bind(WallGold, CubeMesh, FLinearColor(0.90f, 0.78f, 0.55f));
-	Bind(Roofs, CubeMesh, FLinearColor(0.55f, 0.28f, 0.32f));
+	Bind(WallRose, CubeMesh, HolypawLook::Rose);
+	Bind(WallMint, CubeMesh, HolypawLook::Mint);
+	Bind(WallGold, CubeMesh, HolypawLook::Gold);
+	Bind(Roofs, CubeMesh, HolypawLook::Roof);
 	Bind(RoadTiles, CubeMesh, FLinearColor(0.72f, 0.62f, 0.46f));
-	Bind(WaterTiles, CubeMesh, FLinearColor(0.35f, 0.55f, 0.72f));
+	Bind(WaterTiles, CubeMesh, HolypawLook::Water);
 	Bind(Cacti, ConeMesh ? ConeMesh : CubeMesh, FLinearColor(0.42f, 0.62f, 0.32f));
+	Bind(Flowers, CubeMesh, HolypawLook::BloomPink);
+	Bind(Windows, CubeMesh, HolypawLook::Glass);
+	Bind(Chimneys, CubeMesh, FLinearColor(0.48f, 0.28f, 0.24f));
 }
 
 void AHolypawWorldBuilder::AddKit(UInstancedStaticMeshComponent* ISM, const FVector& Loc, const FRotator& Rot, const FVector& Scale)
@@ -610,9 +603,14 @@ void AHolypawWorldBuilder::AddKit(UInstancedStaticMeshComponent* ISM, const FVec
 
 UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name)
 {
+	return PlacePrimitive(CubeMesh, Loc, Scale, Color, Name);
+}
+
+UStaticMeshComponent* AHolypawWorldBuilder::PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name)
+{
 	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this, Name);
-	if (!Comp || !CubeMesh) { return nullptr; }
-	Comp->SetStaticMesh(CubeMesh);
+	if (!Comp || !Mesh) { return nullptr; }
+	Comp->SetStaticMesh(Mesh);
 	Comp->SetMobility(EComponentMobility::Movable);
 	Comp->CreationMethod = EComponentCreationMethod::Instance;
 	if (ShapeMat) { Comp->SetMaterial(0, ShapeMat); }
@@ -620,6 +618,7 @@ UStaticMeshComponent* AHolypawWorldBuilder::PlaceCube(const FVector& Loc, const 
 	Comp->SetWorldScale3D(Scale);
 	Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Comp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	Comp->SetCastShadow(true);
 	AddInstanceComponent(Comp);
 	Comp->RegisterComponent();
 	Comp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
@@ -644,6 +643,11 @@ void AHolypawWorldBuilder::ScatterFlora()
 		if (Z == EHolypawZone::Jungle || Z == EHolypawZone::PalmaDusk || Z == EHolypawZone::Quiltland || Z == EHolypawZone::CarnivalBahia) { H *= 1.28f; }
 		AddKit(Trees, FVector(X, Y, Zs + H * 0.5f), FRotator::ZeroRotator, FVector(0.45f, 0.45f, H / 100.f));
 		AddKit(Canopies, FVector(X, Y, Zs + H + 80.f), FRotator::ZeroRotator, FVector(2.4f, 2.4f, 2.1f));
+		AddKit(CanopyPuffs, FVector(X + 55.f, Y - 30.f, Zs + H + 40.f), FRotator::ZeroRotator, FVector(1.7f, 1.55f, 1.35f));
+		if (HashRand(int32(X), int32(Y), 9) > 0.45f)
+		{
+			AddKit(CanopyPuffs, FVector(X - 40.f, Y + 35.f, Zs + H + 20.f), FRotator::ZeroRotator, FVector(1.4f, 1.3f, 1.15f));
+		}
 		++TreeCount;
 	}
 	int32 GrassCount = 0;
@@ -656,6 +660,10 @@ void AHolypawWorldBuilder::ScatterFlora()
 		if (Z == EHolypawZone::Ocean || Z == EHolypawZone::Ice || Z == EHolypawZone::Desert) { continue; }
 		const float Zs = SampleHeight(X, Y);
 		AddKit(Grass, FVector(X, Y, Zs + 18.f), FRotator::ZeroRotator, FVector(0.12f, 0.12f, 0.35f + HashRand(int32(X), int32(Y), 11) * 0.3f));
+		if (HashRand(int32(X), int32(Y), 17) > 0.72f)
+		{
+			AddKit(Flowers, FVector(X + 18.f, Y - 10.f, Zs + 14.f), FRotator::ZeroRotator, FVector(0.10f, 0.10f, 0.16f + HashRand(int32(X), int32(Y), 23) * 0.12f));
+		}
 		++GrassCount;
 	}
 	int32 RockCount = 0;
@@ -716,6 +724,12 @@ void AHolypawWorldBuilder::BuildCottage()
 	PlaceCube(FVector(CottageSpawn.X - 90.f, CottageSpawn.Y - 40.f, Z + 310.f), FVector(1.4f, 0.7f, 0.5f), FLinearColor(0.55f, 0.4f, 0.32f), MakeName(TEXT("LoftTrunk")));
 	PlaceCube(FVector(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f, Z - 20.f), FVector(3.2f, 2.6f, 0.9f), FLinearColor(0.32f, 0.24f, 0.2f), MakeName(TEXT("CottageCellar")));
 	PlaceCube(FVector(CottageSpawn.X + 240.f, CottageSpawn.Y + 70.f, Z + 70.f), FVector(0.7f, 0.7f, 0.55f), FLinearColor(0.72f, 0.52f, 0.38f), MakeName(TEXT("PorchChair")));
+	PlaceCube(FVector(CottageSpawn.X - 200.f, CottageSpawn.Y - 40.f, Z + 420.f), FVector(0.55f, 0.55f, 1.6f), FLinearColor(0.48f, 0.28f, 0.22f), MakeName(TEXT("CottageChimney")));
+	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y - 140.f, Z + 40.f), FVector(0.22f, 0.22f, 0.9f), HolypawLook::Wood, MakeName(TEXT("PorchPostA")));
+	PlaceCube(FVector(CottageSpawn.X + 280.f, CottageSpawn.Y + 140.f, Z + 40.f), FVector(0.22f, 0.22f, 0.9f), HolypawLook::Wood, MakeName(TEXT("PorchPostB")));
+	PlaceCube(FVector(CottageSpawn.X + 80.f, CottageSpawn.Y - 200.f, Z + 28.f), FVector(0.9f, 0.35f, 0.22f), HolypawLook::BloomPink, MakeName(TEXT("WindowBox")));
+	PlacePrimitive(SphereMesh, FVector(CottageSpawn.X + 80.f, CottageSpawn.Y - 200.f, Z + 48.f), FVector(0.35f, 0.22f, 0.22f), HolypawLook::Rose, MakeName(TEXT("WindowBloom")));
+	HolypawLook::SpawnGlow(GetWorld(), this, FVector(CottageSpawn.X + 280.f, CottageSpawn.Y, Z + 160.f), HolypawLook::Lantern, 1800.f, 640.f);
 	PlacePickup(FVector2D(CottageSpawn.X + 20.f, CottageSpawn.Y + 60.f), TEXT("hymnSheet"), NSLOCTEXT("Holypaw", "HymnSheetPick", "cellar hymn sheet"));
 	PlacePickup(FVector2D(CottageSpawn.X + 260.f, CottageSpawn.Y - 40.f), TEXT("stuffedPostcard"), NSLOCTEXT("Holypaw", "PostcardPick", "porch postcard"));
 
@@ -789,6 +803,9 @@ void AHolypawWorldBuilder::BuildTown(const FHolypawCity& City)
 			UInstancedStaticMeshComponent* Wall = Walls[(Col + Row + 16) % 3];
 			AddKit(Wall, FVector(X, Y, Z + H * 50.f), FRotator::ZeroRotator, FVector(W, D, H));
 			AddKit(Roofs, FVector(X, Y, Z + H * 100.f + 36.f), FRotator::ZeroRotator, FVector(W + 0.3f, D + 0.3f, 0.5f));
+			AddKit(Windows, FVector(X, Y - D * 48.f, Z + H * 42.f), FRotator::ZeroRotator, FVector(0.42f, 0.08f, 0.48f));
+			AddKit(Windows, FVector(X + W * 18.f, Y - D * 48.f, Z + H * 62.f), FRotator::ZeroRotator, FVector(0.32f, 0.08f, 0.38f));
+			AddKit(Chimneys, FVector(X + W * 28.f, Y + D * 16.f, Z + H * 100.f + 78.f), FRotator::ZeroRotator, FVector(0.32f, 0.32f, 0.72f));
 		}
 	}
 }
@@ -1204,6 +1221,8 @@ void AHolypawWorldBuilder::BuildSkyRift()
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2800.f), FVector(1.1f, 1.1f, 12.f), FLinearColor(1.f, 0.88f, 0.55f), MakeName(TEXT("SkyRiftBeam")));
 	PlaceCube(FVector(PeakCenter.X + 900.f, PeakCenter.Y - 400.f, Z + 3400.f), FVector(3.5f, 0.8f, 0.5f), FLinearColor(0.95f, 0.7f, 0.45f), MakeName(TEXT("SkyRiftCloud")));
 	PlaceCube(FVector(PeakCenter.X - 800.f, PeakCenter.Y, Z + 3300.f), FVector(4.2f, 1.0f, 0.55f), FLinearColor(0.85f, 0.62f, 0.95f), MakeName(TEXT("SkyRiftCloudB")));
+	PlacePrimitive(SphereMesh, FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2500.f), FVector(2.2f, 2.2f, 2.2f), HolypawLook::GoldWarm, MakeName(TEXT("SkyRiftCore")));
+	HolypawLook::SpawnGlow(GetWorld(), this, FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2500.f), HolypawLook::GoldWarm, 8000.f, 4200.f);
 }
 
 void AHolypawWorldBuilder::PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name)
@@ -1219,6 +1238,7 @@ void AHolypawWorldBuilder::BuildMountain()
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y, Z + 1600.f), FVector(8.f, 7.f, 8.f), FLinearColor(0.88f, 0.90f, 0.95f), MakeName(TEXT("PeakSnow")));
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2100.f), FVector(2.2f, 2.2f, 1.4f), FLinearColor(0.85f, 0.7f, 1.f), MakeName(TEXT("Shrine")));
 	PlaceCube(FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2280.f), FVector(0.9f, 0.9f, 0.9f), FLinearColor(1.f, 0.9f, 0.45f), MakeName(TEXT("ShrineOrb")));
+	HolypawLook::SpawnGlow(GetWorld(), this, FVector(PeakCenter.X, PeakCenter.Y - 400.f, Z + 2280.f), HolypawLook::GoldWarm, 3600.f, 1400.f);
 	PlaceRangeMass(CityXY(EHolypawZone::AndesLoom) + FVector2D(-1800.f, 400.f), 900.f, FLinearColor(0.52f, 0.42f, 0.34f), TEXT("AndesMass"));
 	PlaceRangeMass(FVector2D(82000.f, 4000.f), 1200.f, FLinearColor(0.62f, 0.58f, 0.55f), TEXT("SilkRidge"));
 }
@@ -1260,6 +1280,8 @@ void AHolypawWorldBuilder::PlaceCamp(const FVector2D& XY, const FText& Name)
 	const float Z = SampleHeight(XY.X, XY.Y);
 	PlaceCube(FVector(XY.X, XY.Y, Z + 70.f), FVector(2.4f, 2.4f, 1.4f), FLinearColor(0.62f, 0.42f, 0.28f), MakeName(TEXT("Tent")));
 	PlaceCube(FVector(XY.X + 80.f, XY.Y, Z + 40.f), FVector(0.4f, 0.4f, 0.5f), FLinearColor(1.f, 0.55f, 0.2f), MakeName(TEXT("Fire")));
+	PlacePrimitive(SphereMesh, FVector(XY.X + 80.f, XY.Y, Z + 70.f), FVector(0.55f, 0.55f, 0.45f), FLinearColor(1.f, 0.62f, 0.22f), MakeName(TEXT("FireGlow")));
+	HolypawLook::SpawnGlow(GetWorld(), this, FVector(XY.X + 80.f, XY.Y, Z + 70.f), FLinearColor(1.f, 0.55f, 0.22f), 2200.f, 520.f);
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

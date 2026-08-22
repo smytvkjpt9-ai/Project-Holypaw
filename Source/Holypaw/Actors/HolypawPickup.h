@@ -19,6 +19,10 @@ public:
 	FText Label;
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual FText GetPrompt() const override;
 	virtual bool Interact(class AHolypawCharacter* InstigatorPawn) override;
+
+protected:
+	FVector Home = FVector::ZeroVector;
 };

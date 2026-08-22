@@ -1,6 +1,6 @@
 #include "Actors/WildFluffy.h"
 #include "Character/HolypawCharacter.h"
-#include "UObject/ConstructorHelpers.h"
+#include "Look/HolypawLook.h"
 
 AWildFluffy::AWildFluffy()
 {
@@ -8,56 +8,96 @@ AWildFluffy::AWildFluffy()
 
 	EarL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarL"));
 	EarL->SetupAttachment(Mesh);
-	EarL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	EarL->SetRelativeLocation(FVector(0.f, 18.f, 28.f));
-	EarL->SetRelativeScale3D(FVector(0.22f, 0.14f, 0.4f));
+	EarL->SetRelativeLocation(FVector(0.f, 20.f, 30.f));
+	EarL->SetRelativeScale3D(FVector(0.20f, 0.14f, 0.42f));
 
 	EarR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EarR"));
 	EarR->SetupAttachment(Mesh);
-	EarR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	EarR->SetRelativeLocation(FVector(0.f, -18.f, 28.f));
-	EarR->SetRelativeScale3D(FVector(0.22f, 0.14f, 0.4f));
+	EarR->SetRelativeLocation(FVector(0.f, -20.f, 30.f));
+	EarR->SetRelativeScale3D(FVector(0.20f, 0.14f, 0.42f));
 
 	Tail = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tail"));
 	Tail->SetupAttachment(Mesh);
-	Tail->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Tail->SetRelativeLocation(FVector(-28.f, 0.f, 4.f));
-	Tail->SetRelativeScale3D(FVector(0.28f, 0.2f, 0.2f));
+	Tail->SetRelativeLocation(FVector(-30.f, 0.f, 4.f));
+	Tail->SetRelativeScale3D(FVector(0.30f, 0.22f, 0.22f));
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	if (ConeFinder.Succeeded())
-	{
-		EarL->SetStaticMesh(ConeFinder.Object);
-		EarR->SetStaticMesh(ConeFinder.Object);
-	}
-	if (SphereFinder.Succeeded())
-	{
-		Tail->SetStaticMesh(SphereFinder.Object);
-	}
+	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
+	EyeL->SetupAttachment(Mesh);
+	EyeL->SetRelativeLocation(FVector(18.f, 8.f, 10.f));
+	EyeL->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+
+	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
+	EyeR->SetupAttachment(Mesh);
+	EyeR->SetRelativeLocation(FVector(18.f, -8.f, 10.f));
+	EyeR->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+
+	Snout = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Snout"));
+	Snout->SetupAttachment(Mesh);
+	Snout->SetRelativeLocation(FVector(22.f, 0.f, 2.f));
+	Snout->SetRelativeScale3D(FVector(0.22f, 0.18f, 0.16f));
 }
 
 void AWildFluffy::BeginPlay()
 {
 	Super::BeginPlay();
 	Home = GetActorLocation();
-	Mesh->SetWorldScale3D(FVector(0.55f, 0.4f, 0.4f));
-	SetSolidColor(Type.Color);
+	if (SphereMesh)
+	{
+		Mesh->SetStaticMesh(SphereMesh);
+	}
+	HolypawLook::PrepPart(EarL, ConeMesh ? ConeMesh : SphereMesh);
+	HolypawLook::PrepPart(EarR, ConeMesh ? ConeMesh : SphereMesh);
+	HolypawLook::PrepPart(Tail, SphereMesh);
+	HolypawLook::PrepPart(EyeL, SphereMesh);
+	HolypawLook::PrepPart(EyeR, SphereMesh);
+	HolypawLook::PrepPart(Snout, SphereMesh);
 	if (ShapeMat)
 	{
-		const FLinearColor Dark = Type.Color * 0.75f;
-		if (UMaterialInstanceDynamic* Mid = EarL->CreateDynamicMaterialInstance(0, ShapeMat))
+		for (UStaticMeshComponent* P : { EarL, EarR, Tail, EyeL, EyeR, Snout })
 		{
-			Mid->SetVectorParameterValue(TEXT("Color"), Dark);
+			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
-		if (UMaterialInstanceDynamic* Mid = EarR->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), Dark);
-		}
-		if (UMaterialInstanceDynamic* Mid = Tail->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), Type.Color);
-		}
+	}
+	Mesh->SetWorldScale3D(FVector(0.58f, 0.42f, 0.42f));
+	SetSolidColor(Type.Color);
+	const FLinearColor Dark = Type.Color * 0.72f;
+	HolypawLook::Paint(EarL, Dark);
+	HolypawLook::Paint(EarR, Dark);
+	HolypawLook::Paint(Tail, Type.Color);
+	HolypawLook::Paint(EyeL, HolypawLook::Button);
+	HolypawLook::Paint(EyeR, HolypawLook::Button);
+	HolypawLook::Paint(Snout, HolypawLook::Cream);
+	switch (Type.Id)
+	{
+	case EFluffyId::Bunny:
+		if (EarL) { EarL->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.62f)); }
+		if (EarR) { EarR->SetRelativeScale3D(FVector(0.16f, 0.12f, 0.62f)); }
+		break;
+	case EFluffyId::Pup:
+		if (Tail) { Tail->SetRelativeScale3D(FVector(0.42f, 0.16f, 0.16f)); }
+		break;
+	case EFluffyId::Duck:
+		if (Snout) { Snout->SetRelativeScale3D(FVector(0.38f, 0.22f, 0.12f)); }
+		if (EarL) { EarL->SetHiddenInGame(true); }
+		if (EarR) { EarR->SetHiddenInGame(true); }
+		break;
+	case EFluffyId::Panda:
+		HolypawLook::Paint(EarL, HolypawLook::Button);
+		HolypawLook::Paint(EarR, HolypawLook::Button);
+		HolypawLook::Paint(EyeL, FLinearColor(0.08f, 0.08f, 0.1f));
+		break;
+	case EFluffyId::Fox:
+		if (EarL) { EarL->SetRelativeScale3D(FVector(0.18f, 0.12f, 0.48f)); }
+		if (EarR) { EarR->SetRelativeScale3D(FVector(0.18f, 0.12f, 0.48f)); }
+		HolypawLook::Paint(Snout, FLinearColor(0.95f, 0.92f, 0.88f));
+		break;
+	case EFluffyId::Dragon:
+		if (EarL) { EarL->SetRelativeRotation(FRotator(0.f, 0.f, -28.f)); }
+		if (EarR) { EarR->SetRelativeRotation(FRotator(0.f, 0.f, 28.f)); }
+		HolypawLook::Paint(Tail, HolypawLook::Gold);
+		break;
+	default:
+		break;
 	}
 	WanderT = FMath::FRandRange(0.5f, 2.f);
 }
@@ -101,5 +141,18 @@ void AWildFluffy::Tick(float DeltaSeconds)
 	else
 	{
 		SetActorLocation(Next);
+	}
+	const float Bob = FMath::Sin(GetWorld()->GetTimeSeconds() * 7.f) * 4.f;
+	if (Mesh)
+	{
+		Mesh->SetRelativeLocation(FVector(0.f, 0.f, Bob));
+	}
+	if (EarL)
+	{
+		EarL->SetRelativeRotation(FRotator(8.f + FMath::Sin(GetWorld()->GetTimeSeconds() * 5.f) * 12.f, 0.f, -16.f));
+	}
+	if (EarR)
+	{
+		EarR->SetRelativeRotation(FRotator(8.f + FMath::Sin(GetWorld()->GetTimeSeconds() * 5.f + 0.7f) * 12.f, 0.f, 16.f));
 	}
 }

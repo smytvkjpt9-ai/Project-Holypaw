@@ -405,9 +405,35 @@ for needle, blob, label in (
     ("BattlePage", CHAR, "character"),
     ("unstuff", CHAR, "character"),
     ("buttonBeam", CHAR, "character"),
+    ("CanopyPuffs", WORLD, "world"),
+    ("GradeVolume", WORLD, "world"),
+    ("FillLight", WORLD, "world"),
+    ("earL", CHAR, "character"),
+    ("HaloLight", CHAR, "character"),
+    ("TickProcAnim", CHAR, "character"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")
+
+LOOK = ROOT / "Source/Holypaw/Look/HolypawLook.cpp"
+if not LOOK.exists():
+    errors.append("missing HolypawLook.cpp presentation bible")
+else:
+    look = LOOK.read_text()
+    for needle in ("GradeVolume", "DressSun", "DressClouds", "DressCamera", "Paint", "Lantern"):
+        if needle not in look:
+            errors.append(f"look missing {needle}")
+
+if "r.ContactShadows" not in ENGINE:
+    errors.append("DefaultEngine missing contact shadows")
+if "InnerEarL" not in (ROOT / "Source/Holypaw/Character/HolypawCharacter.h").read_text():
+    errors.append("teddy missing inner-ear sockets")
+if "Glow" not in (ROOT / "Source/Holypaw/Actors/TravelLantern.cpp").read_text():
+    errors.append("lanterns missing point light")
+if "EyeL" not in (ROOT / "Source/Holypaw/Actors/HugHuman.cpp").read_text():
+    errors.append("humans missing eyes")
+if "CanopyPuffs" not in WORLD:
+    errors.append("world missing layered canopies")
 
 if errors:
     print("FAIL")

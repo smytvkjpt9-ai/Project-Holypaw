@@ -56,6 +56,14 @@ void AHolypawHUD::DrawHUD()
 	}
 
 	const float W = Canvas->SizeX;
+	{
+		FCanvasTileItem Panel(FVector2D(16.f, 12.f), FVector2D(560.f, 168.f), FLinearColor(0.12f, 0.06f, 0.14f, 0.55f));
+		Panel.BlendMode = SE_BLEND_Translucent;
+		Canvas->DrawItem(Panel);
+		FCanvasTileItem Trim(FVector2D(16.f, 12.f), FVector2D(8.f, 168.f), FLinearColor(0.98f, 0.82f, 0.42f, 0.85f));
+		Trim.BlendMode = SE_BLEND_Translucent;
+		Canvas->DrawItem(Trim);
+	}
 	DrawLabel(32.f, 24.f, HolypawCatalog::ZoneDisplayName(P->CurrentZone), FLinearColor(0.82f, 0.75f, 1.f), 1.05f);
 	DrawLabel(32.f, 52.f, TEXT("Fluffy Ascendancy"), FLinearColor(1.f, 0.78f, 0.88f), 1.45f);
 	if (!P->GetClockLine().IsEmpty())

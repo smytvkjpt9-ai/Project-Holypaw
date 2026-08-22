@@ -5,6 +5,8 @@
 #include "HolypawTypes.h"
 #include "HostilePet.generated.h"
 
+class UPointLightComponent;
+
 UCLASS()
 class HOLYPAW_API AHostilePet : public AHolypawInteractable
 {
@@ -55,6 +57,15 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> CrestMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> EyeL;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> EyeR;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPointLightComponent> GlowLight;
+
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual FText GetPrompt() const override;
@@ -84,8 +95,4 @@ private:
 
 	FTimerHandle RespawnTimer;
 	FVector WanderVel = FVector::ZeroVector;
-
-	UStaticMesh* SphereMesh = nullptr;
-	UStaticMesh* ConeMesh = nullptr;
-	UStaticMesh* CylMesh = nullptr;
 };

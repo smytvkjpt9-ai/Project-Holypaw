@@ -1,5 +1,6 @@
 #include "HolypawWorldBuilder.h"
 #include "Actors/HolypawShrine.h"
+#include "Look/HolypawLook.h"
 #include "Engine/PointLight.h"
 #include "Components/PointLightComponent.h"
 #include "EngineUtils.h"
@@ -8,23 +9,7 @@ namespace
 {
 	void SpawnLamp(AHolypawWorldBuilder* Builder, const FVector& Loc, const FLinearColor& Color, const float Intensity)
 	{
-		if (!Builder || !Builder->GetWorld())
-		{
-			return;
-		}
-		FActorSpawnParameters Sp;
-		Sp.Owner = Builder;
-		Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		if (APointLight* Lamp = Builder->GetWorld()->SpawnActor<APointLight>(Loc, FRotator::ZeroRotator, Sp))
-		{
-			if (UPointLightComponent* C = Lamp->FindComponentByClass<UPointLightComponent>())
-			{
-				C->SetIntensity(Intensity);
-				C->SetLightColor(Color);
-				C->SetAttenuationRadius(640.f);
-				C->SetCastShadows(false);
-			}
-		}
+		HolypawLook::SpawnGlow(Builder ? Builder->GetWorld() : nullptr, Builder, Loc, Color, Intensity, 640.f);
 	}
 }
 
@@ -42,6 +27,9 @@ void AHolypawWorldBuilder::DressRoomShell(const FVector& Origin, const FLinearCo
 	PlaceCube(Origin + FVector(-70.f, -214.f, 118.f), FVector(0.18f, 0.16f, 2.2f), Trim, MakeName(TEXT("DoorJambL")));
 	PlaceCube(Origin + FVector(70.f, -214.f, 118.f), FVector(0.18f, 0.16f, 2.2f), Trim, MakeName(TEXT("DoorJambR")));
 	PlaceCube(Origin + FVector(-92.f, -228.f, 90.f), FVector(0.12f, 0.7f, 1.7f), Trim * 0.7f, MakeName(TEXT("DoorLeaf")));
+	PlaceCube(Origin + FVector(-120.f, 212.f, 150.f), FVector(0.7f, 0.08f, 0.7f), HolypawLook::Glass, MakeName(TEXT("RoomPane")));
+	PlaceCube(Origin + FVector(120.f, 212.f, 150.f), FVector(0.7f, 0.08f, 0.7f), HolypawLook::Glass, MakeName(TEXT("RoomPaneB")));
+	PlaceCube(Origin + FVector(0.f, 0.f, 248.f), FVector(0.35f, 0.35f, 0.18f), HolypawLook::GoldWarm, MakeName(TEXT("RoomFixture")));
 }
 
 void AHolypawWorldBuilder::DressInnRoom(const FVector& Origin)

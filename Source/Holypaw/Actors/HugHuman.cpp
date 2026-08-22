@@ -1,5 +1,6 @@
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 #include "UObject/ConstructorHelpers.h"
 
 AHugHuman::AHugHuman()
@@ -8,50 +9,74 @@ AHugHuman::AHugHuman()
 
 	HeadMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Head"));
 	HeadMesh->SetupAttachment(Root);
-	HeadMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 55.f));
-	HeadMesh->SetRelativeScale3D(FVector(0.38f, 0.38f, 0.38f));
+	HeadMesh->SetRelativeLocation(FVector(0.f, 0.f, 58.f));
+	HeadMesh->SetRelativeScale3D(FVector(0.40f, 0.38f, 0.40f));
+
+	Hair = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hair"));
+	Hair->SetupAttachment(HeadMesh);
+	Hair->SetRelativeLocation(FVector(-4.f, 0.f, 18.f));
+	Hair->SetRelativeScale3D(FVector(0.95f, 0.95f, 0.55f));
+
+	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
+	EyeL->SetupAttachment(HeadMesh);
+	EyeL->SetRelativeLocation(FVector(16.f, 8.f, 4.f));
+	EyeL->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.12f));
+
+	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
+	EyeR->SetupAttachment(HeadMesh);
+	EyeR->SetRelativeLocation(FVector(16.f, -8.f, 4.f));
+	EyeR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.12f));
+
+	Hat = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Hat"));
+	Hat->SetupAttachment(HeadMesh);
+	Hat->SetRelativeLocation(FVector(0.f, 0.f, 28.f));
+	Hat->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.12f));
+	Hat->SetHiddenInGame(true);
 
 	ArmL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArmL"));
 	ArmL->SetupAttachment(Root);
-	ArmL->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ArmL->SetRelativeLocation(FVector(0.f, 22.f, 18.f));
-	ArmL->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.45f));
+	ArmL->SetRelativeLocation(FVector(0.f, 24.f, 18.f));
+	ArmL->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.48f));
 
 	ArmR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArmR"));
 	ArmR->SetupAttachment(Root);
-	ArmR->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ArmR->SetRelativeLocation(FVector(0.f, -22.f, 18.f));
-	ArmR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.45f));
-
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	if (SphereFinder.Succeeded())
-	{
-		HeadMesh->SetStaticMesh(SphereFinder.Object);
-	}
+	ArmR->SetRelativeLocation(FVector(0.f, -24.f, 18.f));
+	ArmR->SetRelativeScale3D(FVector(0.12f, 0.12f, 0.48f));
 }
 
 void AHugHuman::BeginPlay()
 {
 	Super::BeginPlay();
-	Mesh->SetWorldScale3D(FVector(0.45f, 0.35f, 1.05f));
-	BaseScale = GetActorScale3D();
-	HomeLocation = GetActorLocation();
+	if (CylMesh)
+	{
+		Mesh->SetStaticMesh(CylMesh);
+	}
+	HolypawLook::PrepPart(HeadMesh, SphereMesh);
+	HolypawLook::PrepPart(Hair, SphereMesh);
+	HolypawLook::PrepPart(EyeL, SphereMesh);
+	HolypawLook::PrepPart(EyeR, SphereMesh);
+	HolypawLook::PrepPart(Hat, SphereMesh);
+	HolypawLook::PrepPart(ArmL, CylMesh ? CylMesh : CubeMesh);
+	HolypawLook::PrepPart(ArmR, CylMesh ? CylMesh : CubeMesh);
 	if (ShapeMat)
 	{
-		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
+		for (UStaticMeshComponent* P : { HeadMesh, Hair, EyeL, EyeR, Hat, ArmL, ArmR })
 		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.96f, 0.8f, 0.74f));
-		}
-		if (UMaterialInstanceDynamic* Mid = ArmL->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.96f, 0.8f, 0.74f));
-		}
-		if (UMaterialInstanceDynamic* Mid = ArmR->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.96f, 0.8f, 0.74f));
+			if (P) { P->SetMaterial(0, ShapeMat); }
 		}
 	}
+	Mesh->SetRelativeScale3D(FVector(0.42f, 0.32f, 0.95f));
+	Mesh->SetRelativeLocation(FVector(0.f, 0.f, 8.f));
+	BaseScale = GetActorScale3D();
+	HomeLocation = GetActorLocation();
+	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
+	HolypawLook::Paint(Hair, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
+	HolypawLook::Paint(EyeL, HolypawLook::Button);
+	HolypawLook::Paint(EyeR, HolypawLook::Button);
+	HolypawLook::Paint(Hat, HolypawLook::GoldWarm);
+	HolypawLook::Paint(ArmL, HolypawLook::Skin);
+	HolypawLook::Paint(ArmR, HolypawLook::Skin);
+	HolypawLook::Paint(Mesh, ShirtColor);
 }
 
 void AHugHuman::Tick(float DeltaSeconds)
@@ -62,13 +87,13 @@ void AHugHuman::Tick(float DeltaSeconds)
 	{
 		HugPulse = FMath::Max(0.f, HugPulse - DeltaSeconds);
 	}
-	const float Bounce = bBeliever ? 0.06f * FMath::Sin(BounceT * 6.f) : 0.02f * FMath::Sin(BounceT * 2.4f);
+	const float Bounce = bBeliever ? 0.07f * FMath::Sin(BounceT * 6.2f) : 0.022f * FMath::Sin(BounceT * 2.4f);
 	const float Squeeze = HugPulse > 0.f ? 0.12f * HugPulse : 0.f;
 	SetActorScale3D(BaseScale * FVector(1.f + Squeeze, 1.f + Squeeze, 1.f + Bounce - Squeeze * 0.4f));
 
 	if (ArmL && ArmR)
 	{
-		const float Wrap = (HugPulse > 0.f) ? 28.f : (bBeliever ? 8.f : 0.f);
+		const float Wrap = (HugPulse > 0.f) ? 32.f : (bBeliever ? 10.f : 0.f);
 		ArmL->SetRelativeRotation(FRotator(0.f, 0.f, Wrap));
 		ArmR->SetRelativeRotation(FRotator(0.f, 0.f, -Wrap));
 	}
@@ -137,16 +162,12 @@ void AHugHuman::BecomeBeliever()
 {
 	bBeliever = true;
 	ConvertProgress = 100.f;
-	if (ShapeMat)
+	HolypawLook::Paint(HeadMesh, HolypawLook::BelieverGold);
+	HolypawLook::Paint(Mesh, HolypawLook::Rose);
+	HolypawLook::Paint(Hair, HolypawLook::Gold);
+	if (Hat)
 	{
-		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(1.f, 0.88f, 0.55f));
-		}
-		if (UMaterialInstanceDynamic* Mid = Mesh->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.95f, 0.72f, 0.82f));
-		}
+		Hat->SetHiddenInGame(false);
 	}
 }
 
@@ -176,12 +197,13 @@ void AHugHuman::ResetFaith()
 	SetActorScale3D(BaseScale);
 	SetActorLocation(HomeLocation);
 	SetSolidColor(ShirtColor);
-	if (ShapeMat && HeadMesh)
+	HolypawLook::Paint(HeadMesh, HolypawLook::Skin);
+	HolypawLook::Paint(Hair, ShirtColor * 0.55f + FLinearColor(0.12f, 0.08f, 0.06f));
+	HolypawLook::Paint(ArmL, HolypawLook::Skin);
+	HolypawLook::Paint(ArmR, HolypawLook::Skin);
+	if (Hat)
 	{
-		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.96f, 0.8f, 0.74f));
-		}
+		Hat->SetHiddenInGame(true);
 	}
 }
 

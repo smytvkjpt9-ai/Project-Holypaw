@@ -12,6 +12,9 @@ class UAudioComponent;
 class ADirectionalLight;
 class ASkyLight;
 class AExponentialHeightFog;
+class APostProcessVolume;
+class ASkyAtmosphere;
+class AVolumetricCloud;
 
 USTRUCT()
 struct FHolypawLandmark
@@ -94,6 +97,18 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UInstancedStaticMeshComponent> Cacti;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> CanopyPuffs;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Flowers;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Windows;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Chimneys;
+
 protected:
 	void HideTemplateFloor();
 	void SpawnAtmosphere();
@@ -161,6 +176,7 @@ protected:
 	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
 
 	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
+	UStaticMeshComponent* PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
 	void ColorMesh(UStaticMeshComponent* Mesh, const FLinearColor& Color);
 	float SampleHeight(float X, float Y) const;
 	float HashRand(int32 X, int32 Y, int32 Salt = 0) const;
@@ -211,10 +227,25 @@ protected:
 	TObjectPtr<ADirectionalLight> SunLight;
 
 	UPROPERTY()
+	TObjectPtr<ADirectionalLight> FillLight;
+
+	UPROPERTY()
+	TObjectPtr<ADirectionalLight> MoonLight;
+
+	UPROPERTY()
 	TObjectPtr<ASkyLight> SkyLight;
 
 	UPROPERTY()
 	TObjectPtr<AExponentialHeightFog> HeightFog;
+
+	UPROPERTY()
+	TObjectPtr<APostProcessVolume> GradeVolume;
+
+	UPROPERTY()
+	TObjectPtr<ASkyAtmosphere> SkyAtmo;
+
+	UPROPERTY()
+	TObjectPtr<AVolumetricCloud> Clouds;
 
 	TArray<EHolypawZone> DressedCities;
 	EHolypawZone ThemeZone = EHolypawZone::ForestCottage;

@@ -1,8 +1,9 @@
 #include "Actors/HostilePet.h"
 #include "Character/HolypawCharacter.h"
 #include "Combat/HolypawBattleMath.h"
+#include "Look/HolypawLook.h"
 #include "Kismet/GameplayStatics.h"
-#include "UObject/ConstructorHelpers.h"
+#include "Components/PointLightComponent.h"
 #include "TimerManager.h"
 
 AHostilePet::AHostilePet()
@@ -11,31 +12,27 @@ AHostilePet::AHostilePet()
 
 	AccentMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Accent"));
 	AccentMesh->SetupAttachment(Root);
-	AccentMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	AccentMeshB = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AccentB"));
 	AccentMeshB->SetupAttachment(Root);
-	AccentMeshB->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	CrestMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Crest"));
 	CrestMesh->SetupAttachment(Root);
-	CrestMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereFinder(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeFinder(TEXT("/Engine/BasicShapes/Cone.Cone"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylFinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	if (SphereFinder.Succeeded())
-	{
-		SphereMesh = SphereFinder.Object;
-	}
-	if (ConeFinder.Succeeded())
-	{
-		ConeMesh = ConeFinder.Object;
-	}
-	if (CylFinder.Succeeded())
-	{
-		CylMesh = CylFinder.Object;
-	}
+	EyeL = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeL"));
+	EyeL->SetupAttachment(Root);
+	EyeL->SetRelativeLocation(FVector(28.f, 10.f, 18.f));
+	EyeL->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+
+	EyeR = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeR"));
+	EyeR->SetupAttachment(Root);
+	EyeR->SetRelativeLocation(FVector(28.f, -10.f, 18.f));
+	EyeR->SetRelativeScale3D(FVector(0.10f, 0.10f, 0.10f));
+
+	GlowLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("GlowLight"));
+	GlowLight->SetupAttachment(Root);
+	GlowLight->SetRelativeLocation(FVector(0.f, 0.f, 40.f));
+	GlowLight->SetVisibility(false);
 }
 
 void AHostilePet::BeginPlay()
@@ -71,14 +68,7 @@ UStaticMesh* AHostilePet::MeshForShape(EVillainShape Shape) const
 
 void AHostilePet::ColorPart(UStaticMeshComponent* Comp, const FLinearColor& Color)
 {
-	if (!Comp || !ShapeMat)
-	{
-		return;
-	}
-	if (UMaterialInstanceDynamic* Mid = Comp->CreateDynamicMaterialInstance(0, ShapeMat))
-	{
-		Mid->SetVectorParameterValue(TEXT("Color"), Color);
-	}
+	HolypawLook::Paint(Comp, Color);
 }
 
 void AHostilePet::ApplyFromCatalog()
@@ -104,6 +94,21 @@ void AHostilePet::ApplyFromCatalog()
 	}
 	Mesh->SetRelativeScale3D(FVector(0.72f, 0.52f, 0.58f));
 	ColorPart(Mesh, D.Color);
+
+	HolypawLook::PrepPart(AccentMesh, ConeMesh ? ConeMesh : CubeMesh);
+	HolypawLook::PrepPart(AccentMeshB, ConeMesh ? ConeMesh : CubeMesh);
+	HolypawLook::PrepPart(CrestMesh, (D.Rank == EVillainRank::Boss || D.Rank == EVillainRank::WorldBoss)
+		? (CylMesh ? CylMesh : CubeMesh)
+		: (SphereMesh ? SphereMesh : CubeMesh));
+	HolypawLook::PrepPart(EyeL, SphereMesh);
+	HolypawLook::PrepPart(EyeR, SphereMesh);
+	if (ShapeMat)
+	{
+		for (UStaticMeshComponent* P : { AccentMesh, AccentMeshB, CrestMesh, EyeL, EyeR })
+		{
+			if (P) { P->SetMaterial(0, ShapeMat); }
+		}
+	}
 
 	UStaticMesh* Snout = ConeMesh ? ConeMesh : CubeMesh;
 	UStaticMesh* Ear = ConeMesh ? ConeMesh : CubeMesh;
@@ -138,6 +143,20 @@ void AHostilePet::ApplyFromCatalog()
 	}
 
 	ApplySignatureSilhouette(D);
+
+	ColorPart(EyeL, HolypawLook::Button);
+	ColorPart(EyeR, HolypawLook::Button);
+	if (GlowLight)
+	{
+		const bool bGlow = D.Rank == EVillainRank::Boss || D.Rank == EVillainRank::WorldBoss || D.Rank == EVillainRank::Elite;
+		GlowLight->SetVisibility(bGlow);
+		if (bGlow)
+		{
+			HolypawLook::DressLanternLight(GlowLight, D.AccentColor);
+			GlowLight->SetIntensity(D.Rank == EVillainRank::Minion ? 0.f : 700.f);
+			GlowLight->SetAttenuationRadius(260.f);
+		}
+	}
 }
 
 void AHostilePet::ApplySignatureSilhouette(const FVillainDef& D)
@@ -298,6 +317,11 @@ void AHostilePet::Tick(float DeltaSeconds)
 	else if (BodyScale > 0.f)
 	{
 		SetActorScale3D(FVector(BodyScale));
+	}
+	if (GlowLight && GlowLight->IsVisible())
+	{
+		const float Pulse = 0.75f + 0.25f * FMath::Sin(GetWorld()->GetTimeSeconds() * 3.4f);
+		GlowLight->SetIntensity((bPhaseTwo ? 1400.f : 700.f) * Pulse);
 	}
 
 	if (bDefeated)
