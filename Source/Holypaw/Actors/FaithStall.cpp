@@ -1,5 +1,6 @@
 #include "Actors/FaithStall.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 #include "Components/AffectionComponent.h"
 #include "Faith/HolypawFaithSim.h"
 #include "UObject/ConstructorHelpers.h"
@@ -36,7 +37,7 @@ void AFaithStall::EnsureHomeZone()
 void AFaithStall::BeginPlay()
 {
 	Super::BeginPlay();
-	SetSolidColor(FLinearColor(0.95f, 0.78f, 0.35f));
+	SetSolidColor(HolypawLook::Gold);
 	EnsureHomeZone();
 	if (Shutter && ShapeMat)
 	{

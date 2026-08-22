@@ -77,7 +77,7 @@ Hug, Miracle, Party — six skills each (1–6 to buy the current tree). Phase 1
 
 ## Art honesty
 
-This cloud VM cannot sculpt Nanite characters or ship a production FBX pipeline. Actors are **assembled engine primitives** (ears, snout, paws, eyes, human heads/arms, fluffy tails) in the Holypaw palette. Towns, roads, and seas use **instanced kits**. Sky Atmosphere, volumetric clouds, height fog, and a pastel post-process grade. **Zero Quixel / Megascans / Fab photoscans.** Drop real meshes in Unreal on your PC later; the C++ sockets are already named.
+This cloud VM cannot sculpt Nanite characters or ship a production FBX pipeline. Actors are **assembled engine primitives** (ears, inner ears, snout, nose, catchlights, arms, legs, paws, human hair/eyes/hats, fluffy tails) in the Holypaw palette (rose, mint, gold, powder blue). Towns use **instanced kits** with windows, chimneys, and layered canopies. Lumen GI, virtual shadows, contact shadows, Sky Atmosphere, volumetric clouds, fill + moon lights, lantern point lights, and a painterly post-process grade. **Zero Quixel / Megascans / Fab photoscans.** Named sockets (`earL`, `snout`, `halo`, `pawL`, `body`) are the FBX drop contract on your PC.
 
 **Animation is a separate system** (`Source/Holypaw/Anim/HolypawProcAnim.cpp`). Pretty meshes still feel like a prototype if they do not move. The conversion fantasy is authored clips: **wrap**, **blink**, **ear flop**, **kneel**, **party trail**, **victory**. A convert is one beat: reach, wrap, hold through the bow, authored release, then spin. The teddy steps in. The human does not kneel until the wrap closes. Party squash is a land hit, not a pancake rest. Clip names stay the contract for later skeletal anims.
 

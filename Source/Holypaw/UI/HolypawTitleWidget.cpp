@@ -47,8 +47,9 @@ int32 UHolypawTitleWidget::NativePaint(const FPaintArgs& Args, const FGeometry& 
 	const FVector2D Size = AllottedGeometry.GetLocalSize();
 	const float CX = Size.X * 0.5f;
 
-	PaintPanel(OutDrawElements, Layer, AllottedGeometry, FVector2D(0.f, 0.f), Size, FLinearColor(0.08f, 0.04f, 0.10f, 0.82f));
-	PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 420.f, 90.f), FVector2D(840.f, Size.Y - 180.f), FLinearColor(0.14f, 0.08f, 0.16f, 0.92f));
+	PaintPanel(OutDrawElements, Layer, AllottedGeometry, FVector2D(0.f, 0.f), Size, FLinearColor(0.10f, 0.04f, 0.12f, 0.84f));
+	PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 428.f, 82.f), FVector2D(856.f, Size.Y - 164.f), FLinearColor(0.16f, 0.08f, 0.18f, 0.94f));
+	PaintPanel(OutDrawElements, Layer + 1, AllottedGeometry, FVector2D(CX - 428.f, 82.f), FVector2D(12.f, Size.Y - 164.f), FLinearColor(0.98f, 0.82f, 0.42f, 0.95f));
 
 	if (P->Mode == EHolypawPawnMode::Pause)
 	{

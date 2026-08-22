@@ -1,18 +1,25 @@
 #include "Actors/HolypawPickup.h"
 #include "Character/HolypawCharacter.h"
+#include "Look/HolypawLook.h"
 
 AHolypawPickup::AHolypawPickup()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	Label = NSLOCTEXT("Holypaw", "Pickup", "Keepsake");
 }
 
 void AHolypawPickup::BeginPlay()
 {
 	Super::BeginPlay();
+	if (SphereMesh)
+	{
+		Mesh->SetStaticMesh(SphereMesh);
+	}
+	SetActorScale3D(FVector(0.35f, 0.35f, 0.35f));
+	Home = GetActorLocation();
 	if (ItemId == TEXT("hymnSheet"))
 	{
-		SetSolidColor(FLinearColor(0.95f, 0.86f, 0.55f));
+		SetSolidColor(HolypawLook::GoldWarm);
 	}
 	else if (ItemId == TEXT("wheatEar"))
 	{
@@ -20,16 +27,24 @@ void AHolypawPickup::BeginPlay()
 	}
 	else if (ItemId == TEXT("peatBead"))
 	{
-		SetSolidColor(FLinearColor(0.55f, 0.28f, 0.3f));
+		SetSolidColor(HolypawLook::RoseDeep);
 	}
 	else if (ItemId == TEXT("auroraThread"))
 	{
-		SetSolidColor(FLinearColor(0.55f, 0.78f, 1.f));
+		SetSolidColor(HolypawLook::Powder);
 	}
 	else
 	{
-		SetSolidColor(FLinearColor(0.85f, 0.62f, 0.72f));
+		SetSolidColor(HolypawLook::Rose);
 	}
+}
+
+void AHolypawPickup::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	const float T = GetWorld()->GetTimeSeconds();
+	AddActorWorldRotation(FRotator(0.f, 70.f * DeltaSeconds, 0.f));
+	SetActorLocation(Home + FVector(0.f, 0.f, FMath::Sin(T * 3.2f) * 10.f));
 }
 
 FText AHolypawPickup::GetPrompt() const
@@ -52,5 +67,6 @@ bool AHolypawPickup::Interact(AHolypawCharacter* InstigatorPawn)
 	InstigatorPawn->Toast(FString::Printf(TEXT("Pocketed %s."), *Label.ToString()));
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
 	return true;
 }

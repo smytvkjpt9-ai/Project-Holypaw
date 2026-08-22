@@ -12,6 +12,9 @@ class UAudioComponent;
 class ADirectionalLight;
 class ASkyLight;
 class AExponentialHeightFog;
+class APostProcessVolume;
+class ASkyAtmosphere;
+class AVolumetricCloud;
 
 USTRUCT()
 struct FHolypawLandmark
@@ -101,6 +104,27 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UInstancedStaticMeshComponent> Cacti;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> CanopyPuffs;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Flowers;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Windows;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Chimneys;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Doors;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> WindowWarm;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UInstancedStaticMeshComponent> Foam;
+
 protected:
 	void HideTemplateFloor();
 	void SpawnAtmosphere();
@@ -162,6 +186,21 @@ protected:
 	void DressShopRoom(const FVector& Origin);
 	void DressOpenStall(const FVector& Origin);
 	void DressMillHall(const FVector& Origin);
+	void PlaceBed(const FVector& Origin, float Yaw, const FLinearColor& Quilt, const TCHAR* Tag);
+	void PlaceChair(const FVector& Origin, float Yaw);
+	void PlaceTable(const FVector& Origin, float Yaw);
+	void PlaceShelf(const FVector& Origin, float Yaw);
+	void PlaceRug(const FVector& Origin, const FLinearColor& Color, const FVector& Scale);
+	void PlaceHearth(const FVector& Origin);
+	void PlaceCrate(const FVector& Origin);
+	void PlacePlanter(const FVector& Origin);
+	void PlaceBench(const FVector& Origin, float Yaw);
+	void PlaceWell(const FVector& Origin);
+	void PlaceAwningStall(const FVector& Origin);
+	void PlaceCampKit(const FVector& Origin);
+	void PlaceYardFence(const FVector& Origin);
+	void PlaceClothesline(const FVector& Origin);
+	void DressCityPlaza(const FVector2D& Center, float Z);
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY, bool bOpenAir = false, const TCHAR* KeepName = nullptr);
@@ -170,7 +209,8 @@ protected:
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;
 	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
 
-	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name);
+	UStaticMeshComponent* PlaceCube(const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot = FRotator::ZeroRotator, bool bBlock = true);
+	UStaticMeshComponent* PlacePrimitive(UStaticMesh* Mesh, const FVector& Loc, const FVector& Scale, const FLinearColor& Color, const FName& Name, const FRotator& Rot = FRotator::ZeroRotator, bool bBlock = true);
 	void ColorMesh(UStaticMeshComponent* Mesh, const FLinearColor& Color);
 	float SampleHeight(float X, float Y) const;
 	float HashRand(int32 X, int32 Y, int32 Salt = 0) const;
@@ -221,10 +261,25 @@ protected:
 	TObjectPtr<ADirectionalLight> SunLight;
 
 	UPROPERTY()
+	TObjectPtr<ADirectionalLight> FillLight;
+
+	UPROPERTY()
+	TObjectPtr<ADirectionalLight> MoonLight;
+
+	UPROPERTY()
 	TObjectPtr<ASkyLight> SkyLight;
 
 	UPROPERTY()
 	TObjectPtr<AExponentialHeightFog> HeightFog;
+
+	UPROPERTY()
+	TObjectPtr<APostProcessVolume> GradeVolume;
+
+	UPROPERTY()
+	TObjectPtr<ASkyAtmosphere> SkyAtmo;
+
+	UPROPERTY()
+	TObjectPtr<AVolumetricCloud> Clouds;
 
 	TArray<EHolypawZone> DressedCities;
 	EHolypawZone ThemeZone = EHolypawZone::ForestCottage;

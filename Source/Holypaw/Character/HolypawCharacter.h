@@ -12,10 +12,39 @@ class UAffectionComponent;
 class USkillTreeComponent;
 class UPartyComponent;
 class UHolypawMissionComponent;
+class UPointLightComponent;
+class USceneComponent;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
 enum class EHolypawShrineKind : uint8;
+
+USTRUCT()
+struct FHolypawFollowerVisual
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Body;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EarL;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EarR;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Tail;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EyeL;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> EyeR;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Snout;
+};
 
 UENUM()
 enum class EHolypawPawnMode : uint8
@@ -77,6 +106,66 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> EyeR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> InnerEarL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> InnerEarR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Nose;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> HighlightL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> HighlightR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> CheekL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> CheekR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> ArmL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> ArmR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> LegL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> LegR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> FootL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> FootR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Ribbon;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BrowL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BrowR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> Tail;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BowL;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMeshComponent> BowR;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPointLightComponent> HaloLight;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAffectionComponent> Affection;
@@ -287,8 +376,8 @@ protected:
 	bool bSeamBrace = false;
 	bool bPartyBrace = false;
 	bool bHeardChoirHour = false;
-	float ExploreArm = 540.f;
-	float BattleArm = 300.f;
+	float ExploreArm = 430.f;
+	float BattleArm = 240.f;
 	FTimerHandle BattleTimer;
 
 	float Invuln = 0.f;
@@ -349,9 +438,10 @@ protected:
 	UMaterialInterface* ShapeMat = nullptr;
 
 	void SyncFollowers(float DeltaSeconds);
+	UStaticMeshComponent* MakeFollowerPart(UStaticMesh* Mesh, const FLinearColor& Color, USceneComponent* Attach = nullptr);
 
 	UPROPERTY()
-	TArray<TObjectPtr<UStaticMeshComponent>> FollowerMeshes;
+	TArray<FHolypawFollowerVisual> Followers;
 
 	TArray<FVector> Trail;
 	UStaticMesh* SphereMesh = nullptr;
