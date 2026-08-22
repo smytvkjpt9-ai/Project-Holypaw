@@ -1441,13 +1441,19 @@ FVector AHolypawWorldBuilder::GetTravelLocation(EHolypawZone Zone) const
 void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
-	PlaceAwningStall(FVector(XY.X, XY.Y, Z));
+	DressShopRoom(FVector(XY.X, XY.Y, Z));
 	FActorSpawnParameters Sp;
 	Sp.Owner = this;
 	Sp.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	if (AFaithStall* S = GetWorld()->SpawnActor<AFaithStall>(FVector(XY.X, XY.Y + 80.f, Z + 40.f), FRotator::ZeroRotator, Sp))
+	if (AFaithStall* S = GetWorld()->SpawnActor<AFaithStall>(FVector(XY.X, XY.Y + 40.f, Z + 18.f), FRotator::ZeroRotator, Sp))
 	{
-		S->SetActorScale3D(FVector(0.9f, 0.9f, 0.5f));
+		S->SetActorScale3D(FVector(1.1f, 1.1f, 0.25f));
+	}
+	if (AHugHuman* Keep = GetWorld()->SpawnActor<AHugHuman>(FVector(XY.X + 80.f, XY.Y + 90.f, Z + 50.f), FRotator::ZeroRotator, Sp))
+	{
+		Keep->PersonName = FText::FromString(TEXT("Shopkeep"));
+		Keep->ShirtColor = FLinearColor(0.95f, 0.72f, 0.35f);
+		Keep->SetSolidColor(Keep->ShirtColor);
 	}
 }
 
@@ -1526,6 +1532,7 @@ void AHolypawWorldBuilder::SpawnGameplayActors()
 	SpawnHuman(TEXT("Lamp Lighter"), FVector2D(RibbonCity.X + 80.f, RibbonCity.Y - 3100.f), FLinearColor(1.f, 0.82f, 0.42f));
 	SpawnHuman(TEXT("Spire Guard"), FVector2D(RibbonCity.X - 80.f, RibbonCity.Y + 80.f), FLinearColor(0.62f, 0.55f, 0.72f));
 	SpawnHuman(TEXT("Mill Whistleblower"), FVector2D(RibbonCity.X + 4800.f, RibbonCity.Y - 700.f), FLinearColor(0.7f, 0.68f, 0.6f));
+	SpawnHuman(TEXT("Floor Foreman"), FVector2D(RibbonCity.X + 5100.f, RibbonCity.Y - 800.f), FLinearColor(0.62f, 0.58f, 0.5f));
 	SpawnHuman(TEXT("Plaza Florist"), FVector2D(RibbonCity.X - 160.f, RibbonCity.Y - 280.f), FLinearColor(0.88f, 0.45f, 0.62f));
 	SpawnHuman(TEXT("Night Watch"), FVector2D(RibbonCity.X + 240.f, RibbonCity.Y - 3600.f), FLinearColor(0.35f, 0.42f, 0.62f));
 	SpawnHuman(TEXT("Harbor Hand"), FVector2D(Tidewell.X + 400.f, Tidewell.Y + 200.f), FLinearColor(0.45f, 0.55f, 0.7f));
@@ -1792,17 +1799,16 @@ void AHolypawWorldBuilder::BuildPolyMill()
 {
 	const FVector2D Mill = RibbonCity + FVector2D(5200.f, -800.f);
 	const float Z = SampleHeight(Mill.X, Mill.Y);
-	for (int32 I = 0; I < 5; ++I)
-	{
-		PlaceCube(FVector(Mill.X + I * 280.f, Mill.Y, Z + 220.f + I * 40.f),
-			FVector(2.2f, 1.6f, 4.4f + I * 0.4f),
-			FLinearColor(0.55f, 0.52f, 0.48f),
-			MakeName(TEXT("PolyShed")));
-	}
-	PlaceCube(FVector(Mill.X + 400.f, Mill.Y + 200.f, Z + 380.f), FVector(1.2f, 1.2f, 7.5f),
+	DressMillHall(FVector(Mill.X, Mill.Y, Z));
+	PlaceCube(FVector(Mill.X + 520.f, Mill.Y + 280.f, Z + 380.f), FVector(1.2f, 1.2f, 7.5f),
 		FLinearColor(0.72f, 0.28f, 0.38f), MakeName(TEXT("PolyStack")));
-	PlaceSign(Mill + FVector2D(-200.f, 0.f),
-		NSLOCTEXT("Holypaw", "PolyMill", "POLY MILL  |  cheap polyester, identical smiles, no handmade soul"));
+	PlaceCube(FVector(Mill.X + 620.f, Mill.Y - 420.f, Z + 180.f), FVector(1.6f, 1.2f, 3.4f),
+		FLinearColor(0.55f, 0.52f, 0.48f), MakeName(TEXT("PolyShed")));
+	PlaceCube(FVector(Mill.X + 880.f, Mill.Y + 80.f, Z + 160.f), FVector(1.4f, 1.8f, 3.0f),
+		FLinearColor(0.52f, 0.5f, 0.46f), MakeName(TEXT("PolyShed")));
+	PlaceSign(Mill + FVector2D(-480.f, 0.f),
+		NSLOCTEXT("Holypaw", "PolyMill", "POLY MILL  |  walk in  |  cheap polyester, identical smiles, no handmade soul"));
+	PlaceShrine(Mill + FVector2D(40.f, -40.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "MillCrate", "Mill Scrap Crate"));
 	SpawnVillainAt(EHolypawVillain::RazorPetbot, Mill + FVector2D(600.f, 400.f));
 	SpawnVillainAt(EHolypawVillain::RibbonEnforcer, Mill + FVector2D(200.f, -500.f));
 	SpawnVillainAt(EHolypawVillain::GoldSnipper, Mill + FVector2D(-300.f, 300.f));

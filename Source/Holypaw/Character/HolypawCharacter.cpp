@@ -448,6 +448,19 @@ void AHolypawCharacter::Tick(float DeltaSeconds)
 	if (Mode == EHolypawPawnMode::Play)
 	{
 		UpdateZone();
+		if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+		{
+			if (GI->IsDusk() && !bHeardChoirHour)
+			{
+				bHeardChoirHour = true;
+				Toast(TEXT("Choir hour. Believers walk to chapels. Night they pile into inns."));
+				PlayCue(TEXT("Miracle"));
+			}
+			if (!GI->IsDusk())
+			{
+				bHeardChoirHour = false;
+			}
+		}
 		if (AActor* Near = FindNearestInteractable(420.f))
 		{
 			if (AHolypawInteractable* I = Cast<AHolypawInteractable>(Near))
@@ -735,6 +748,8 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	M.Color = Fluffy->Type.Color;
 	M.Attack = Fluffy->Type.Attack;
 	M.Rarity = Fluffy->Type.Rarity;
+	M.FluffyId = Fluffy->Type.Id;
+	M.Role = UPartyComponent::RoleFor(Fluffy->Type.Id);
 	Party->TryAdd(M);
 	Fluffy->bRecruited = true;
 	Fluffy->SetActorHiddenInGame(true);
@@ -745,7 +760,9 @@ bool AHolypawCharacter::RecruitFluffy(AWildFluffy* Fluffy)
 	{
 		Story->NotifyRecruit();
 	}
-	Toast(FString::Printf(TEXT("%s joined! Tiny hench-fluff acquired."), *Fluffy->Type.DisplayName.ToString()));
+	Toast(FString::Printf(TEXT("%s joined as %s. Tiny hench-fluff acquired."),
+		*Fluffy->Type.DisplayName.ToString(),
+		UPartyComponent::RoleLabel(M.Role)));
 	PlayCue(TEXT("Talk"));
 	return true;
 }
@@ -837,6 +854,7 @@ void AHolypawCharacter::StartBattle(AHostilePet* Enemy)
 	EnemyRipTurns = 0;
 	MillTurns = 0;
 	bSeamBrace = false;
+	bPartyBrace = false;
 	if (SpringArm)
 	{
 		SpringArm->TargetArmLength = BattleArm;
@@ -872,7 +890,8 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 	if (Kind == TEXT("flee"))
 	{
 		const float Chance = HolypawBattleDirector::FleeChance(
-			Skills->HasSkill(TEXT("haloStep")), E->bBlocksFlee, E->IsBoss());
+			Skills->HasSkill(TEXT("haloStep")), E->bBlocksFlee, E->IsBoss())
+			+ (Party->CountRole(EPartyRole::Scout) > 0 ? 0.12f : 0.f);
 		if (FMath::FRand() < Chance)
 		{
 			BattleLog = TEXT("You scampered away!");
@@ -952,6 +971,42 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		return;
 	}
 
+	if (Kind == TEXT("cheer") || Kind == TEXT("spareBun"))
+	{
+		int32 Heal = Kind == TEXT("cheer") ? (6 + Party->Members.Num() * 2) : 10;
+		HP = FMath::Min(HPMax, HP + Heal);
+		BattleLog = Kind == TEXT("cheer")
+			? FString::Printf(TEXT("Cheer tucks %d stuffing. %s"), Heal, *Party->DescribeRoles())
+			: FString::Printf(TEXT("Spare bun. +%d stuffing."), Heal);
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.55f, false);
+		return;
+	}
+
+	if (Kind == TEXT("tuck"))
+	{
+		bGuarding = true;
+		bSeamBrace = true;
+		HP = FMath::Min(HPMax, HP + 3);
+		BattleLog = TEXT("Tuck. Seams fold in.");
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.5f, false);
+		return;
+	}
+
+	if (Kind == TEXT("ribbonBind"))
+	{
+		const int32 Cost = FMath::Max(6, HolypawBattleDirector::AbilityFpCost(TEXT("ribbonBind")));
+		if (!Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP to bind."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		bEnemyStaggered = true;
+		BattleLog = TEXT("Ribbon Bind. Their special fumbles next.");
+		GetWorldTimerManager().SetTimer(BattleTimer, this, &AHolypawCharacter::EnemyBattleSwing, 0.65f, false);
+		return;
+	}
+
 	int32 Dmg = 0;
 	if (Kind == TEXT("slap"))
 	{
@@ -992,19 +1047,29 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		}
 		const float Mult = Skills->HasSkill(TEXT("partyBond")) ? 1.4f : 1.f;
 		Dmg = FMath::FloorToInt(Base * Mult) + FMath::RandRange(0, 4);
+		Dmg += Party->AssaultBonus(E->GetDef().Faction == EHolypawFaction::PolyMill);
 		if (Skills->HasSkill(TEXT("choirAssault")))
 		{
 			Dmg += Dmg / 2;
 		}
+		const int32 Choir = Party->CountRole(EPartyRole::Choir);
+		if (Choir > 0)
+		{
+			HP = FMath::Min(HPMax, HP + Choir * 2);
+		}
+		if (Party->CountRole(EPartyRole::Brace) > 0)
+		{
+			bPartyBrace = true;
+		}
 		if (bPartyCut)
 		{
 			Dmg = FMath::Max(1, Dmg / 2);
-			BattleLog = FString::Printf(TEXT("Snipped Party Assault deals %d."), Dmg);
+			BattleLog = FString::Printf(TEXT("Snipped Party Assault deals %d. %s"), Dmg, *Party->DescribeRoles());
 		}
 		else
 		{
 			BattleLog = Party->Members.Num() > 0
-				? FString::Printf(TEXT("Party Assault deals %d!"), Dmg)
+				? FString::Printf(TEXT("Party Assault deals %d! %s"), Dmg, *Party->DescribeRoles())
 				: FString::Printf(TEXT("Lonely swipe for %d. Find fluffies!"), Dmg);
 		}
 	}
@@ -1065,6 +1130,28 @@ void AHolypawCharacter::PlayerBattleAttack(FName Kind)
 		{
 			BattleLog = FString::Printf(TEXT("Poly Rip shrugs off handmade seams (%d)."), Dmg);
 		}
+	}
+	else if (Kind == TEXT("fluffBurst"))
+	{
+		Dmg = Attack + Party->TotalAttack() + FMath::RandRange(0, 4);
+		BattleLog = FString::Printf(TEXT("Fluff Burst pops for %d! %s"), Dmg, *Party->DescribeRoles());
+	}
+	else if (Kind == TEXT("millHymn"))
+	{
+		const int32 Cost = FMath::Max(8, HolypawBattleDirector::AbilityFpCost(TEXT("millHymn")));
+		if (!Affection->SpendFP(Cost))
+		{
+			BattleLog = FString::Printf(TEXT("Need %d FP for a mill hymn."), Cost);
+			bBattleBusy = false;
+			return;
+		}
+		Dmg = FMath::FloorToInt(Attack * 1.6f) + FMath::RandRange(0, 4);
+		if (E->GetDef().Faction == EHolypawFaction::PolyMill)
+		{
+			Dmg += 8;
+		}
+		HP = FMath::Min(HPMax, HP + 4);
+		BattleLog = FString::Printf(TEXT("Mill Hymn deals %d and tucks 4."), Dmg);
 	}
 
 	if (E->GetDef().Faction == EHolypawFaction::PolyMill && Skills->HasSkill(TEXT("polyRip")))
@@ -1169,7 +1256,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	Req.bPhaseTwo = En->bPhaseTwo;
 	Req.BattleTurn = BattleTurn;
 	Req.bStaggered = bEnemyStaggered;
-	Req.bGuarding = bGuarding;
+	Req.bGuarding = bGuarding || bPartyBrace;
 	Req.bSeamGuard = Skills->HasSkill(TEXT("seamGuard")) || bSeamBrace;
 	Req.HymnShield = HymnShield;
 	Req.bFaithArmor = Skills->HasSkill(TEXT("faithArmor"));
@@ -1207,6 +1294,7 @@ void AHolypawCharacter::EnemyBattleSwing()
 	{
 		bGuarding = false;
 		bSeamBrace = false;
+		bPartyBrace = false;
 	}
 	if (In.MillTurns > 0)
 	{
@@ -1622,10 +1710,19 @@ void AHolypawCharacter::CycleSkillTree()
 	}
 	if (Mode == EHolypawPawnMode::Battle)
 	{
-		BattlePage = 1 - BattlePage;
-		Toast(BattlePage == 0
-			? TEXT("Commands: Slap Beam Party Flee Guard Hymn  (Tab: overflow)")
-			: TEXT("Overflow: Unstuff ButtonBeam Stitch PolyRip Lullaby SeamGuard"));
+		BattlePage = (BattlePage + 1) % 3;
+		if (BattlePage == 0)
+		{
+			Toast(TEXT("Commands: Slap Beam Party Flee Guard Hymn  (Tab: overflow)"));
+		}
+		else if (BattlePage == 1)
+		{
+			Toast(TEXT("Overflow: Unstuff ButtonBeam Stitch PolyRip Lullaby SeamGuard"));
+		}
+		else
+		{
+			Toast(TEXT("Party tricks: Cheer Tuck FluffBurst MillHymn RibbonBind SpareBun"));
+		}
 		return;
 	}
 	if (bMapOpen)

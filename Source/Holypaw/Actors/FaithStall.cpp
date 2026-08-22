@@ -16,7 +16,7 @@ void AFaithStall::BeginPlay()
 
 FText AFaithStall::GetPrompt() const
 {
-	return FText::FromString(TEXT("E  Faith stall (buns, ribbons, jars)"));
+	return FText::FromString(TEXT("E  Walk in · faith stall (buns, ribbons, jars)"));
 }
 
 bool AFaithStall::Interact(AHolypawCharacter* InstigatorPawn)

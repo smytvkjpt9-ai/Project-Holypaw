@@ -47,6 +47,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	FVector GetCottageSpawn() const { return CottageSpawn; }
+	FVector2D GetPeakCenter() const { return PeakCenter; }
 	FVector GetTravelLocation(EHolypawZone Zone) const;
 	void TickClockLighting(float DeltaSeconds);
 	virtual void Tick(float DeltaSeconds) override;
@@ -176,6 +177,8 @@ protected:
 	void DressChapelRoom(const FVector& Origin);
 	void DressWorkshopRoom(const FVector& Origin);
 	void DressCottageRooms(const FVector& Origin, float GroundZ);
+	void DressShopRoom(const FVector& Origin);
+	void DressMillHall(const FVector& Origin);
 	void PlaceBed(const FVector& Origin, float Yaw, const FLinearColor& Quilt, const TCHAR* Tag);
 	void PlaceChair(const FVector& Origin, float Yaw);
 	void PlaceTable(const FVector& Origin, float Yaw);

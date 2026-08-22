@@ -61,7 +61,9 @@ namespace HolypawCatalog
 			Add(TEXT("Innkeep"),
 				TEXT("Beds here remember the last person who was serious. We washed that out."),
 				TEXT("Rest is a political act if the mill wants you exhausted and identical."),
-				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."));
+				TEXT("E on the inn. HP full, cocoa, a save. Chapel is west of the fountain."),
+				TEXT("Dusk they hymn. Night they sleep here. I count round heads like sheep."),
+				8);
 			Add(TEXT("Choir Bear"),
 				TEXT("I am not a bear. I am a person in a choir that aspires. Close enough."),
 				TEXT("The chapel fills Miracle Charge. Bring the cellar hymn sheet and press 3. Dusk sings along."),
@@ -85,7 +87,19 @@ namespace HolypawCatalog
 			Add(TEXT("Mill Whistleblower"),
 				TEXT("I filed a complaint that polyester has no soul. They offered a coupon. I took a hymn."),
 				TEXT("Razor Petbots east of town. Bring a party. Steal their scrap. Key 3 if you have some."),
-				TEXT("Poly Mill, grey sheds, red stack. Handmade not polyester — the sign is not subtle."));
+				TEXT("Poly Mill, grey hall, red stack. Walk in. Handmade not polyester — the sign is not subtle."),
+				TEXT("The hall is beige on purpose. Rippers in your party make the vats nervous."),
+				10);
+			Add(TEXT("Floor Foreman"),
+				TEXT("I scheduled identical smiles. Then a bear walked into my mill and the clipboard got round."),
+				TEXT("Conveyors still run. They convey nothing useful. Clap anyway."),
+				TEXT("West door faces Ribbon. Vats, bales, a crate. Unstuff the petbots first."),
+				TEXT("Night shift is just the beige getting darker. I stay. Someone has to be wrong here."),
+				12);
+			Add(TEXT("Shopkeep"),
+				TEXT("Walk in. Jars, buns, ribbons. I do not sell beige. I do not know how."),
+				TEXT("Hearts discount if you converted the block. I will pretend that is a coupon."),
+				TEXT("E on the rug. I is pockets. Night I sleep in the inn with the round people."));
 			Add(TEXT("Plaza Florist"),
 				TEXT("I sell roses that refuse to be identical. The mill asked for a bulk beige. I sent a thorn."),
 				TEXT("Toss a thought in the fountain. Faith comes back smelling like wet stone and hope."),

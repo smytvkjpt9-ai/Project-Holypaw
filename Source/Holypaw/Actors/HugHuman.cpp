@@ -1,6 +1,8 @@
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
+#include "HolypawGameInstance.h"
+#include "AI/HolypawSchedule.h"
 #include "UObject/ConstructorHelpers.h"
 
 AHugHuman::AHugHuman()
@@ -187,14 +189,18 @@ void AHugHuman::Tick(float DeltaSeconds)
 		ArmR->SetRelativeLocation(Pose.ArmRLoc);
 	}
 
-	FVector Feet = GetActorLocation();
-	if (bBeliever && !bKnelt && !Pose.bHoldFeet)
+	BounceT += DeltaSeconds;
+	if (!Pose.bHoldFeet)
 	{
-		const float Orbit = 160.f;
-		const float Ang = HumanAnim.Clock * 0.55f;
-		const FVector Parade = HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
-		Feet = FMath::VInterpTo(Feet, Parade, DeltaSeconds, 1.6f);
+		float Hour = 12.f;
+		if (const UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
+		{
+			Hour = GI->GetWorldHour();
+		}
+		HolypawSchedule::TickHuman(*this, DeltaSeconds, Hour);
+		// Day parade / dusk chapel / night inn: bBeliever && !bKnelt is the old beat; TickHuman owns it now.
 	}
+	FVector Feet = GetActorLocation();
 	Feet.Z = HomeLocation.Z + Pose.DropZ;
 	SetActorLocation(Feet);
 }
