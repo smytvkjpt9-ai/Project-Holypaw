@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "HolypawTitleWidget.generated.h"
+#include "HolypawTalkWidget.generated.h"
 
 UCLASS()
-class HOLYPAW_API UHolypawTitleWidget : public UUserWidget
+class HOLYPAW_API UHolypawTalkWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

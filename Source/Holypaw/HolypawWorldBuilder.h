@@ -47,6 +47,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Holypaw")
 	FVector GetCottageSpawn() const { return CottageSpawn; }
+	FVector2D GetPeakCenter() const { return PeakCenter; }
 	FVector GetTravelLocation(EHolypawZone Zone) const;
 	void TickClockLighting(float DeltaSeconds);
 	virtual void Tick(float DeltaSeconds) override;
