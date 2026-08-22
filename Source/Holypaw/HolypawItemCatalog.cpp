@@ -42,6 +42,14 @@ namespace HolypawCatalog
 			Add(TEXT("duneNote"), TEXT("Dune Note"), TEXT("Sand that hummed first. Sand Priest will hum it back (talk 3)."), 0, 0, 6);
 			Add(TEXT("capeShell"), TEXT("Cape Shell"), TEXT("Two oceans argued inside it. Cape Lookout files ships as opinions (talk 3)."), 0, 0, 0);
 			Add(TEXT("acaciaBell"), TEXT("Acacia Bell"), TEXT("Hung without a permit. Grass Bell will let the wind keep it (talk 3)."), 0, 0, 4);
+			Add(TEXT("confettiDrum"), TEXT("Confetti Drum"), TEXT("Carnival Bahia stuffing-in-a-drum. Confetti Baker files it as government (talk 3)."), 0, 0, 0);
+			Add(TEXT("mountainWool"), TEXT("Mountain Wool"), TEXT("Andes Loom weather-dye. Wool Climber knitted the first inch (talk 3)."), 0, 0, 0);
+			Add(TEXT("moonThread"), TEXT("Moon Thread"), TEXT("Silk Delta rumor-wrap. Delta Weaver prefers mayors to moons (talk 3)."), 0, 0, 0);
+			Add(TEXT("saffronSail"), TEXT("Saffron Sail"), TEXT("Spice Harbor handmade stamp fodder. Pepper Clerk clapped after the firing (talk 3)."), 0, 0, 0);
+			Add(TEXT("reefLyric"), TEXT("Reef Lyric"), TEXT("Just the word bear, repeatedly. Reef Choir already charted it (talk 3)."), 0, 0, 8);
+			Add(TEXT("auroraMitten"), TEXT("Aurora Mitten"), TEXT("Civic policy you can wear. Aurora Child wants the pair that copies (talk 3)."), 0, 0, 0);
+			Add(TEXT("snowSermon"), TEXT("Snow Sermon"), TEXT("Whispered into drift. Tundra Keeper files loud round thoughts as allowed (talk 3)."), 0, 0, 6);
+			Add(TEXT("spareScarf"), TEXT("Spare Scarf"), TEXT("Last scarf on the last ice. Ice Scarf was saving it for a mayor (talk 3)."), 0, 0, 0);
 			return Out;
 		}();
 		return All;

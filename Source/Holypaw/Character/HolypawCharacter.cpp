@@ -1332,7 +1332,7 @@ TArray<FString> AHolypawCharacter::GetJournalLines() const
 	}
 	if (Shown == 0)
 	{
-		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. Home Sewn, Old World, Sand Belt, Globe Trek."));
+		Lines.Add(TEXT("Talk 4 takes a job. Talk 3 turns it in. All 26 cities have an errand if you hop."));
 	}
 	return Lines;
 }

@@ -135,6 +135,46 @@ namespace HolypawCatalog
 				TEXT("Grass Bell"), TEXT("Grass Bell"), TEXT("acaciaBell"), 1, 14, 8, 8.f,
 				TEXT("Hung without a permit. Fetch it. Wind does hymns anyway."),
 				TEXT("Grass Bell lets the weather keep the permit. Gold already lives here."));
+			Add(TEXT("drumGov"), TEXT("Confetti drum"),
+				TEXT("Pocket a confetti drum on Carnival Bahia's Drum Walk and give it to the Confetti Baker."),
+				TEXT("Confetti Baker"), TEXT("Confetti Baker"), TEXT("confettiDrum"), 1, 16, 8, 6.f,
+				TEXT("Stuffing in the drums. Key 4. Confetti is a valid government."),
+				TEXT("Baker stamps the drum as policy. The parade converts between beats."));
+			Add(TEXT("firstInch"), TEXT("Mountain wool"),
+				TEXT("Take mountain wool from Andes Loom's Wool Walk to the Wool Climber."),
+				TEXT("Wool Climber"), TEXT("Wool Climber"), TEXT("mountainWool"), 1, 16, 8, 8.f,
+				TEXT("I knitted the first inch. Bring the next. Don't mill this mountain."),
+				TEXT("Climber knits the spine shut against brochures. Carnival can stay loud."));
+			Add(TEXT("wrapMoon"), TEXT("Moon thread"),
+				TEXT("Find moon thread on Silk Delta's Thread Walk and give it to the Delta Weaver."),
+				TEXT("Delta Weaver"), TEXT("Delta Weaver"), TEXT("moonThread"), 1, 18, 10, 8.f,
+				TEXT("Thread enough to wrap a moon. Wrap a factory rumor instead. Key 3 when it holds."),
+				TEXT("Weaver wraps the rumor. Cherry Isle can clap in pink now."));
+			Add(TEXT("handmadePepper"), TEXT("Saffron sail"),
+				TEXT("Pick a saffron sail on Spice Harbor's Sail Walk and give it to the Pepper Clerk."),
+				TEXT("Pepper Clerk"), TEXT("Pepper Clerk"), TEXT("saffronSail"), 1, 16, 8, 4.f,
+				TEXT("I stamped handmade on identical pepper. They fired me. Bring a sail. I will clap."),
+				TEXT("Clerk stamps the sail VOID-BEIGE. Mill scrap still belongs in a museum."));
+			Add(TEXT("bearLyric"), TEXT("Reef lyric"),
+				TEXT("Take a reef lyric from Coral Choir's Reef Walk to the Reef Choir."),
+				TEXT("Reef Choir"), TEXT("Reef Choir"), TEXT("reefLyric"), 1, 14, 8, 10.f,
+				TEXT("We already sang. Bring lyrics that are just the word bear. Chart-topping."),
+				TEXT("Choir files the lyric. The lagoon stays off-key on purpose."));
+			Add(TEXT("mittenLaw"), TEXT("Aurora mitten"),
+				TEXT("Pocket an aurora mitten on Copy Walk and give it to the Aurora Child."),
+				TEXT("Aurora Child"), TEXT("Aurora Child"), TEXT("auroraMitten"), 1, 14, 8, 8.f,
+				TEXT("The lights copy you if you glow. Bring a mitten. Civic policy you can wear."),
+				TEXT("Child wears the pair. The lights copy. Rude. Cute."));
+			Add(TEXT("loudAllowed"), TEXT("Snow sermon"),
+				TEXT("Find a snow sermon on Tundra Parish's Quiet Walk and give it to the Tundra Keeper."),
+				TEXT("Tundra Keeper"), TEXT("Tundra Keeper"), TEXT("snowSermon"), 1, 14, 8, 6.f,
+				TEXT("Sermons whispered into snow. Bring one. You are loud in a round way. Allowed."),
+				TEXT("Keeper files the sermon. Silence keeps the cold honest. You can stay loud."));
+			Add(TEXT("mayorSpare"), TEXT("Spare scarf"),
+				TEXT("Pick the spare scarf on Felt Ice Camp's Spare Walk and give it to Ice Scarf."),
+				TEXT("Ice Scarf"), TEXT("Ice Scarf"), TEXT("spareScarf"), 1, 16, 8, 8.f,
+				TEXT("I was saving it for a mayor. You can have the spare. Key 3 when it warms."),
+				TEXT("Ice Scarf ties the last knot. The coup echoes. The porch still remembers you."));
 			return Out;
 		}();
 		return All;

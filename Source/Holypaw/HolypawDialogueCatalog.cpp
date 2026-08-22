@@ -306,20 +306,52 @@ namespace HolypawCatalog
 				TEXT("Gate. Then Loom Walk if you like yarn that remembers fingers."));
 			Add(TEXT("Aurora Child"),
 				TEXT("The lights are shy until you glow. Then they copy you. Rude. Cute."),
-				TEXT("Tundra Parish keeps the cold honest."),
-				TEXT("Felt Ice Camp is the last scarf on Earth."));
+				TEXT("Copy Walk dropped a mitten. Key 4. Civic policy you can wear. Key 3 when it copies."),
+				TEXT("Aurora Borough lantern. Mitten Inn. Tundra Parish keeps the cold honest."));
+			Add(TEXT("Mitten Pair"),
+				TEXT("I am two mittens arguing about which hand is policy. You hugged the argument out."),
+				TEXT("Lights on the walk. Child wants the pair that copies. Glow Font wishes."),
+				TEXT("Copy Walk west. Then parish if you like quiet."));
+			Add(TEXT("Light Priest"),
+				TEXT("I dunk hymns in color. The mill dunks beige. Different skies."),
+				TEXT("Light Chapel fills Miracle Charge. Frost Moths. Bring a party."),
+				TEXT("Choir north. Gold roof under the copy-lights."));
 			Add(TEXT("Tundra Keeper"),
 				TEXT("I kept a parish for people who like silence. You are loud in a round way. Allowed."),
-				TEXT("Drift wolves. Hymn louder."),
-				TEXT("Aurora Borough if you miss colors."));
+				TEXT("Quiet Walk hid a snow sermon. Key 4. Drift wolves. Hymn louder."),
+				TEXT("Tundra Parish lantern. Parish Inn. Aurora Borough if you miss colors."));
+			Add(TEXT("Snow Page"),
+				TEXT("I write sermons on drift so the wind can edit them. Improvement."),
+				TEXT("Pages on the walk. Keeper files the round one. Whisper Font wishes."),
+				TEXT("Quiet Walk west. Then wolf notch if the hymn needs volume."));
+			Add(TEXT("Quiet Priest"),
+				TEXT("I baptize nothing. Snow dunks the hymn and calls it punctuation."),
+				TEXT("Drift Chapel. Then Felt Ice if you need the last scarf on Earth."),
+				TEXT("Choir north. White roof. Allowed loudness."));
 			Add(TEXT("Confetti Baker"),
 				TEXT("Carnival Bahia puts drums in the stuffing. I put stuffing in the drums. Same parade."),
-				TEXT("Andes Loom is up. Wool dyed in weather."),
-				TEXT("South Sewn lantern. Confetti is a valid government."));
+				TEXT("Drum Walk hid a confetti drum. Key 4. Confetti is a valid government."),
+				TEXT("Carnival Bahia lantern. Confetti Inn. Andes Loom is up."));
+			Add(TEXT("Drum Kid"),
+				TEXT("I hit a drum until it converted. Unemployment never looked so sequined."),
+				TEXT("Drums, gold hats. Baker files government. Sequins Font wishes."),
+				TEXT("Drum Walk west. Then the harbor if the parade is hungry."));
+			Add(TEXT("Parade Priest"),
+				TEXT("I dunk hymns in sequins. The mill cannot franchise glitter theology."),
+				TEXT("Parade Chapel fills Miracle Charge. Plaza Corp Cats. Bring a party."),
+				TEXT("Choir north. Loud gold. Wool if the drums rest."));
 			Add(TEXT("Wool Climber"),
 				TEXT("The spine of the world wears a sweater now. I knitted the first inch."),
-				TEXT("Don't mill this mountain. It would become a brochure."),
-				TEXT("Carnival Bahia if you need noise."));
+				TEXT("Wool Walk dropped weather-dye. Key 4. Don't mill this mountain. It would become a brochure."),
+				TEXT("Andes Loom lantern. Wool Inn. Carnival Bahia if you need noise."));
+			Add(TEXT("Skein Mender"),
+				TEXT("I mend skeins so they stay lumpy. Identical wool is a crime of altitude."),
+				TEXT("Bales on the walk. Climber wants the next inch. Weather Font wishes."),
+				TEXT("Wool Walk west. Then brochure notch if the mountain argues."));
+			Add(TEXT("Height Priest"),
+				TEXT("I baptize wool in weather. The mill baptizes brochures. Rude."),
+				TEXT("Height Chapel. Stitched Wolves. Unstuff them kindly."),
+				TEXT("Choir north. Thin air hymns. Don't mill this."));
 			Add(TEXT("Bell Warden"),
 				TEXT("Clockhaven teatime bells. I rang one for your coup. The fog applauded on delay."),
 				TEXT("Cog Walk dropped a gear that refuses to be identical. Key 4. Key 3 when it ticks."),
@@ -371,20 +403,53 @@ namespace HolypawCatalog
 				TEXT("Choir north. Gold roof, gold grass, no beige."));
 			Add(TEXT("Delta Weaver"),
 				TEXT("Thread enough to wrap a moon. We wrapped a factory rumor instead."),
-				TEXT("Spice Harbor pepper docks if you like sneezing politically."),
-				TEXT("Cherry Loom is the island that claps in pink."));
+				TEXT("Thread Walk dropped moon thread. Key 4. Key 3 when the wrap holds. Cherry claps in pink."),
+				TEXT("Silk Delta lantern. Delta Inn. Spice Harbor pepper docks if you like sneezing politically."));
+			Add(TEXT("Rumor Kid"),
+				TEXT("I tied a rumor to a river. The river converted. I clapped."),
+				TEXT("Silk lines on the walk. Weaver wants the moon-round one. Moon Font wishes."),
+				TEXT("Thread Walk west. Then cherry if the wrap holds."));
+			Add(TEXT("Silt Priest"),
+				TEXT("I dunk hymns in silt. They come out as policy that remembers fingers."),
+				TEXT("Silt Chapel fills Miracle Charge. Miracle Eaters. Bring a party."),
+				TEXT("Choir north. Red roof on the great river."));
 			Add(TEXT("Pepper Clerk"),
 				TEXT("Saffron sails. I stamped 'handmade' on a crate of identical pepper. They fired me. I clapped."),
-				TEXT("Mill scrap belongs in a museum of bad ideas."),
-				TEXT("Silk Delta north. Hug the clerks."));
+				TEXT("Sail Walk hid a saffron sail. Key 4. Mill scrap belongs in a museum of bad ideas."),
+				TEXT("Spice Harbor lantern. Pepper Inn. Silk Delta north. Hug the clerks."));
+			Add(TEXT("Sail Kid"),
+				TEXT("I sneeze politically. The mill called it a brand opportunity. I threw pepper."),
+				TEXT("Hulls and gold sails. Clerk wants the handmade one. Hot Font wishes."),
+				TEXT("Sail Walk west. Then the dock if you like heat."));
+			Add(TEXT("Saffron Priest"),
+				TEXT("I baptize sails. Identical pepper cannot be holy. That is the whole theology."),
+				TEXT("Saffron Chapel. Harbor Hooks pinch. Bring a party anyway."),
+				TEXT("Choir north. Gold-on-orange. Delta if you like wrapping."));
 			Add(TEXT("Reef Choir"),
 				TEXT("We already sang. You gave us lyrics that are just the word bear, repeatedly. Chart-topping."),
-				TEXT("Cape Plush argues. We harmonize. Visit both."),
-				TEXT("Lantern off the reef before you get soggy thoughts."));
+				TEXT("Reef Walk hid a lyric. Key 4. Cape Plush argues. We harmonize. Visit both."),
+				TEXT("Coral Choir lantern. Reef Inn. Lantern off the reef before you get soggy thoughts."));
+			Add(TEXT("Anemone Kid"),
+				TEXT("I hold my breath for opinions. They float. Lyrics do not."),
+				TEXT("Pink heads on the walk. Choir wants the bear one. Anemone Font wishes."),
+				TEXT("Reef Walk west. Then the lagoon if you like off-key."));
+			Add(TEXT("Lagoon Priest"),
+				TEXT("I dunk hymns in lagoon. They come back soggy and correct."),
+				TEXT("Lagoon Chapel fills Miracle Charge. Salt Crabs. Bring a party."),
+				TEXT("Choir north. Blue roof. Cape if the water argues."));
 			Add(TEXT("Ice Scarf"),
 				TEXT("Last scarf on the last ice. I was saving it for a mayor. You can have the spare."),
-				TEXT("Felt South is quiet so the coup echoes. Enjoy the acoustics."),
-				TEXT("Home is a lantern away. The porch remembers you."));
+				TEXT("Spare Walk hid the spare. Key 4. Felt South is quiet so the coup echoes."),
+				TEXT("Felt Ice Camp lantern. Ice Inn. Home is a lantern away. The porch remembers you."),
+				TEXT("Quietly: I was never going to give it to a mayor. Mayors mill things."), 10);
+			Add(TEXT("Penguin Usher"),
+				TEXT("I seat penguins in tiny scarves. Same chairs. Better plot. Colder."),
+				TEXT("Stoop south. Scarf wants the spare. Penguin Font wishes."),
+				TEXT("Penguin Stoop. Then echo choir if you like acoustics."));
+			Add(TEXT("Echo Priest"),
+				TEXT("I baptize nothing. Quiet dunks the hymn so the coup has room to echo."),
+				TEXT("Echo Chapel. Ice Shard Cats. Unstuff them kindly. Then hop home."),
+				TEXT("Choir north. White roof at the end of the sewn world."));
 			Add(TEXT("Default"),
 				TEXT("I was being so serious. I'm not, now. Thank you, bear."),
 				TEXT("Clap first. Policy later."),

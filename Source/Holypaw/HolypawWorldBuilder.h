@@ -115,6 +115,14 @@ protected:
 	void BuildSandHymnDistricts();
 	void BuildCapePlushDistricts();
 	void BuildSavannahBellDistricts();
+	void BuildCarnivalBahiaDistricts();
+	void BuildAndesLoomDistricts();
+	void BuildSilkDeltaDistricts();
+	void BuildSpiceHarborDistricts();
+	void BuildCoralChoirDistricts();
+	void BuildAuroraBoroughDistricts();
+	void BuildTundraParishDistricts();
+	void BuildFeltIceCampDistricts();
 	void BuildSkyRift();
 	void BuildRoads();
 	void BuildAllSettlements();
@@ -168,6 +176,14 @@ protected:
 	FVector2D SandHymn = FVector2D(32000.f, -58000.f);
 	FVector2D CapePlush = FVector2D(18000.f, -98000.f);
 	FVector2D SavannahBell = FVector2D(44000.f, -80000.f);
+	FVector2D CarnivalBahia = FVector2D(-8000.f, -86000.f);
+	FVector2D AndesLoom = FVector2D(-28000.f, -70000.f);
+	FVector2D SilkDelta = FVector2D(80000.f, 22000.f);
+	FVector2D SpiceHarbor = FVector2D(74000.f, -14000.f);
+	FVector2D CoralChoir = FVector2D(110000.f, -58000.f);
+	FVector2D AuroraBorough = FVector2D(8000.f, 82000.f);
+	FVector2D TundraParish = FVector2D(-18000.f, 98000.f);
+	FVector2D FeltIceCamp = FVector2D(2000.f, -124000.f);
 	FVector2D PeakCenter = FVector2D(2000.f, 16000.f);
 
 	int32 GridN = 168;
