@@ -9,21 +9,15 @@
 class UProceduralMeshComponent;
 class UInstancedStaticMeshComponent;
 class UAudioComponent;
+class UStaticMeshComponent;
+class UStaticMesh;
+class UMaterialInterface;
 class ADirectionalLight;
 class ASkyLight;
 class AExponentialHeightFog;
 class APostProcessVolume;
 class ASkyAtmosphere;
 class AVolumetricCloud;
-
-USTRUCT()
-struct FHolypawLandmark
-{
-	GENERATED_BODY()
-
-	FString Name;
-	FVector2D Pos = FVector2D::ZeroVector;
-};
 
 /**
  * Runtime open world: Earth-analog globe from HolypawAtlas (cities, roads, landmasses).

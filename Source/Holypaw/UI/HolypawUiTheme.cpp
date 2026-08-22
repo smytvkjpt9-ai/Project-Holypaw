@@ -1,6 +1,8 @@
 #include "UI/HolypawUiTheme.h"
 #include "Rendering/DrawElements.h"
 #include "Styling/CoreStyle.h"
+#include "Styling/SlateBrush.h"
+#include "Fonts/SlateFontInfo.h"
 #include "Layout/SlateLayoutTransform.h"
 #include "Brushes/SlateColorBrush.h"
 

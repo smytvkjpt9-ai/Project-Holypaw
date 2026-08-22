@@ -4,7 +4,7 @@
 #include "Actors/HolypawInteractable.h"
 #include "HolypawShrine.generated.h"
 
-UENUM()
+UENUM(BlueprintType)
 enum class EHolypawShrineKind : uint8
 {
 	Inn,

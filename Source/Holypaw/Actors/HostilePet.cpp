@@ -4,6 +4,7 @@
 #include "Look/HolypawLook.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PointLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "TimerManager.h"
 
 AHostilePet::AHostilePet()

@@ -2,6 +2,8 @@
 #include "Faith/HolypawFaithSim.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 AHolypawMillBanner::AHolypawMillBanner()
 {

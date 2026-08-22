@@ -1,6 +1,7 @@
 #include "Actors/HugHuman.h"
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
+#include "Components/StaticMeshComponent.h"
 #include "HolypawGameInstance.h"
 #include "HolypawTypes.h"
 #include "AI/HolypawSchedule.h"

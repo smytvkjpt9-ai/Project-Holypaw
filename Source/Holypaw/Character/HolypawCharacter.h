@@ -14,6 +14,9 @@ class UPartyComponent;
 class UHolypawMissionComponent;
 class UPointLightComponent;
 class USceneComponent;
+class UStaticMeshComponent;
+class UStaticMesh;
+class UMaterialInterface;
 class AWildFluffy;
 class AHugHuman;
 class AHostilePet;
@@ -46,7 +49,7 @@ struct FHolypawFollowerVisual
 	TObjectPtr<UStaticMeshComponent> Snout;
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class EHolypawPawnMode : uint8
 {
 	Title,

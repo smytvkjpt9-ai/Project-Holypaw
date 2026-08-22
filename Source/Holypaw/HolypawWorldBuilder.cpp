@@ -33,6 +33,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Components/AudioComponent.h"
+#include "Math/NumericLimits.h"
 
 AHolypawWorldBuilder::AHolypawWorldBuilder()
 {
@@ -1883,6 +1885,15 @@ EHolypawZone AHolypawWorldBuilder::ResolveZone(const FVector& WorldPos) const
 	}
 
 	return HolypawCatalog::ResolveWilderness(P);
+}
+
+namespace
+{
+	struct FHolypawLandmark
+	{
+		FString Name;
+		FVector2D Pos = FVector2D::ZeroVector;
+	};
 }
 
 FString AHolypawWorldBuilder::GetCompassLine(const FVector& From) const

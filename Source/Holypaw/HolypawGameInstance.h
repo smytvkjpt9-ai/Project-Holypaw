@@ -3,12 +3,12 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "HolypawTypes.h"
-#include "Sound/SoundWaveProcedural.h"
 #include "HolypawGameInstance.generated.h"
 
 class UHolypawSaveGame;
 class UHolypawSettingsSave;
 class AHolypawCharacter;
+class USoundWaveProcedural;
 
 UCLASS()
 class HOLYPAW_API UHolypawGameInstance : public UGameInstance

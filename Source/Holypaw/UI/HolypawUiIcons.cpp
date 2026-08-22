@@ -2,6 +2,7 @@
 #include "UI/HolypawUiTheme.h"
 #include "Rendering/DrawElements.h"
 #include "Layout/SlateLayoutTransform.h"
+#include "Styling/SlateBrush.h"
 
 namespace HolypawUi
 {

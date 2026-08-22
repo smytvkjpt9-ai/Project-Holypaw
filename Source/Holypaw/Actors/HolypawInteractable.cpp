@@ -2,6 +2,7 @@
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInterface.h"
 
 AHolypawInteractable::AHolypawInteractable()
 {

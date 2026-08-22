@@ -75,7 +75,7 @@ protected:
 	TMap<uint32, FHolypawLoopCache> ExploreCache;
 	TMap<uint32, FHolypawLoopCache> CombatCache;
 	TMap<uint32, FHolypawLoopCache> AmbientCache;
-	TArray<uint8> FootPool[6][4];
+	TArray<TArray<uint8>> FootPool;
 	bool bFootPoolReady = false;
 
 	EHolypawZone ExploreZone = EHolypawZone::ForestCottage;

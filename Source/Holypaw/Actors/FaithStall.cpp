@@ -5,6 +5,7 @@
 #include "Faith/HolypawFaithSim.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Components/StaticMeshComponent.h"
 
 AFaithStall::AFaithStall()
 {

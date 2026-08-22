@@ -2,7 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "HolypawInteractable.generated.h"
+
+class UStaticMesh;
+class UMaterialInterface;
 
 UCLASS()
 class HOLYPAW_API AHolypawInteractable : public AActor

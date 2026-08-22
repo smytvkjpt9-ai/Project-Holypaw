@@ -646,8 +646,10 @@ void UHolypawAudioSubsystem::PlayCachedFootstep()
 	}
 	if (!bFootPoolReady)
 	{
+		FootPool.SetNum(6);
 		for (int32 Surf = 0; Surf < 6; ++Surf)
 		{
+			FootPool[Surf].SetNum(4);
 			for (int32 V = 0; V < 4; ++V)
 			{
 				HolypawSynth::FStereo Stereo;

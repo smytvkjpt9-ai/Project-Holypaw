@@ -3,6 +3,7 @@
 #include "Look/HolypawLook.h"
 #include "HolypawTypes.h"
 #include "Components/PointLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 ATravelLantern::ATravelLantern()
 {

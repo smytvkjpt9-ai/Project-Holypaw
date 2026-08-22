@@ -1,6 +1,7 @@
 #include "Actors/WildFluffy.h"
 #include "Character/HolypawCharacter.h"
 #include "Look/HolypawLook.h"
+#include "Components/StaticMeshComponent.h"
 
 AWildFluffy::AWildFluffy()
 {

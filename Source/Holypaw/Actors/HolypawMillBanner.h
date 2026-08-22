@@ -3,8 +3,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "HolypawTypes.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "HolypawMillBanner.generated.h"
+
+class UStaticMesh;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
 
 /** Polyester propaganda. Hearts make it sag, then come down for a handmade ribbon. */
 UCLASS()
