@@ -68,12 +68,19 @@ namespace HolypawSchedule
 				Human.MarketGoal = Stall->GetActorLocation() + FVector(-70.f, -40.f, 0.f);
 			}
 		}
+		const float Salt = Human.ParadeSalt;
+		Human.ChapelGoal += FVector((FMath::Fmod(Salt, 1.f) - 0.5f) * 220.f, (FMath::Fmod(Salt * 1.7f, 1.f) - 0.5f) * 160.f, 0.f);
+		Human.PlazaGoal += FVector((FMath::Fmod(Salt * 2.1f, 1.f) - 0.5f) * 180.f, (FMath::Fmod(Salt * 0.8f, 1.f) - 0.5f) * 140.f, 0.f);
 	}
 
 	FVector ParadeGoal(const AHugHuman& Human, const float Hour, const int32 Hearts)
 	{
 		const bool bNight = Hour < 5.f || Hour >= 20.f;
 		const bool bDusk = Hour >= 17.f && Hour < 20.f;
+		if (Human.ParadeKick > 0.f && Human.bBeliever)
+		{
+			return bDusk ? Human.ChapelGoal : Human.PlazaGoal;
+		}
 		if (!Human.bBeliever)
 		{
 			if (bNight)
@@ -81,7 +88,7 @@ namespace HolypawSchedule
 				return Human.HomeLocation;
 			}
 			const float Orbit = HolypawFaith::ParadeOrbit(Hearts, false);
-			const float Ang = Human.BounceT * 0.28f;
+			const float Ang = Human.BounceT * 0.28f + Human.ParadeSalt;
 			return Human.HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
 		}
 		if (bNight)
@@ -92,13 +99,17 @@ namespace HolypawSchedule
 		{
 			return Human.ChapelGoal;
 		}
+		if (Human.bTendsStall && HolypawFaith::ShopsOpen(Hearts))
+		{
+			return Human.HomeLocation;
+		}
 		if (!HolypawFaith::BelieversParade(Hearts))
 		{
 			const float Orbit = HolypawFaith::ParadeOrbit(Hearts, true);
-			const float Ang = Human.BounceT * 0.55f;
+			const float Ang = Human.BounceT * 0.55f + Human.ParadeSalt;
 			return Human.HomeLocation + FVector(FMath::Cos(Ang) * Orbit, FMath::Sin(Ang) * Orbit, 0.f);
 		}
-		const float Phase = FMath::Fmod(Human.BounceT * 0.14f, 4.f);
+		const float Phase = FMath::Fmod(Human.BounceT * 0.14f + Human.ParadeSalt, 4.f);
 		if (Phase < 1.f)
 		{
 			return Human.PlazaGoal;
@@ -114,6 +125,20 @@ namespace HolypawSchedule
 		return Human.HomeLocation;
 	}
 
+	void WalkToward(AHugHuman& Human, FVector Goal, const float DeltaSeconds, const float Speed)
+	{
+		Goal.Z = Human.HomeLocation.Z;
+		const FVector Here = Human.GetActorLocation();
+		const FVector Next = FMath::VInterpConstantTo(Here, Goal, DeltaSeconds, Speed);
+		const FVector Step = Next - Here;
+		Human.SetActorLocation(Next);
+		if (Step.SizeSquared2D() > 4.f)
+		{
+			const float Yaw = FMath::RadiansToDegrees(FMath::Atan2(Step.Y, Step.X));
+			Human.SetActorRotation(FMath::RInterpTo(Human.GetActorRotation(), FRotator(0.f, Yaw, 0.f), DeltaSeconds, 8.f));
+		}
+	}
+
 	void TickHuman(AHugHuman& Human, const float DeltaSeconds, const float Hour)
 	{
 		if (Human.IsKnelt())
@@ -121,35 +146,44 @@ namespace HolypawSchedule
 			return;
 		}
 		EnsureAnchors(Human);
-		const int32 Hearts = HolypawFaith::HeartsHere(&Human, Human.GetActorLocation());
-		FVector Goal = ParadeGoal(Human, Hour, Hearts);
-		float Speed = 1.4f;
+		if (Human.ParadeKick > 0.f)
+		{
+			Human.ParadeKick = FMath::Max(0.f, Human.ParadeKick - DeltaSeconds);
+		}
+		const int32 Hearts = Human.bHomeZoneReady
+			? HolypawFaith::HeartsAt(&Human, Human.HomeZone)
+			: HolypawFaith::HeartsHere(&Human, Human.GetActorLocation());
+		const FVector Goal = ParadeGoal(Human, Hour, Hearts);
+		float Speed = 160.f;
 		const bool bNight = Hour < 5.f || Hour >= 20.f;
 		const bool bDusk = Hour >= 17.f && Hour < 20.f;
 		if (Human.bBeliever)
 		{
-			if (bNight)
+			if (Human.ParadeKick > 0.f)
 			{
-				Speed = 2.1f;
+				Speed = 280.f;
+			}
+			else if (bNight)
+			{
+				Speed = 220.f;
 			}
 			else if (bDusk)
 			{
-				Speed = HolypawFaith::ChoirOwnsDusk(Hearts) ? 2.8f : 2.4f;
+				Speed = HolypawFaith::ChoirOwnsDusk(Hearts) ? 300.f : 240.f;
 			}
 			else if (HolypawFaith::BelieversParade(Hearts))
 			{
-				Speed = 2.2f;
+				Speed = 240.f;
 			}
 			else
 			{
-				Speed = 1.6f;
+				Speed = 180.f;
 			}
 		}
 		else if (bNight)
 		{
-			Speed = 1.8f;
+			Speed = 200.f;
 		}
-		Goal.Z = Human.HomeLocation.Z;
-		Human.SetActorLocation(FMath::VInterpTo(Human.GetActorLocation(), Goal, DeltaSeconds, Speed));
+		WalkToward(Human, Goal, DeltaSeconds, Speed);
 	}
 }

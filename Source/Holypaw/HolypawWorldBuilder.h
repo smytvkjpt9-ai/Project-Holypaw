@@ -58,6 +58,8 @@ public:
 	void PlaceRibbonMillBanners();
 	void TickConversionPulse(float DeltaSeconds);
 	void SnapConversionLook();
+	void ApplyRibbonLook(int32 Hearts);
+	void NotifyConvertPulse(const FVector& At);
 	FString GetConversionLine() const;
 
 	UPROPERTY(VisibleAnywhere)
@@ -162,7 +164,7 @@ protected:
 	void DressCity(EHolypawZone Zone);
 	void PlacePickup(const FVector2D& XY, FName ItemId, const FText& Label);
 	void PlaceStall(const FVector2D& XY);
-	void PlaceSign(const FVector2D& XY, const FText& Message);
+	void PlaceSign(const FVector2D& XY, const FText& Message, FName LivingId = NAME_None);
 	bool IsInAnyTown(float X, float Y, float Extra = 0.f) const;
 	void FlattenNearTowns(float X, float Y, float& InOutHeight) const;
 	void PlaceRangeMass(const FVector2D& Center, float ExtraH, const FLinearColor& Color, const TCHAR* Name);
@@ -238,4 +240,18 @@ protected:
 
 	UPROPERTY()
 	TArray<TObjectPtr<class AHolypawMillBanner>> MillBanners;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> FountainPool;
+
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> FountainJet;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> HandmadeBanners;
+
+	UPROPERTY()
+	TArray<TObjectPtr<class ASignpost>> LivingSigns;
+
+	int32 LastRibbonLook = -1;
 };

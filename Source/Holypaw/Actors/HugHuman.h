@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
+#include "HolypawTypes.h"
 #include "HugHuman.generated.h"
 
 UCLASS()
@@ -29,9 +30,14 @@ public:
 	FVector InnGoal = FVector::ZeroVector;
 	FVector PlazaGoal = FVector::ZeroVector;
 	FVector MarketGoal = FVector::ZeroVector;
+	EHolypawZone HomeZone = EHolypawZone::RibbonCity;
+	bool bHomeZoneReady = false;
 	bool bAnchorsReady = false;
+	bool bTendsStall = false;
 	float BounceT = 0.f;
 	float ClapBurst = 0.f;
+	float ParadeKick = 0.f;
+	float ParadeSalt = 0.f;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> HeadMesh;
@@ -50,7 +56,7 @@ public:
 	virtual FText GetPrompt() const override;
 	virtual bool Interact(class AHolypawCharacter* InstigatorPawn) override;
 
-	void BecomeBeliever();
+	void BecomeBeliever(bool bCelebrate = true);
 	void KneelInWorship();
 	void ReceiveHug();
 	void ResetFaith();

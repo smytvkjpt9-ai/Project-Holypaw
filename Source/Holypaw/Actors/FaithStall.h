@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Actors/HolypawInteractable.h"
+#include "HolypawTypes.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "FaithStall.generated.h"
 
 /** Spend Affection for Faith at city markets. Shutters stay down until city Hearts open shops. */
@@ -18,6 +20,9 @@ public:
 	virtual bool Interact(class AHolypawCharacter* InstigatorPawn) override;
 
 	bool IsUnlatched() const;
+	void SnapShutter();
+	EHolypawZone HomeZone = EHolypawZone::RibbonCity;
+	bool bHomeZoneReady = false;
 
 	UPROPERTY(EditAnywhere, Category = "Holypaw")
 	int32 ApCost = 10;
@@ -30,6 +35,10 @@ public:
 
 protected:
 	void ApplyShutter(float OpenAlpha);
+	void EnsureHomeZone();
 
 	float ShutterAlpha = 0.f;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> ShutterMid;
 };

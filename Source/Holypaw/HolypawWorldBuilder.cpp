@@ -850,12 +850,13 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	const FVector2D Harbor = RibbonCity + FVector2D(4200.f, 1600.f);
 	const FVector2D Quiet = RibbonCity + FVector2D(200.f, -3400.f);
 
-	PlaceSign(Plaza + FVector2D(80.f, -80.f), NSLOCTEXT("Holypaw", "DistPlaza", "Ribbon Plaza  |  hug, rest, look up at the spire"));
-	PlaceSign(Market + FVector2D(-200.f, 0.f), NSLOCTEXT("Holypaw", "DistMarket", "Market  |  stalls, faith for AP, no factory smiles"));
+	PlaceSign(Plaza + FVector2D(80.f, -80.f), NSLOCTEXT("Holypaw", "DistPlaza", "Ribbon Plaza  |  mill ads still up. hug someone — Hearts change this"), TEXT("ribbonPlaza"));
+	PlaceSign(Market + FVector2D(-200.f, 0.f), NSLOCTEXT("Holypaw", "DistMarket", "Market  |  shutters down until a Heart sticks"), TEXT("ribbonMarket"));
 	PlaceSign(Cloth + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistCloth", "Cloth Quarter  |  handmade banners, not polyester"));
 	PlaceSign(Harbor + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistHarbor", "Harbor Steps  |  east to Tidewell and the Plush Sea"));
 	PlaceSign(Quiet + FVector2D(0.f, 0.f), NSLOCTEXT("Holypaw", "DistQuiet", "Quiet Rows  |  windows lit, few hostiles on the street"));
 
+	PlaceStall(Plaza + FVector2D(220.f, -260.f));
 	PlaceStall(Market);
 	PlaceStall(Market + FVector2D(260.f, 120.f));
 	PlaceStall(Market + FVector2D(-180.f, 200.f));
@@ -865,8 +866,8 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 	PlaceShrine(Plaza + FVector2D(-480.f, 420.f), EHolypawShrineKind::Chapel, NSLOCTEXT("Holypaw", "ChapelName", "Bear Chapel"));
 	PlaceShrine(Cloth + FVector2D(180.f, 160.f), EHolypawShrineKind::Workshop, NSLOCTEXT("Holypaw", "LoftName", "Cloth Loft"));
 	PlaceShrine(Harbor + FVector2D(-220.f, 80.f), EHolypawShrineKind::Crate, NSLOCTEXT("Holypaw", "CrateName", "Harbor Crate"));
-	PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 70.f), FVector(1.6f, 1.6f, 0.22f), FLinearColor(0.55f, 0.75f, 0.92f), MakeName(TEXT("FountainPool")));
-	PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 130.f), FVector(0.35f, 0.35f, 1.1f), FLinearColor(0.85f, 0.88f, 0.95f), MakeName(TEXT("FountainJet")));
+	FountainPool = PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 70.f), FVector(1.6f, 1.6f, 0.22f), FLinearColor(0.55f, 0.75f, 0.92f), MakeName(TEXT("FountainPool")));
+	FountainJet = PlaceCube(FVector(Plaza.X + 40.f, Plaza.Y - 40.f, SampleHeight(Plaza.X, Plaza.Y) + 130.f), FVector(0.35f, 0.35f, 1.1f), FLinearColor(0.85f, 0.88f, 0.95f), MakeName(TEXT("FountainJet")));
 
 	const FVector2D Inn = Plaza + FVector2D(520.f, 180.f);
 	PlaceCube(FVector(Inn.X + 90.f, Inn.Y, SampleHeight(Inn.X, Inn.Y) + 90.f), FVector(0.35f, 0.12f, 0.55f), FLinearColor(1.f, 0.82f, 0.55f), MakeName(TEXT("InnLamp")));
@@ -878,7 +879,7 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 
 	const FVector2D Loft = Cloth + FVector2D(180.f, 160.f);
 	PlaceCube(FVector(Loft.X + 80.f, Loft.Y, SampleHeight(Loft.X, Loft.Y) + 50.f), FVector(0.9f, 0.45f, 0.35f), FLinearColor(0.55f, 0.42f, 0.62f), MakeName(TEXT("Loom")));
-	PlaceSign(RibbonCity + FVector2D(4700.f, -620.f), NSLOCTEXT("Holypaw", "MillProtest", "Handmade not polyester  |  clap, don't stamp"));
+	PlaceSign(RibbonCity + FVector2D(4700.f, -620.f), NSLOCTEXT("Holypaw", "MillProtest", "POLY ads  |  beige theology, identical smiles. three Hearts drop them"), TEXT("millProtest"));
 	PlaceRibbonMillBanners();
 
 	for (int32 I = 0; I < 5; ++I)
@@ -887,7 +888,10 @@ void AHolypawWorldBuilder::BuildRibbonDistricts()
 		const float Y = Cloth.Y - 80.f;
 		const float Z = SampleHeight(X, Y);
 		PlaceCube(FVector(X, Y, Z + 140.f), FVector(0.12f, 0.12f, 2.4f), FLinearColor(0.35f, 0.22f, 0.18f), MakeName(TEXT("BannerPole")));
-		PlaceCube(FVector(X + 40.f, Y, Z + 200.f), FVector(0.9f, 0.08f, 1.1f), FLinearColor(0.85f, 0.42f, 0.58f), MakeName(TEXT("Banner"));
+		if (UStaticMeshComponent* ClothBanner = PlaceCube(FVector(X + 40.f, Y, Z + 200.f), FVector(0.9f, 0.08f, 1.1f), FLinearColor(0.85f, 0.42f, 0.58f), MakeName(TEXT("Banner"))))
+		{
+			HandmadeBanners.Add(ClothBanner);
+		}
 	}
 
 	for (int32 I = 0; I < 6; ++I)
@@ -1375,10 +1379,11 @@ void AHolypawWorldBuilder::PlaceStall(const FVector2D& XY)
 		Keep->PersonName = FText::FromString(TEXT("Shopkeep"));
 		Keep->ShirtColor = FLinearColor(0.95f, 0.72f, 0.35f);
 		Keep->SetSolidColor(Keep->ShirtColor);
+		Keep->bTendsStall = true;
 	}
 }
 
-void AHolypawWorldBuilder::PlaceSign(const FVector2D& XY, const FText& Message)
+void AHolypawWorldBuilder::PlaceSign(const FVector2D& XY, const FText& Message, const FName LivingId)
 {
 	const float Z = SampleHeight(XY.X, XY.Y);
 	PlaceCube(FVector(XY.X, XY.Y, Z + 70.f), FVector(0.16f, 0.16f, 1.4f), FLinearColor(0.4f, 0.3f, 0.2f), MakeName(TEXT("SignPole")));
@@ -1389,6 +1394,12 @@ void AHolypawWorldBuilder::PlaceSign(const FVector2D& XY, const FText& Message)
 	if (ASignpost* S = GetWorld()->SpawnActor<ASignpost>(FVector(XY.X, XY.Y, Z + 40.f), FRotator::ZeroRotator, Sp))
 	{
 		S->Message = Message;
+		S->LivingId = LivingId;
+		if (!LivingId.IsNone())
+		{
+			LivingSigns.Add(S);
+			S->RefreshFromHearts(0);
+		}
 		S->SetActorScale3D(FVector(0.5f, 0.5f, 1.2f));
 	}
 }

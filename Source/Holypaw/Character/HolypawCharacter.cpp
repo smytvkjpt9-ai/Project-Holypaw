@@ -636,13 +636,19 @@ bool AHolypawCharacter::HugPerson(AHugHuman* Human)
 	{
 		Human->BecomeBeliever();
 		Affection->AddMiracle(22.f);
-		AddCityHeart(CurrentZone);
+		const FString Pulse = AddCityHeart(CurrentZone);
 		if (Story)
 		{
 			Story->NotifyConvert();
 		}
-		Toast(FString::Printf(TEXT("%s's last serious thought fell out. %s"),
-			*Human->PersonName.ToString(), *Human->GetBelieverLine()));
+		FString Line = FString::Printf(TEXT("%s's last serious thought fell out. %s"),
+			*Human->PersonName.ToString(), *Human->GetBelieverLine());
+		if (!Pulse.IsEmpty())
+		{
+			Line += TEXT("  ");
+			Line += Pulse;
+		}
+		Toast(Line);
 		PlayCue(TEXT("Convert"));
 	}
 	else
@@ -1356,6 +1362,7 @@ void AHolypawCharacter::TryMiracle()
 	int32 Heal = Skills->HasSkill(TEXT("peakLiturgy")) ? 30 : 15;
 	HP = FMath::Min(HPMax, HP + Heal);
 	int32 NewlyConvinced = 0;
+	FString LastPulse;
 	const float Sermon = Skills->HasSkill(TEXT("bearCreed")) ? 40.f : 14.f;
 	const float SermonRange = Skills->HasSkill(TEXT("bearCreed")) ? 2800.f : 1600.f;
 	for (TActorIterator<AHugHuman> It(GetWorld()); It; ++It)
@@ -1376,7 +1383,7 @@ void AHolypawCharacter::TryMiracle()
 		{
 			H->BecomeBeliever();
 			++NewlyConvinced;
-			AddCityHeart(CurrentZone);
+			LastPulse = AddCityHeart(CurrentZone);
 			if (Story)
 			{
 				Story->NotifyConvert();
@@ -1401,6 +1408,11 @@ void AHolypawCharacter::TryMiracle()
 	}
 	FString MiracleToast = FString::Printf(TEXT("Miracle hymn! +%d FP. %d human(s) dropped their last independent thought."),
 		FpGain, NewlyConvinced);
+	if (!LastPulse.IsEmpty())
+	{
+		MiracleToast += TEXT("  ");
+		MiracleToast += LastPulse;
+	}
 	if (UHolypawGameInstance* GI = UHolypawGameInstance::Get(this))
 	{
 		if (GI->IsDusk())
@@ -1922,48 +1934,54 @@ int32 AHolypawCharacter::GetCityHearts(EHolypawZone Zone) const
 	return 0;
 }
 
-void AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
+FString AHolypawCharacter::AddCityHeart(EHolypawZone Zone, int32 Amount)
 {
 	if (!HolypawCatalog::IsCityZone(Zone) && Zone != EHolypawZone::ForestCottage)
 	{
 		Zone = CurrentZone;
 	}
 	const EHolypawFaithStage Before = HolypawFaith::StageForHearts(GetCityHearts(Zone));
+	int32 Now = 0;
+	bool bFound = false;
 	for (FHolypawHeartRecord& Rec : CityHearts)
 	{
 		if (Rec.Zone == Zone)
 		{
 			Rec.Hearts += Amount;
-			UnlockTravel(Zone);
-			const EHolypawFaithStage After = HolypawFaith::StageForHearts(Rec.Hearts);
-			PulseLivingWorld();
-			if (After != Before)
-			{
-				Toast(HolypawFaith::StageToast(After, Zone));
-				if (HolypawFaith::ShopsOpen(Rec.Hearts) && !HolypawFaith::ShopsOpen(HolypawFaith::HeartsForStage(Before)))
-				{
-					PlayCue(TEXT("ShopOpen"));
-				}
-				else if (HolypawFaith::MillBannersDown(Rec.Hearts))
-				{
-					PlayCue(TEXT("BannerDown"));
-				}
-			}
-			return;
+			Now = Rec.Hearts;
+			bFound = true;
+			break;
 		}
 	}
-	FHolypawHeartRecord Rec;
-	Rec.Zone = Zone;
-	Rec.Hearts = Amount;
-	CityHearts.Add(Rec);
+	if (!bFound)
+	{
+		FHolypawHeartRecord Rec;
+		Rec.Zone = Zone;
+		Rec.Hearts = Amount;
+		Now = Rec.Hearts;
+		CityHearts.Add(Rec);
+	}
 	UnlockTravel(Zone);
 	PulseLivingWorld();
-	const EHolypawFaithStage After = HolypawFaith::StageForHearts(Rec.Hearts);
-	if (After != Before)
+	for (TActorIterator<AHolypawWorldBuilder> It(GetWorld()); It; ++It)
 	{
-		Toast(HolypawFaith::StageToast(After, Zone));
+		It->NotifyConvertPulse(GetActorLocation());
+		break;
+	}
+	const EHolypawFaithStage After = HolypawFaith::StageForHearts(Now);
+	if (After == Before)
+	{
+		return FString();
+	}
+	if (HolypawFaith::ShopsOpen(Now) && !HolypawFaith::ShopsOpen(HolypawFaith::HeartsForStage(Before)))
+	{
 		PlayCue(TEXT("ShopOpen"));
 	}
+	else if (HolypawFaith::MillBannersDown(Now))
+	{
+		PlayCue(TEXT("BannerDown"));
+	}
+	return HolypawFaith::StageToast(After, Zone);
 }
 
 void AHolypawCharacter::OpenFastTravel(EHolypawZone FromZone)

@@ -23,18 +23,30 @@ AFaithStall::AFaithStall()
 	}
 }
 
+void AFaithStall::EnsureHomeZone()
+{
+	if (bHomeZoneReady)
+	{
+		return;
+	}
+	HomeZone = HolypawFaith::ZoneAt(this, GetActorLocation());
+	bHomeZoneReady = true;
+}
+
 void AFaithStall::BeginPlay()
 {
 	Super::BeginPlay();
 	SetSolidColor(FLinearColor(0.95f, 0.78f, 0.35f));
+	EnsureHomeZone();
 	if (Shutter && ShapeMat)
 	{
-		if (UMaterialInstanceDynamic* Mid = Shutter->CreateDynamicMaterialInstance(0, ShapeMat))
+		ShutterMid = Shutter->CreateDynamicMaterialInstance(0, ShapeMat);
+		if (ShutterMid)
 		{
-			Mid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.42f, 0.34f, 0.3f));
+			ShutterMid->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.42f, 0.34f, 0.3f));
 		}
 	}
-	ApplyShutter(HolypawFaith::ShutterOpenAlpha(HolypawFaith::HeartsHere(this, GetActorLocation())));
+	ApplyShutter(HolypawFaith::ShutterOpenAlpha(HolypawFaith::HeartsAt(this, HomeZone)));
 }
 
 void AFaithStall::ApplyShutter(const float OpenAlpha)
@@ -47,27 +59,31 @@ void AFaithStall::ApplyShutter(const float OpenAlpha)
 	const float Z = FMath::Lerp(95.f, 230.f, ShutterAlpha);
 	Shutter->SetRelativeLocation(FVector(0.f, -90.f, Z));
 	Shutter->SetCollisionEnabled(ShutterAlpha > 0.6f ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryAndPhysics);
-	if (ShapeMat)
+	if (ShutterMid)
 	{
-		if (UMaterialInstanceDynamic* Mid = Shutter->CreateDynamicMaterialInstance(0, ShapeMat))
-		{
-			const FLinearColor Closed(0.42f, 0.34f, 0.3f);
-			const FLinearColor Open(0.92f, 0.62f, 0.48f);
-			Mid->SetVectorParameterValue(TEXT("Color"), FMath::Lerp(Closed, Open, ShutterAlpha));
-		}
+		const FLinearColor Closed(0.42f, 0.34f, 0.3f);
+		const FLinearColor Open(0.92f, 0.62f, 0.48f);
+		ShutterMid->SetVectorParameterValue(TEXT("Color"), FMath::Lerp(Closed, Open, ShutterAlpha));
 	}
+}
+
+void AFaithStall::SnapShutter()
+{
+	EnsureHomeZone();
+	ApplyShutter(HolypawFaith::ShutterOpenAlpha(HolypawFaith::HeartsAt(this, HomeZone)));
 }
 
 void AFaithStall::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	const float Want = HolypawFaith::ShutterOpenAlpha(HolypawFaith::HeartsHere(this, GetActorLocation()));
+	EnsureHomeZone();
+	const float Want = HolypawFaith::ShutterOpenAlpha(HolypawFaith::HeartsAt(this, HomeZone));
 	ApplyShutter(FMath::FInterpTo(ShutterAlpha, Want, DeltaSeconds, 2.8f));
 }
 
 bool AFaithStall::IsUnlatched() const
 {
-	return HolypawFaith::ShopsOpen(HolypawFaith::HeartsHere(this, GetActorLocation()));
+	return HolypawFaith::ShopsOpen(HolypawFaith::HeartsAt(this, HomeZone));
 }
 
 FText AFaithStall::GetPrompt() const

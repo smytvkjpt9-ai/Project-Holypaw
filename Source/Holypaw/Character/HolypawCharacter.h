@@ -140,7 +140,7 @@ public:
 	void SetUnlockedTravel(const TArray<EHolypawZone>& Zones);
 	void UnlockTravel(EHolypawZone Zone);
 	int32 GetCityHearts(EHolypawZone Zone) const;
-	void AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
+	FString AddCityHeart(EHolypawZone Zone, int32 Amount = 1);
 	void PulseLivingWorld(bool bSnap = false);
 	FString GetFaithLine() const;
 	const TArray<FHolypawItemStack>& GetInventory() const { return Inventory; }

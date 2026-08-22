@@ -169,6 +169,40 @@ namespace HolypawFaith
 		return TEXT("Mill banners up. Identical smiles, beige theology.");
 	}
 
+	FText LivingSign(const FName Id, const int32 Hearts)
+	{
+		const EHolypawFaithStage Stage = StageForHearts(Hearts);
+		if (Id == TEXT("ribbonPlaza"))
+		{
+			if (Stage >= EHolypawFaithStage::CoupVisible)
+			{
+				return NSLOCTEXT("Holypaw", "PlazaCoup", "Ribbon Plaza  |  mill banners down. dusk hymns. clap at the fountain");
+			}
+			if (Stage >= EHolypawFaithStage::FirstClap)
+			{
+				return NSLOCTEXT("Holypaw", "PlazaOpen", "Ribbon Plaza  |  fountain stall unlatched. believers clap-walk");
+			}
+			return NSLOCTEXT("Holypaw", "PlazaHeld", "Ribbon Plaza  |  mill ads still up. hug someone — Hearts change this");
+		}
+		if (Id == TEXT("ribbonMarket"))
+		{
+			if (ShopsOpen(Hearts))
+			{
+				return NSLOCTEXT("Holypaw", "MarketOpen", "Market  |  shutters up. Hearts discount. no factory smiles");
+			}
+			return NSLOCTEXT("Holypaw", "MarketShut", "Market  |  shutters down until a Heart sticks");
+		}
+		if (Id == TEXT("millProtest"))
+		{
+			if (MillBannersDown(Hearts))
+			{
+				return NSLOCTEXT("Holypaw", "MillFell", "Handmade not polyester  |  the ads fell. clap, don't stamp");
+			}
+			return NSLOCTEXT("Holypaw", "MillUp", "POLY ads  |  beige theology, identical smiles. three Hearts drop them");
+		}
+		return FText::GetEmpty();
+	}
+
 	float MillSmogScale(const int32 RibbonHearts)
 	{
 		if (RibbonHearts >= ChoirCityNeed)

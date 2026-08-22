@@ -47,6 +47,7 @@ namespace HolypawFaith
 	FString ShopClosedLine();
 	FString DuskLine(int32 Hearts, bool bInCity);
 	FString BannerStateLine(int32 Hearts);
+	FText LivingSign(FName Id, int32 Hearts);
 
 	float MillSmogScale(int32 RibbonHearts);
 	float BannerPitchDegrees(int32 Hearts);

@@ -48,19 +48,23 @@ void AHolypawMillBanner::BeginPlay()
 {
 	Super::BeginPlay();
 	ClothBase = Cloth ? Cloth->GetRelativeLocation() : FVector(48.f, 0.f, 210.f);
-	Colorize(Pole, FLinearColor(0.38f, 0.34f, 0.32f));
-	Colorize(Cloth, FLinearColor(0.72f, 0.28f, 0.38f));
-	Colorize(HandmadeRibbon, FLinearColor(0.92f, 0.48f, 0.62f));
-	SnapToHearts(HolypawFaith::HeartsHere(this, GetActorLocation()));
+	Colorize(Pole, FLinearColor(0.38f, 0.34f, 0.32f), PoleMid);
+	Colorize(Cloth, FLinearColor(0.72f, 0.28f, 0.38f), ClothMid);
+	Colorize(HandmadeRibbon, FLinearColor(0.92f, 0.48f, 0.62f), RibbonMid);
+	SnapToHearts(HolypawFaith::HeartsAt(this, HomeZone));
 }
 
-void AHolypawMillBanner::Colorize(UStaticMeshComponent* Mesh, const FLinearColor& Color)
+void AHolypawMillBanner::Colorize(UStaticMeshComponent* Mesh, const FLinearColor& Color, TObjectPtr<UMaterialInstanceDynamic>& Mid)
 {
 	if (!Mesh || !ShapeMat)
 	{
 		return;
 	}
-	if (UMaterialInstanceDynamic* Mid = Mesh->CreateDynamicMaterialInstance(0, ShapeMat))
+	if (!Mid)
+	{
+		Mid = Mesh->CreateDynamicMaterialInstance(0, ShapeMat);
+	}
+	if (Mid)
 	{
 		Mid->SetVectorParameterValue(TEXT("Color"), Color);
 	}
@@ -74,17 +78,22 @@ void AHolypawMillBanner::ApplyPitch(const float Pitch)
 		Cloth->SetRelativeRotation(FRotator(Pitch, 0.f, 0.f));
 		const float Drop = Pitch / 82.f;
 		Cloth->SetRelativeLocation(ClothBase + FVector(Drop * 40.f, 0.f, Drop * -90.f));
-		if (Pitch > 50.f)
+		const int32 Bucket = (Pitch > 50.f) ? 2 : ((Pitch > 12.f) ? 1 : 0);
+		if (Bucket != ColorBucket)
 		{
-			Colorize(Cloth, FLinearColor(0.55f, 0.42f, 0.4f));
-		}
-		else if (Pitch > 12.f)
-		{
-			Colorize(Cloth, FLinearColor(0.68f, 0.32f, 0.38f));
-		}
-		else
-		{
-			Colorize(Cloth, FLinearColor(0.72f, 0.28f, 0.38f));
+			ColorBucket = Bucket;
+			if (Bucket == 2)
+			{
+				Colorize(Cloth, FLinearColor(0.55f, 0.42f, 0.4f), ClothMid);
+			}
+			else if (Bucket == 1)
+			{
+				Colorize(Cloth, FLinearColor(0.68f, 0.32f, 0.38f), ClothMid);
+			}
+			else
+			{
+				Colorize(Cloth, FLinearColor(0.72f, 0.28f, 0.38f), ClothMid);
+			}
 		}
 	}
 	if (HandmadeRibbon)
@@ -105,10 +114,20 @@ void AHolypawMillBanner::SnapToHearts(const int32 Hearts)
 	ApplyPitch(HolypawFaith::BannerPitchDegrees(Hearts));
 }
 
+void AHolypawMillBanner::BoostDrop(const float Seconds)
+{
+	DropBoost = FMath::Max(DropBoost, Seconds);
+}
+
 void AHolypawMillBanner::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	const int32 Hearts = HolypawFaith::HeartsHere(this, GetActorLocation());
+	if (DropBoost > 0.f)
+	{
+		DropBoost = FMath::Max(0.f, DropBoost - DeltaSeconds);
+	}
+	const int32 Hearts = HolypawFaith::HeartsAt(this, HomeZone);
 	const float Want = HolypawFaith::BannerPitchDegrees(Hearts);
-	ApplyPitch(FMath::FInterpTo(ClothPitch, Want, DeltaSeconds, 2.4f));
+	const float Rate = DropBoost > 0.f ? 7.5f : 2.4f;
+	ApplyPitch(FMath::FInterpTo(ClothPitch, Want, DeltaSeconds, Rate));
 }

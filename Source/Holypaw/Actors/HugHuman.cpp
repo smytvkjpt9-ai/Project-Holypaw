@@ -56,6 +56,10 @@ void AHugHuman::BeginPlay()
 	Mesh->SetWorldScale3D(FVector(0.45f, 0.35f, 1.05f));
 	BaseScale = GetActorScale3D();
 	HomeLocation = GetActorLocation();
+	HomeZone = HolypawFaith::ZoneAt(this, HomeLocation);
+	bHomeZoneReady = true;
+	bTendsStall = PersonName.ToString().Contains(TEXT("Shopkeep")) || PersonName.ToString().Contains(TEXT("Hawker"));
+	ParadeSalt = FMath::Fmod(static_cast<float>(GetTypeHash(PersonName.ToString())) * 0.017f + FMath::Abs(HomeLocation.X) * 0.00013f, 4.f);
 	if (ShapeMat)
 	{
 		if (UMaterialInstanceDynamic* Mid = HeadMesh->CreateDynamicMaterialInstance(0, ShapeMat))
@@ -96,7 +100,7 @@ void AHugHuman::Tick(float DeltaSeconds)
 		Hour = GI->GetWorldHour();
 		bDusk = GI->IsDusk();
 	}
-	const int32 Hearts = HolypawFaith::HeartsHere(this, GetActorLocation());
+	const int32 Hearts = HolypawFaith::HeartsAt(this, HomeZone);
 	const bool bClap = IsClapping();
 	if (ArmL && ArmR)
 	{
@@ -178,7 +182,11 @@ bool AHugHuman::IsClapping() const
 	{
 		return true;
 	}
-	const int32 Hearts = HolypawFaith::HeartsHere(this, GetActorLocation());
+	if (ParadeKick > 0.f)
+	{
+		return true;
+	}
+	const int32 Hearts = HolypawFaith::HeartsAt(this, HomeZone);
 	if (!HolypawFaith::BelieversParade(Hearts))
 	{
 		return false;
@@ -195,11 +203,15 @@ bool AHugHuman::IsClapping() const
 	return FMath::Fmod(BounceT, 3.2f) < 1.1f;
 }
 
-void AHugHuman::BecomeBeliever()
+void AHugHuman::BecomeBeliever(const bool bCelebrate)
 {
 	bBeliever = true;
 	ConvertProgress = 100.f;
-	ClapBurst = 2.6f;
+	if (bCelebrate)
+	{
+		ClapBurst = 2.6f;
+		ParadeKick = 7.5f;
+	}
 	if (Sash)
 	{
 		Sash->SetHiddenInGame(false);
@@ -247,6 +259,7 @@ void AHugHuman::ResetFaith()
 	}
 	bKnelt = false;
 	ClapBurst = 0.f;
+	ParadeKick = 0.f;
 	BaseScale = FVector::OneVector;
 	SetActorScale3D(BaseScale);
 	SetActorLocation(HomeLocation);
@@ -270,7 +283,7 @@ void AHugHuman::RestoreFaith(float Progress, bool bNowBeliever, bool bNowKnelt)
 	ConvertProgress = FMath::Clamp(Progress, 0.f, 100.f);
 	if (bNowBeliever || ConvertProgress >= 100.f)
 	{
-		BecomeBeliever();
+		BecomeBeliever(false);
 	}
 	if (bNowKnelt)
 	{

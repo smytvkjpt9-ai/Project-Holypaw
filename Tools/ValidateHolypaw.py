@@ -323,6 +323,16 @@ if "ParadeGoal" not in SCHEDULE:
     errors.append("schedule missing believer parade goals")
 if "PlazaGoal" not in SCHEDULE:
     errors.append("schedule missing plaza clap-walk")
+if "VInterpConstantTo" not in SCHEDULE:
+    errors.append("schedule missing real walk (not a slide)")
+if "ParadeSalt" not in SCHEDULE:
+    errors.append("schedule missing staggered parade")
+if "LivingSign" not in FAITH:
+    errors.append("faith sim missing living sign copy")
+if "NotifyConvertPulse" not in PULSE:
+    errors.append("conversion pulse missing nearby clap/banner drop")
+if "FountainPool" not in PULSE:
+    errors.append("conversion pulse missing fountain look")
 
 if not (ROOT / "Source/Holypaw/Actors/HolypawPickup.cpp").exists():
     errors.append("missing HolypawPickup.cpp")
@@ -465,6 +475,8 @@ for needle, blob, label in (
     ("PulseLivingWorld", CHAR, "character"),
     ("PlaceRibbonMillBanners", WORLD, "world"),
     ("ShopClosedLine", CHAR, "character"),
+    ("NotifyConvertPulse", CHAR, "character"),
+    ("ribbonPlaza", WORLD, "world"),
 ):
     if needle not in blob:
         errors.append(f"{label} missing {needle}")
