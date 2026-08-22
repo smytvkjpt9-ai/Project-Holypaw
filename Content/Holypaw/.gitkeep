@@ -1,0 +1,2 @@
+; Keep Content/Holypaw so GitHub Pages-style clones still have the folder.
+; Maps are generated at runtime by AHolypawWorldBuilder (and optionally saved via Tools/GenerateWorld.py).
