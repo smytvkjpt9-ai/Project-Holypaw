@@ -11,7 +11,6 @@ AHolypawPlayerController::AHolypawPlayerController()
 void AHolypawPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	bShowHUD = true;
 	FInputModeGameOnly Mode;
 	SetInputMode(Mode);
 }
