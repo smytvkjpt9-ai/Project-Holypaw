@@ -41,11 +41,11 @@ Do **not** keep clicking Yes. Compile from Visual Studio (or the script below) s
 
    That places `AHolypawWorldBuilder` in the current level. Play still generates cottage, path, city, and biomes at BeginPlay even if you skip this.
 7. Press **Play**. The title overlay asks for a slot (1–3, Enter / N new / L load). Then wake at the forest cottage, walk inside for bed and kitchen, recruit a fluffy, hug the ranger, follow lanterns to Ribbon City. **F5** saves. Resting at the cottage, a camp, or a walk-in **inn** also saves. Gold **lanterns** open map travel (Tab to pick, E to hop). Converted people **clap, walk, and talk**. Stalls stay shuttered until a Heart opens them (**I** for pockets). Walk into a **chapel** to fill Miracle Charge. **Fountain** wishes grant FP. Three Hearts in Ribbon drop the mill banners; dusk then plays a hymn pad. The sun, fog, mill smog, and city music follow the clock. F6 mutes music, ambient, and combat buses. In battle, **Tab** flips the overflow command page.
-8. Later, on your PC: `ModelContextProtocol.StartServer` → Cursor MCP at `http://127.0.0.1:8000/mcp` (see `.cursor/mcp.json.example`). The plugin is **off** in `Holypaw.uproject` so a missing MCP install cannot block the editor. Turn it on locally if you want it.
+8. **Cursor + Unreal MCP:** see [`Docs/MCP_SETUP.md`](Docs/MCP_SETUP.md). In Unreal’s console (\`): `ModelContextProtocol.StartServer`. Cursor uses `.cursor/mcp.json` → `http://127.0.0.1:8000/mcp`. Unreal must be open first.
 
 If a compile still fails, open `Saved/Logs` (newest `.log`) or the Visual Studio Error List and send the **first** `error C####` or `Error:` line — not “module could not be found”.
 
-Plugins already enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**. **ModelContextProtocol** is optional and disabled.
+Plugins enabled: **PythonScriptPlugin**, **EnhancedInput**, **ProceduralMeshComponent**, **ModelContextProtocol** + **AllToolsets** (both optional — editor still loads if MCP is missing from your UE install).
 
 ## Campaign (J journal)
 

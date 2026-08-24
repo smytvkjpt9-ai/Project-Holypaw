@@ -777,7 +777,10 @@ uproject = (ROOT / "Holypaw.uproject").read_text()
 if '"ModelContextProtocol"' in uproject and re.search(
     r'"Name":\s*"ModelContextProtocol"[\s\S]*?"Enabled":\s*true', uproject
 ):
-    errors.append("ModelContextProtocol should stay disabled so a missing plugin cannot block editor load")
+    if not re.search(r'"Name":\s*"ModelContextProtocol"[\s\S]*?"Optional":\s*true', uproject):
+        errors.append("ModelContextProtocol must stay Optional: true so missing MCP does not block editor load")
+    if '"AllToolsets"' not in uproject:
+        errors.append("AllToolsets should be listed in Holypaw.uproject when ModelContextProtocol is enabled")
 if not (ROOT / "Tools/BuildHolypaw.bat").exists():
     errors.append("missing Tools/BuildHolypaw.bat")
 if not (ROOT / "GenerateHolypawSln.bat").exists():
